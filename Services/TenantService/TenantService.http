@@ -1,0 +1,6 @@
+@TenantService_HostAddress = http://localhost:5062
+
+GET {{TenantService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
