@@ -26,6 +26,21 @@ namespace Infrastructure.Authentication
                     ValidateAudience = false
                 };
             });
+            builder.Services.AddAuthorization(options =>
+            {
+                foreach (var scope in AuthorizationConstants.SCOPE_ALL)
+                {
+                    options.AddPolicy(scope, policy =>
+                        policy.RequireClaim(AuthorizationConstants.TOKEN_CLAIMS_TYPE_SCOPE, scope));
+                }
+            });
+            builder.Services.AddScoped<ITokenClaimsService>(x => new TokenClaimsService());
+        }
+
+        public static void UseCustomAuthentication(this WebApplication app)
+        {
+            app.UseAuthentication();
+            app.UseAuthorization();
         }
     }
 }

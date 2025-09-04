@@ -1,25 +1,23 @@
+using Infrastructure.Database;
+using TenantService.Data;
+using TenantService.Endpoints;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddControllers();
+builder.Host.ConfigureAppSettings();
+builder.AddInfrastructure();
+builder.AddCustomDbContext<TenantDbContext>(builder.Configuration.GetConnectionString(nameof(TenantDbContext)), "TenantService");
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
+app.UseInfrastructure();
+app.MapTenantEndpoints();
+//app.MapControllers();
 
 app.Run();
