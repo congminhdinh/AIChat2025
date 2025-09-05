@@ -1,8 +1,11 @@
+using Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Host.ConfigureAppSettings();
 // Add services to the container.
-
-builder.Services.AddControllers();
+builder.Services.AddReverseProxy()
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -16,10 +19,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
+app.MapReverseProxy();
 
 app.Run();
