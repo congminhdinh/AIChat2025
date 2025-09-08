@@ -10,7 +10,7 @@ namespace TenantService.Endpoints
         }
         static void MapWebApiGroups(this IEndpointRouteBuilder app)
         {
-            var group = app.MapWebApiGroup("tenants");
+            var group = app.MapWebApiGroup("tenants/ok");
             group.MapGet("/", () => Results.Ok("Tenant service is running"));
         }
     }

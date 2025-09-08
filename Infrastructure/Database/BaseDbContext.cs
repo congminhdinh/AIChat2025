@@ -14,31 +14,38 @@ namespace Infrastructure.Database
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Automatically apply all IEntityTypeConfiguration classes from this assembly
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
-            //foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-            //{
-            //    if (typeof(AuditableEntity).IsAssignableFrom(entityType.ClrType) && !entityType.IsAbstract())
-            //    {
-            //        // Use HasQueryFilter with lambda
-            //        var method = typeof(ModelBuilder)
-            //            .GetMethods()
-            //            .First(m => m.Name == nameof(ModelBuilder.Entity) && m.IsGenericMethod);
 
-            //        var generic = method.MakeGenericMethod(entityType.ClrType);
-            //        var builder = generic.Invoke(modelBuilder, null);
+            // Loop through all entities discovered by EF Core
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                // Check if the entity type is a class that inherits from AuditableEntity
+                if (typeof(AuditableEntity).IsAssignableFrom(entityType.ClrType) && entityType.ClrType.IsClass)
+                {
+                    // If so, add the soft-delete query filter
+                    AddSoftDeleteFilter(modelBuilder, entityType.ClrType);
+                }
+            }
+        }
 
-            //        var builderType = typeof(EntityTypeBuilder<>).MakeGenericType(entityType.ClrType);
-            //        var hasQueryFilter = builderType.GetMethod(nameof(EntityTypeBuilder.HasQueryFilter));
+        private void AddSoftDeleteFilter(ModelBuilder modelBuilder, Type entityType)
+        {
+            // Create the lambda parameter (e.g., "m")
+            var parameter = Expression.Parameter(entityType, "m");
 
-            //        // Build: e => !e.IsDeleted
-            //        var parameter = Expression.Parameter(entityType.ClrType, "e");
-            //        var property = Expression.Property(parameter, nameof(AuditableEntity.IsDeleted));
-            //        var condition = Expression.Not(property);
-            //        var lambda = Expression.Lambda(condition, parameter);
+            // Get the "IsDeleted" property from the parameter
+            var property = Expression.Property(parameter, nameof(AuditableEntity.IsDeleted));
 
-            //        hasQueryFilter!.Invoke(builder, new object[] { lambda });
-            //    }
-            //}
+            // Create the condition "m.IsDeleted == false"
+            var condition = Expression.Equal(property, Expression.Constant(false));
+
+            // Build the complete lambda expression: m => m.IsDeleted == false
+            var lambda = Expression.Lambda(condition, parameter);
+
+            // Apply the filter to the entity
+            modelBuilder.Entity(entityType).HasQueryFilter(lambda);
         }
     }
 }

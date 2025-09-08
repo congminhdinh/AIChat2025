@@ -1,27 +1,25 @@
+using AccountService.Data;
+using AccountService.Endpoints;
 using Infrastructure;
+using Infrastructure.Database;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Host.ConfigureAppSettings();
-builder.Services.AddControllers();
+builder.AddInfrastructure();
+builder.AddCustomDbContext<AccountDbContext>(builder.Configuration.GetConnectionString(nameof(AccountDbContext)), "AccountService");
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
+app.UseInfrastructure();
+app.MapAccountEndpoints();
+//app.MapControllers();
 
 app.Run();
