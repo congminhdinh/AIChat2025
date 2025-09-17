@@ -22,7 +22,7 @@ namespace Infrastructure.Authentication
                 new(AuthorizationConstants.TOKEN_CLAIMS_TENANT, $"{tenantId}"),
             };
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expires = DateTime.UtcNow.AddDays(7);
+            var expires = DateTime.Now.AddDays(7);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
@@ -33,7 +33,7 @@ namespace Infrastructure.Authentication
             return new TokenResponseDto(
                 AccessToken: tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor)),
                 RefreshToken: Guid.NewGuid().ToString().Replace("-", ""),
-                ExpiresIn: (long)(expires - DateTime.UtcNow).TotalSeconds,
+                ExpiresIn: (long)(expires - DateTime.Now).TotalSeconds,
                 ExpiresAt: expires
             );
         }
