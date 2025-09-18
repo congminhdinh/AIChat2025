@@ -1,9 +1,10 @@
 ﻿using AccountService.Data;
 using AccountService.Dtos;
 using AccountService.Entities;
+using AccountService.Requests;
 using AccountService.Specifications;
+using Infrastructure;
 using Infrastructure.Authentication;
-using Infrastructure.Repository;
 using Infrastructure.Utils;
 using System.Linq.Expressions;
 
@@ -20,7 +21,7 @@ namespace AccountService.Features
         }
 
         //Đăng ký tài khoản
-        public async Task<TokenDto> Register(RegisterDto input, int tenantId)
+        public async Task<BaseResponse<TokenDto>> Register(RegisterRequest input, int tenantId)
         {
             var isExisted = await _repository.AnyAsync(new AccountSpecification(input.Email, tenantId));
             if (isExisted)
@@ -34,10 +35,10 @@ namespace AccountService.Features
             await _repository.AddAsync(account);
             await _repository.SaveChangesAsync();
             var token = _tokenClaimsService.GetTokenAsync(tenantId, account.Id, account.Email, AuthorizationConstants.SCOPE_WEB);
-            return new TokenDto(token.AccessToken, token.RefreshToken, token.ExpiresAt);
+            return new BaseResponse<TokenDto>(new TokenDto(token.AccessToken, token.RefreshToken, token.ExpiresAt), input.CorrelationId());
         }
 
-        public async Task<TokenDto> Login(LoginDto input, int tenantId)
+        public async Task<BaseResponse<TokenDto>> Login(LoginRequest input, int tenantId)
         {
             var account = await _repository.FirstOrDefaultAsync(new AccountSpecification(input.Email, tenantId));
             if (account == null || !PasswordHasher.VerifyPassword(account.Password, input.Password))
@@ -45,7 +46,7 @@ namespace AccountService.Features
                 throw new Exception("Invalid email or password");
             }
             var token = _tokenClaimsService.GetTokenAsync(tenantId, account.Id, account.Email, AuthorizationConstants.SCOPE_WEB);
-            return new TokenDto(token.AccessToken, token.RefreshToken, token.ExpiresAt);
+            return new BaseResponse<TokenDto>(new TokenDto(token.AccessToken, token.RefreshToken, token.ExpiresAt), input.CorrelationId());
         }
     }
 }

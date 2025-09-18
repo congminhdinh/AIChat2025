@@ -1,6 +1,8 @@
 ﻿using AccountService.Dtos;
 using AccountService.Features;
+using AccountService.Requests;
 using Infrastructure.Web;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AccountService.Endpoints
 {
@@ -12,13 +14,16 @@ namespace AccountService.Endpoints
         }
         static void MapWebApiGroups(this IEndpointRouteBuilder app)
         {
-            var group = app.MapWebApiGroup("accounts/ok");
-            group.MapGet("/", () => Results.Ok("Account service is running"));
-            group.MapPost("/register", async (AccountBusiness accountBusiness, RegisterDto input, int tenantId) =>
+            var group = app.MapWebApiGroup("accounts");
+            group.MapGet("/ok", () => Results.Ok("Account service is running"));
+            group.MapPost("/register", async (AccountBusiness accountBusiness, [FromBody]RegisterRequest input, int tenantId) =>
             {
-                var result = await accountBusiness.Register(input, tenantId);
-                return Results.Ok(result);
-            }).WithName("Register").WithOpenApi();
+                return await accountBusiness.Register(input, tenantId);
+            }).AllowAnonymous();
+            group.MapPost("/login", async (AccountBusiness accountBusiness, LoginRequest input, int tenantId) =>
+            {
+                return await accountBusiness.Login(input, tenantId);
+            }).AllowAnonymous();
         }
     }
 }

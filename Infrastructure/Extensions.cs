@@ -1,6 +1,5 @@
 ﻿using Infrastructure.Authentication;
 using Infrastructure.OS;
-using Infrastructure.Repository;
 using Infrastructure.Web;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -32,7 +31,7 @@ namespace Infrastructure
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
             builder.Services.AddSingleton<ICurrentUserProvider, CurrentUserProvider>();
-            builder.AddRepositoryExtensions();
+            //builder.AddRepositoryExtensions();
             builder.Services.AddHttpContextAccessor();
             builder.AddCustomAuthorization();
             builder.AddCustomOpenApi();

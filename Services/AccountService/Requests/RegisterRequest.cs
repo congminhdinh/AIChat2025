@@ -1,6 +1,8 @@
-﻿namespace AccountService.Dtos
+﻿using Infrastructure;
+
+namespace AccountService.Requests
 {
-    public class RegisterDto
+    public class RegisterRequest: BaseRequest
     {
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;

@@ -20,13 +20,12 @@ namespace AccountService.Data
                 new Account
                 {
                     Id = 1,
-                    Email = "",
+                    Email = "minhdc223@gmail.com",
                     Name = "Admin",
                     IsAdmin = true,
                     Password = "XWVlzLc5K4xHQ5bfxcmyXKXX5zyUFPvFmDZHWmj9/dg=:73f25c0d147b4ac6968be8455c817b0d", //"Admin@123"
                     TenantId = 1,
-                    LastModifiedAt = null,
-                    CreatedAt = null,
+                    LastModifiedAt = null
                 });
 
         }
