@@ -17,7 +17,7 @@ namespace TenantService.Data
                 new Tenant
                 {
                     Id = 1,
-                    Name = "Admin"
+                    Name = "SuperAdmin"
 
                 });
 
