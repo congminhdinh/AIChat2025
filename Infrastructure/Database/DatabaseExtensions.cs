@@ -12,7 +12,7 @@ namespace Infrastructure.Database
             builder.Services.AddSingleton<UpdateTenancyInterceptor>();
             builder.Services.AddDbContext<TContext>((serviceProvider, optionBuilder) =>
             {
-                optionBuilder.UseSqlite(connectionString, sqlOptions =>
+                optionBuilder.UseSqlServer(connectionString, sqlOptions =>
                 {
                     sqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", dbSchema);
                 });
