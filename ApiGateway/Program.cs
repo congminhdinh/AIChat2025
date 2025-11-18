@@ -21,34 +21,28 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// 4. Configure Swagger UI to display endpoints for each service
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        // Discover and add an endpoint for each downstream service from the YARP config
         var proxyConfig = app.Services.GetRequiredService<IProxyConfigProvider>().GetConfig();
         var clusters = proxyConfig.Clusters.ToList();
 
-        // Find and add the "account" service first to make it the default
         var accountCluster = clusters.FirstOrDefault(c => c.ClusterId.Equals("account-cluster", StringComparison.OrdinalIgnoreCase));
         if (accountCluster != null)
         {
             options.SwaggerEndpoint($"/swagger/service/{accountCluster.ClusterId}", "account");
         }
-
-        // Add the rest of the services, skipping the default one
         foreach (var cluster in clusters)
         {
             if (cluster.ClusterId.Equals("account-cluster", StringComparison.OrdinalIgnoreCase))
             {
-                continue; // Already added as the default
+                continue;
             }
 
             if (cluster.Metadata?.TryGetValue("SwaggerUiName", out _) ?? false)
             {
-                // Derive the doc name from the ClusterId (e.g., "tenant-cluster" -> "tenant")
                 var docName = cluster.ClusterId.Replace("-cluster", "", StringComparison.OrdinalIgnoreCase);
                 options.SwaggerEndpoint($"/swagger/service/{cluster.ClusterId}", docName);
             }
