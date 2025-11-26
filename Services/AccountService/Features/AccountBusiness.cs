@@ -48,5 +48,9 @@ namespace AccountService.Features
             var token = _tokenClaimsService.GetTokenAsync(tenantId, account.Id, account.Email, AuthorizationConstants.SCOPE_WEB);
             return new BaseResponse<TokenDto>(new TokenDto(token.AccessToken, token.RefreshToken, token.ExpiresAt), input.CorrelationId());
         }
+
+        //admin
+
+        public async Task<BaseResponse<List<AccpimtDT>>>
     }
 }

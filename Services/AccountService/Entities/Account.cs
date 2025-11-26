@@ -22,6 +22,7 @@ namespace AccountService.Entities
         public string? Name { get; set; }
         public string? Avatar { get; set; }
         public bool IsAdmin { get; set; } = false;
+        public bool IsActive { get; set; }
 
     }
 }
