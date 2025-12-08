@@ -37,6 +37,7 @@ namespace Infrastructure.Authentication
                 ExpiresAt: expires
             );
         }
+        
     }
     public record TokenResponseDto(string AccessToken, string RefreshToken, long ExpiresIn, DateTime ExpiresAt);
 }

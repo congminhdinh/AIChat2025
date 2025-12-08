@@ -49,8 +49,9 @@ namespace AccountService.Features
             return new BaseResponse<TokenDto>(new TokenDto(token.AccessToken, token.RefreshToken, token.ExpiresAt), input.CorrelationId());
         }
 
-        //admin
+        #region Quản lý tài khoản
 
-        public async Task<BaseResponse<List<AccpimtDT>>>
+        
+        #endregion
     }
 }
