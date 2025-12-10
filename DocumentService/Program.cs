@@ -1,6 +1,6 @@
-using AccountService.Data;
-using AccountService.Endpoints;
-using AccountService.Features;
+using DocumentService.Data;
+using DocumentService.Endpoints;
+using DocumentService.Features;
 using Infrastructure;
 using Infrastructure.Database;
 
@@ -10,9 +10,8 @@ builder.Host.ConfigureAppSettings();
 builder.AddInfrastructure();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped(typeof(IReadRepository<>), typeof(EfRepository<>));
-builder.Services.AddScoped<AccountBusiness>();
-builder.Services.AddScoped<AuthBusiness>();
-builder.AddCustomDbContext<AccountDbContext>(builder.Configuration.GetConnectionString(nameof(AccountDbContext)), "AccountService");
+builder.Services.AddScoped<PromptDocumentBusiness>();
+builder.AddCustomDbContext<DocumentDbContext>(builder.Configuration.GetConnectionString(nameof(DocumentDbContext)), "DocumentService");
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -22,7 +21,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseInfrastructure();
-app.MapAuthEndpoints();
+app.MapDocumentEndpoints();
 //app.MapControllers();
 
 app.Run();

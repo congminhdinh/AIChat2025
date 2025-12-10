@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ApiGateway\ApiGateway.csproj" />
+    <ProjectReference Include="..\DocumentService\DocumentService.csproj" />
     <ProjectReference Include="..\Services\AccountService\AccountService.csproj" />
     <ProjectReference Include="..\Services\TenantService\TenantService.csproj" />
   </ItemGroup>

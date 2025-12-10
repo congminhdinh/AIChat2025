@@ -9,4 +9,7 @@ builder.AddProject<ApiGateway>("apigateway")
        .WithReference(tenantService);
        //// Expose the gateway's endpoint to be accessible from the browser
        //.WithExternalHttpEndpoints();
+builder.AddProject<Projects.DocumentService>("documentservice");
+       //// Expose the gateway's endpoint to be accessible from the browser
+       //.WithExternalHttpEndpoints();
 builder.Build().Run();

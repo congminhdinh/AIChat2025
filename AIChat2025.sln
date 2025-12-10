@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TenantService", "Services\T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AccountService", "Services\AccountService\AccountService.csproj", "{48B77330-E520-59DC-32A3-141E82BA3373}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocumentService", "DocumentService\DocumentService.csproj", "{22FB5245-91C4-7667-B958-D27495A38CBD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,10 @@ Global
 		{48B77330-E520-59DC-32A3-141E82BA3373}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{48B77330-E520-59DC-32A3-141E82BA3373}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{48B77330-E520-59DC-32A3-141E82BA3373}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22FB5245-91C4-7667-B958-D27495A38CBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22FB5245-91C4-7667-B958-D27495A38CBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22FB5245-91C4-7667-B958-D27495A38CBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22FB5245-91C4-7667-B958-D27495A38CBD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -51,6 +57,7 @@ Global
 		{9C483F14-57B3-4BB3-A213-4401B188C3D4} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{079E74A8-1758-4926-0EF1-EBAF9921406D} = {34B0DA73-1783-489E-BCEE-0439FAF43C68}
 		{48B77330-E520-59DC-32A3-141E82BA3373} = {34B0DA73-1783-489E-BCEE-0439FAF43C68}
+		{22FB5245-91C4-7667-B958-D27495A38CBD} = {34B0DA73-1783-489E-BCEE-0439FAF43C68}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E34BD2E9-64F3-4F69-B222-A53786A7EC73}
