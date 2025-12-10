@@ -8,6 +8,7 @@ namespace Infrastructure.Web;
 public interface ICurrentUserProvider
 {
     int UserId { get; }
+    int TenantId { get; }
     string Username { get; }
     string? Scope { get; }
 }
@@ -16,10 +17,13 @@ public class CurrentUserProvider(IHttpContextAccessor httpContextAccessor) : ICu
 {
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
     private int _cachedUserId;
+    private int _cachedTenantId;
     private string _cachedScope ="";
     private string _cachedUsername = "";
 
     public int UserId => GetUserId();
+
+    public int TenantId => GetTenantId();
 
     public string Username => GetUsername();
 
@@ -38,6 +42,22 @@ public class CurrentUserProvider(IHttpContextAccessor httpContextAccessor) : ICu
         {
             _cachedUserId = userId;
             return userId;
+        }
+        return 0;
+    }
+    private int GetTenantId()
+    {
+        if (_cachedTenantId > 0)
+        {
+            return _cachedTenantId;
+        }
+        var tenantClaim = _httpContextAccessor?.HttpContext?.User?
+            .FindFirstValue(AuthorizationConstants.TOKEN_CLAIMS_TENANT);
+
+        if (int.TryParse(tenantClaim, out int tenantId))
+        {
+            _cachedTenantId = tenantId;
+            return tenantId;
         }
         return 0;
     }

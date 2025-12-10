@@ -24,7 +24,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseInfrastructure();
-app.MapAccountEndpoints();
+app.MapAuthEndpoints();
 //app.MapControllers();
 
 app.Run();
