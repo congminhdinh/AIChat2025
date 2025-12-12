@@ -1,4 +1,5 @@
 using Infrastructure;
+using Microsoft.OpenApi.Models;
 using System.Text.Json.Nodes;
 using Yarp.ReverseProxy.Configuration;
 
@@ -17,6 +18,29 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "API Gateway", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme.",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new List<string>()
+        }
+    });
 });
 
 var app = builder.Build();
@@ -50,11 +74,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-
-// 5. Map the YARP proxy endpoints
 app.MapReverseProxy();
-
-// 6. Add a custom endpoint to fetch, transform, and serve the downstream swagger.json
 app.MapGet("/swagger/service/{clusterId}", async (
     string clusterId,
     HttpContext context,
@@ -77,8 +97,6 @@ app.MapGet("/swagger/service/{clusterId}", async (
         await context.Response.WriteAsync($"'SwaggerDownstreamPath' metadata not found for cluster '{clusterId}'.");
         return;
     }
-
-    // Get the destination address and the route prefix
     var destination = cluster.Destinations!.First().Value;
     var route = proxyConfig.Routes.FirstOrDefault(r => r.ClusterId == clusterId);
     if (route == null)
@@ -98,15 +116,10 @@ app.MapGet("/swagger/service/{clusterId}", async (
 
         // Use System.Text.Json to modify the document
         var swaggerNode = JsonNode.Parse(swaggerJsonString)!;
-
-        // Clear any existing servers, as the gateway is the single point of entry
         if (swaggerNode["servers"] is JsonArray servers)
         {
             servers.Clear();
         }
-
-        // Because your downstream services already include the full path prefix in their swagger docs,
-        // we don't need to modify the paths here. We just clone them.
         if (swaggerNode["paths"] is JsonObject paths)
         {
             var newPaths = new JsonObject();
@@ -116,6 +129,7 @@ app.MapGet("/swagger/service/{clusterId}", async (
             }
             swaggerNode["paths"] = newPaths;
         }
+
 
         context.Response.Headers.ContentType = new(new[] { "application/json" });
         await context.Response.WriteAsync(swaggerNode.ToJsonString());

@@ -1,8 +1,4 @@
-﻿using DocumentService.Features;
-using Infrastructure.Web;
-using Microsoft.AspNetCore.Mvc;
-
-namespace DocumentService.Endpoints
+﻿namespace DocumentService.Endpoints
 {
     public static class DocumentEndpoint
     {

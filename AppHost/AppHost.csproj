@@ -19,6 +19,7 @@
     <ProjectReference Include="..\DocumentService\DocumentService.csproj" />
     <ProjectReference Include="..\Services\AccountService\AccountService.csproj" />
     <ProjectReference Include="..\Services\TenantService\TenantService.csproj" />
+    <ProjectReference Include="..\StorageService\StorageService.csproj" />
   </ItemGroup>
 
 </Project>

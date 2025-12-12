@@ -35,6 +35,7 @@ namespace Infrastructure
             builder.Services.AddHttpContextAccessor();
             builder.AddCustomAuthorization();
             builder.AddCustomOpenApi();
+            builder.Services.AddAntiforgery();
         }
 
         public static void UseInfrastructure(this WebApplication app)
@@ -43,6 +44,7 @@ namespace Infrastructure
             app.UseCustomAuthentication();
             app.UseMiddleware<ExceptionMiddleware>();
             app.MapOpenApi();
+            app.UseAntiforgery();
             app.UseStatusCodePages(async statusCodeContext =>
             {
                 var message = $"Có lỗi xảy ra ({statusCodeContext.HttpContext.Response.StatusCode})";
