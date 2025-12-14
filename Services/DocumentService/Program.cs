@@ -8,9 +8,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.ConfigureAppSettings();
 builder.AddInfrastructure();
+var appSettings = builder.Configuration.Get<AppSettings>()?? new AppSettings();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped(typeof(IReadRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped<PromptDocumentBusiness>();
+builder.Services.AddHttpClient<PromptDocumentBusiness>();
 builder.AddCustomDbContext<DocumentDbContext>(builder.Configuration.GetConnectionString(nameof(DocumentDbContext)), "DocumentService");
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

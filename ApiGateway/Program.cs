@@ -12,7 +12,15 @@ builder.Services.AddReverseProxy()
 
 // 2. Add HttpClient for fetching downstream swagger docs
 builder.Services.AddHttpClient();
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 // 3. Add Swagger services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -45,35 +53,34 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+app.UseHttpsRedirection();
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
+    options.EnablePersistAuthorization();
+    var proxyConfig = app.Services.GetRequiredService<IProxyConfigProvider>().GetConfig();
+    var clusters = proxyConfig.Clusters.ToList();
+
+    var accountCluster = clusters.FirstOrDefault(c => c.ClusterId.Equals("account-cluster", StringComparison.OrdinalIgnoreCase));
+    if (accountCluster != null)
     {
-        var proxyConfig = app.Services.GetRequiredService<IProxyConfigProvider>().GetConfig();
-        var clusters = proxyConfig.Clusters.ToList();
-
-        var accountCluster = clusters.FirstOrDefault(c => c.ClusterId.Equals("account-cluster", StringComparison.OrdinalIgnoreCase));
-        if (accountCluster != null)
+        options.SwaggerEndpoint($"/swagger/service/{accountCluster.ClusterId}", "account");
+    }
+    foreach (var cluster in clusters)
+    {
+        if (cluster.ClusterId.Equals("account-cluster", StringComparison.OrdinalIgnoreCase))
         {
-            options.SwaggerEndpoint($"/swagger/service/{accountCluster.ClusterId}", "account");
+            continue;
         }
-        foreach (var cluster in clusters)
+
+        if (cluster.Metadata?.TryGetValue("SwaggerUiName", out _) ?? false)
         {
-            if (cluster.ClusterId.Equals("account-cluster", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            if (cluster.Metadata?.TryGetValue("SwaggerUiName", out _) ?? false)
-            {
-                var docName = cluster.ClusterId.Replace("-cluster", "", StringComparison.OrdinalIgnoreCase);
-                options.SwaggerEndpoint($"/swagger/service/{cluster.ClusterId}", docName);
-            }
+            var docName = cluster.ClusterId.Replace("-cluster", "", StringComparison.OrdinalIgnoreCase);
+            options.SwaggerEndpoint($"/swagger/service/{cluster.ClusterId}", docName);
         }
-    });
-}
-
+    }
+});
+app.UseCors("AllowAll");
 app.MapReverseProxy();
 app.MapGet("/swagger/service/{clusterId}", async (
     string clusterId,
@@ -84,6 +91,8 @@ app.MapGet("/swagger/service/{clusterId}", async (
 {
     var logger = loggerFactory.CreateLogger("SwaggerProxy");
     var proxyConfig = proxyConfigProvider.GetConfig();
+
+    // 1. Validation
     if (!proxyConfig.Clusters.Any(c => c.ClusterId == clusterId))
     {
         context.Response.StatusCode = StatusCodes.Status404NotFound;
@@ -97,14 +106,9 @@ app.MapGet("/swagger/service/{clusterId}", async (
         await context.Response.WriteAsync($"'SwaggerDownstreamPath' metadata not found for cluster '{clusterId}'.");
         return;
     }
+
     var destination = cluster.Destinations!.First().Value;
-    var route = proxyConfig.Routes.FirstOrDefault(r => r.ClusterId == clusterId);
-    if (route == null)
-    {
-        context.Response.StatusCode = StatusCodes.Status404NotFound;
-        await context.Response.WriteAsync($"Route not found for cluster '{clusterId}'.");
-        return;
-    }
+    // We don't need the Route prefix anymore since we are not adding it.
 
     var downstreamUrl = $"{destination.Address!.TrimEnd('/')}{downstreamPath}";
 
@@ -114,34 +118,97 @@ app.MapGet("/swagger/service/{clusterId}", async (
         logger.LogInformation("Fetching swagger doc from: {DownstreamUrl}", downstreamUrl);
         var swaggerJsonString = await httpClient.GetStringAsync(downstreamUrl);
 
-        // Use System.Text.Json to modify the document
         var swaggerNode = JsonNode.Parse(swaggerJsonString)!;
-        if (swaggerNode["servers"] is JsonArray servers)
-        {
-            servers.Clear();
-        }
-        if (swaggerNode["paths"] is JsonObject paths)
-        {
-            var newPaths = new JsonObject();
-            foreach (var path in paths)
-            {
-                newPaths.Add($"{path.Key}", path.Value!.DeepClone());
-            }
-            swaggerNode["paths"] = newPaths;
-        }
 
+        if (swaggerNode is JsonObject jsonObj)
+        {
+            if (jsonObj["servers"] is JsonArray servers)
+            {
+                servers.Clear();
+                servers.Add(new JsonObject { ["url"] = $"https://{context.Request.Host}" });
+            }
+            else
+            {
+                // Create servers array if it doesn't exist
+                var newServers = new JsonArray();
+                newServers.Add(new JsonObject { ["url"] = $"https://{context.Request.Host}" });
+                jsonObj["servers"] = newServers;
+            }
+
+            // 3. Process Paths (NO PREFIX ADDITION) + Inject Locks
+            if (jsonObj["paths"] is JsonObject paths)
+            {
+                var newPaths = new JsonObject();
+                // Define public endpoints that should NOT have a lock icon
+                var ignoredPaths = new[] { "login", "register", "allowanonymous", "public" };
+
+                foreach (var path in paths)
+                {
+                    // === CORE CHANGE: Use the path EXACTLY as is ===
+                    // We do NOT add publicPrefix here anymore.
+                    string originalKey = path.Key;
+
+                    var pathItem = path.Value!.DeepClone();
+
+                    // Check if this path should be ignored for Auth (e.g. login)
+                    bool isIgnored = ignoredPaths.Any(ignore => originalKey.Contains(ignore, StringComparison.OrdinalIgnoreCase));
+
+                    // Inject Security (Lock Icons) if not ignored
+                    if (!isIgnored && pathItem is JsonObject pathItemObj)
+                    {
+                        foreach (var operationEntry in pathItemObj)
+                        {
+                            var method = operationEntry.Key.ToLower();
+                            // Apply only to HTTP methods
+                            if (new[] { "get", "post", "put", "delete", "patch" }.Contains(method))
+                            {
+                                if (operationEntry.Value is JsonObject operation)
+                                {
+                                    // Add Security Requirement: [{"Bearer": []}]
+                                    var securityArray = new JsonArray();
+                                    var requirement = new JsonObject();
+                                    requirement.Add("Bearer", new JsonArray());
+                                    securityArray.Add(requirement);
+                                    operation["security"] = securityArray;
+                                }
+                            }
+                        }
+                    }
+
+                    newPaths.Add(originalKey, pathItem);
+                }
+                jsonObj["paths"] = newPaths;
+            }
+
+            // 4. Inject "Authorize" Button Definition
+            var components = jsonObj["components"] as JsonObject ?? new JsonObject();
+            jsonObj["components"] = components;
+
+            var securitySchemes = components["securitySchemes"] as JsonObject ?? new JsonObject();
+            components["securitySchemes"] = securitySchemes;
+
+            // Ensure "Bearer" scheme is defined so the button works
+            if (!securitySchemes.ContainsKey("Bearer"))
+            {
+                securitySchemes.Add("Bearer", new JsonObject
+                {
+                    ["type"] = "http",
+                    ["scheme"] = "bearer",
+                    ["bearerFormat"] = "JWT",
+                    ["description"] = "JWT Authorization header using the Bearer scheme."
+                });
+            }
+        }
 
         context.Response.Headers.ContentType = new(new[] { "application/json" });
         await context.Response.WriteAsync(swaggerNode.ToJsonString());
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Error fetching or transforming swagger doc for {ClusterId} from {DownstreamUrl}", clusterId, downstreamUrl);
+        logger.LogError(ex, "Error fetching or transforming swagger doc for {ClusterId}", clusterId);
         context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        await context.Response.WriteAsync($"Error fetching or transforming swagger doc for {clusterId}: {ex.Message}");
+        await context.Response.WriteAsync($"Error: {ex.Message}");
     }
 });
-
-
 app.Run();
 

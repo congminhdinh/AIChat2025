@@ -23,7 +23,7 @@ namespace AccountService.Data
                     Email = "minhdc223@gmail.com",
                     Name = "Admin",
                     IsAdmin = true,
-                    Password = "XWVlzLc5K4xHQ5bfxcmyXKXX5zyUFPvFmDZHWmj9/dg=:73f25c0d147b4ac6968be8455c817b0d", //"Admin@123"
+                    Password = "7Qp+0J3/1Zc/u/O8T/uFzO/o6uX/iT4/5z/0q/3z/q8=:b6a9876543210fedcba9876543210fed", //"Admin@123"
                     TenantId = 1,
                     LastModifiedAt = null
                 });

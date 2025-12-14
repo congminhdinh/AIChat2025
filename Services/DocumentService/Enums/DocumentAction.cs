@@ -3,7 +3,7 @@
     public enum DocumentAction
     {
         Upload,
-        Delete,
+        Standardization,
         Vectorize_Start,
         Vectorize_Success,
         Vectorize_Failed,

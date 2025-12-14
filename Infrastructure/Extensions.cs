@@ -1,5 +1,7 @@
 ﻿using Infrastructure.Authentication;
+using Infrastructure.Logging;
 using Infrastructure.OS;
+using Infrastructure.Tenancy;
 using Infrastructure.Web;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -27,20 +29,24 @@ namespace Infrastructure
         }
         public static void AddInfrastructure(this WebApplicationBuilder builder)
         {
+            builder.Services.Configure<AppSettings>(builder.Configuration);
             builder.AddCustomOs();
             builder.Services.AddHttpContextAccessor();
+            builder.AddCustomLogging();
             builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
             builder.Services.AddSingleton<ICurrentUserProvider, CurrentUserProvider>();
+            builder.Services.AddSingleton<ICurrentTenantProvider, CurrentTenantProvider>();
             //builder.AddRepositoryExtensions();
             builder.Services.AddHttpContextAccessor();
             builder.AddCustomAuthorization();
             builder.AddCustomOpenApi();
             builder.Services.AddAntiforgery();
+
         }
 
         public static void UseInfrastructure(this WebApplication app)
         {
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
             app.UseCustomAuthentication();
             app.UseMiddleware<ExceptionMiddleware>();
             app.MapOpenApi();

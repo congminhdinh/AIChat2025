@@ -70,7 +70,7 @@ namespace DocumentService.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Documents");
+                    b.ToTable("Documents", (string)null);
                 });
 #pragma warning restore 612, 618
         }

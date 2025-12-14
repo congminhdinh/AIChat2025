@@ -69,7 +69,7 @@ namespace AccountService.Features
             return new BaseResponse<int>(account.Id, input.CorrelationId());
         }
 
-        public async Task<BaseResponse<int>> UpdateAccount(UpdateAccountRequest input)
+        public async Task<BaseResponse<int>> UpdateAccount(UpdateAccountRequest input)  
         {
             var tenantId = _currentUserProvider.TenantId;
             var account = await _repository.FirstOrDefaultAsync(new AccountSpecificationById(input.AccountId, tenantId));

@@ -38,7 +38,7 @@ namespace AccountService.Features
         public async Task<BaseResponse<TokenDto>> Login(LoginRequest input, int tenantId)
         {
             var account = await _repository.FirstOrDefaultAsync(new AccountSpecification(input.Email, tenantId));
-            if (account == null || !PasswordHasher.VerifyPassword(account.Password, input.Password))
+            if (account == null || !PasswordHasher.VerifyPassword(input.Password, account.Password))
             {
                 throw new Exception("Invalid email or password");
             }

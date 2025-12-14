@@ -31,10 +31,17 @@ namespace Infrastructure
         private async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
             context.Response.ContentType = "application/json";
-
-            //context.Response.StatusCode =  (int)HttpStatusCode.InternalServerError;
             context.Response.StatusCode = (int)HttpStatusCode.OK;
-            await context.Response.WriteAsync($"{exception.Message} {context.Response.StatusCode}");
+            if (!Guid.TryParse(context.Request.Headers["X-Correlation-ID"], out var correlationId))
+            {
+                correlationId = Guid.NewGuid();
+            }
+            var response = new BaseResponse(
+                message: exception.Message,
+                status: BaseResponseStatus.Error,
+                correlationId: correlationId
+            );
+            await context.Response.WriteAsync(response.ToString());
         }
     }
 }
