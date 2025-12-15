@@ -22,6 +22,10 @@ namespace AccountService.Features
 
         public async Task<BaseResponse<AccountDto>> GetAccountById(GetAccountByIdRequest input)
         {
+            if (!CheckIsAdmin())
+            {
+                throw new Exception("Unauthorized access");
+            }
             var tenantId = _currentUserProvider.TenantId;
             var account = await _repository.FirstOrDefaultAsync(new AccountSpecificationById(input.AccountId, tenantId));
             if (account == null)
@@ -34,17 +38,25 @@ namespace AccountService.Features
 
         public async Task<BaseResponse<PaginatedList<AccountDto>>> GetAccountList(GetAccountListRequest input)
         {
+            if (!CheckIsAdmin())
+            {
+                throw new Exception("Unauthorized access");
+            }
             var tenantId = _currentUserProvider.TenantId;
-            var spec = new AccountListSpec(tenantId, input.Name, input.Username, input.Email, input.pageIndex, input.pageSize);
+            var spec = new AccountListSpec(tenantId, input.Name, input.Username, input.Email, input.PageIndex, input.PageSize);
             var accounts = await _repository.ListAsync(spec);
             var count = accounts.Count;
 
             var accountDtos = accounts.Select(account => new AccountDto(account.Id, account.Email, account.Name, account.Avatar, account.IsAdmin, account.IsActive)).ToList();
-            return new BaseResponse<PaginatedList<AccountDto>>(new PaginatedList<AccountDto>(accountDtos, count, input.pageIndex, input.pageSize), input.CorrelationId());
+            return new BaseResponse<PaginatedList<AccountDto>>(new PaginatedList<AccountDto>(accountDtos, input.PageIndex, input.PageSize), input.CorrelationId());
         }
 
         public async Task<BaseResponse<int>> CreateAccount(CreateAccountRequest input)
         {
+            if (!CheckIsAdmin())
+            {
+                throw new Exception("Unauthorized access");
+            }
             var tenantId = _currentUserProvider.TenantId;
             var account = await _repository.FirstOrDefaultAsync(new AccountSpecification(input.Email, tenantId));
             if(account != null)
@@ -58,6 +70,10 @@ namespace AccountService.Features
 
         public async Task<BaseResponse<int>> ChangePassword(ChangePasswordRequest input)
         {
+            if (!CheckIsAdmin())
+            {
+                throw new Exception("Unauthorized access");
+            }
             var tenantId = _currentUserProvider.TenantId;
             var account = await _repository.FirstOrDefaultAsync(new AccountSpecificationById(input.AccountId, tenantId));
             if (account == null)
@@ -71,6 +87,10 @@ namespace AccountService.Features
 
         public async Task<BaseResponse<int>> UpdateAccount(UpdateAccountRequest input)  
         {
+            if (!CheckIsAdmin())
+            {
+                throw new Exception("Unauthorized access");
+            }
             var tenantId = _currentUserProvider.TenantId;
             var account = await _repository.FirstOrDefaultAsync(new AccountSpecificationById(input.AccountId, tenantId));
             if (account == null)
@@ -82,6 +102,33 @@ namespace AccountService.Features
             account.Avatar = input.Avatar;
             await _repository.UpdateAsync(account);
             return new BaseResponse<int>(account.Id, input.CorrelationId());
+        }
+
+        public async Task<BaseResponse<int>> DisableTenancy(int tenancyId)
+        {
+            if(!CheckIsSuperAdmin())
+            {
+                throw new Exception("Unauthorized access");
+            }
+            var accounts = await _repository.ListAsync(new AccountSpecificationByTenantId(tenancyId));
+            foreach(var account in accounts)
+            {
+                account.TenancyActive = false;
+                await _repository.UpdateAsync(account);
+            }
+            return new BaseResponse<int>(tenancyId, new Guid());
+        }
+
+        private bool CheckIsAdmin()
+        {
+            return _currentUserProvider.IsAdmin;
+        }
+
+        private bool CheckIsSuperAdmin()
+        {
+            var tenantId = _currentUserProvider.TenantId;
+            var isAdmin = _currentUserProvider.IsAdmin;
+            return tenantId == 1 && isAdmin;
         }
     }
 }

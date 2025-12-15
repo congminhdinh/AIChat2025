@@ -38,5 +38,28 @@ namespace StorageService.Features
             var relativePath = Path.Combine(input.Directory ?? string.Empty, fileNameWithPrefix);
             return new BaseResponse<StringValueDto>(new StringValueDto { Value = relativePath }, input.CorrelationId());
         }
+
+        public Stream? DownloadFile(string relativeFilePath)
+        {
+            try
+            {
+                var baseDir = _appSettings.DocumentFilePath;
+                var fullPath = Path.Combine(baseDir, relativeFilePath);
+
+                if (!File.Exists(fullPath))
+                {
+                    _logger.LogWarning($"File not found: {fullPath}");
+                    return null;
+                }
+
+                // Lưu ý: Dùng FileShare.Read để tránh khóa file nếu đang có tiến trình khác đọc
+                return new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error downloading file: {relativeFilePath}");
+                return null;
+            }
+        }
     }
 }

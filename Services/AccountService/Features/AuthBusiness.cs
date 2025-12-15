@@ -31,7 +31,7 @@ namespace AccountService.Features
             };
             await _repository.AddAsync(account);
             await _repository.SaveChangesAsync();
-            var token = _tokenClaimsService.GetTokenAsync(tenantId, account.Id, account.Email, AuthorizationConstants.SCOPE_WEB);
+            var token = _tokenClaimsService.GetTokenAsync(tenantId, account.Id, account.Email, AuthorizationConstants.SCOPE_WEB, false);
             return new BaseResponse<TokenDto>(new TokenDto(token.AccessToken, token.RefreshToken, token.ExpiresAt), input.CorrelationId());
         }
 
@@ -42,7 +42,7 @@ namespace AccountService.Features
             {
                 throw new Exception("Invalid email or password");
             }
-            var token = _tokenClaimsService.GetTokenAsync(tenantId, account.Id, account.Email, AuthorizationConstants.SCOPE_WEB);
+            var token = _tokenClaimsService.GetTokenAsync(tenantId, account.Id, account.Email, AuthorizationConstants.SCOPE_WEB, account.IsAdmin);
             return new BaseResponse<TokenDto>(new TokenDto(token.AccessToken, token.RefreshToken, token.ExpiresAt), input.CorrelationId());
         }
     }

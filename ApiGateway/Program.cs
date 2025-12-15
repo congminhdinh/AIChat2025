@@ -108,10 +108,7 @@ app.MapGet("/swagger/service/{clusterId}", async (
     }
 
     var destination = cluster.Destinations!.First().Value;
-    // We don't need the Route prefix anymore since we are not adding it.
-
     var downstreamUrl = $"{destination.Address!.TrimEnd('/')}{downstreamPath}";
-
     try
     {
         var httpClient = httpClientFactory.CreateClient();
@@ -129,42 +126,29 @@ app.MapGet("/swagger/service/{clusterId}", async (
             }
             else
             {
-                // Create servers array if it doesn't exist
                 var newServers = new JsonArray();
                 newServers.Add(new JsonObject { ["url"] = $"https://{context.Request.Host}" });
                 jsonObj["servers"] = newServers;
             }
-
-            // 3. Process Paths (NO PREFIX ADDITION) + Inject Locks
             if (jsonObj["paths"] is JsonObject paths)
             {
                 var newPaths = new JsonObject();
-                // Define public endpoints that should NOT have a lock icon
                 var ignoredPaths = new[] { "login", "register", "allowanonymous", "public" };
 
                 foreach (var path in paths)
                 {
-                    // === CORE CHANGE: Use the path EXACTLY as is ===
-                    // We do NOT add publicPrefix here anymore.
                     string originalKey = path.Key;
-
                     var pathItem = path.Value!.DeepClone();
-
-                    // Check if this path should be ignored for Auth (e.g. login)
                     bool isIgnored = ignoredPaths.Any(ignore => originalKey.Contains(ignore, StringComparison.OrdinalIgnoreCase));
-
-                    // Inject Security (Lock Icons) if not ignored
                     if (!isIgnored && pathItem is JsonObject pathItemObj)
                     {
                         foreach (var operationEntry in pathItemObj)
                         {
                             var method = operationEntry.Key.ToLower();
-                            // Apply only to HTTP methods
                             if (new[] { "get", "post", "put", "delete", "patch" }.Contains(method))
                             {
                                 if (operationEntry.Value is JsonObject operation)
                                 {
-                                    // Add Security Requirement: [{"Bearer": []}]
                                     var securityArray = new JsonArray();
                                     var requirement = new JsonObject();
                                     requirement.Add("Bearer", new JsonArray());
@@ -179,8 +163,6 @@ app.MapGet("/swagger/service/{clusterId}", async (
                 }
                 jsonObj["paths"] = newPaths;
             }
-
-            // 4. Inject "Authorize" Button Definition
             var components = jsonObj["components"] as JsonObject ?? new JsonObject();
             jsonObj["components"] = components;
 

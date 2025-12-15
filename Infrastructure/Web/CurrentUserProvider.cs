@@ -11,6 +11,7 @@ public interface ICurrentUserProvider
     int TenantId { get; }
     string Username { get; }
     string? Scope { get; }
+    bool IsAdmin { get; }
 }
 
 public class CurrentUserProvider(IHttpContextAccessor httpContextAccessor) : ICurrentUserProvider
@@ -20,6 +21,7 @@ public class CurrentUserProvider(IHttpContextAccessor httpContextAccessor) : ICu
     private int _cachedTenantId;
     private string _cachedScope ="";
     private string _cachedUsername = "";
+    private bool _cachedIsAdmin = false;
 
     public int UserId => GetUserId();
 
@@ -28,6 +30,7 @@ public class CurrentUserProvider(IHttpContextAccessor httpContextAccessor) : ICu
     public string Username => GetUsername();
 
     public string Scope => GetScope();
+    public bool IsAdmin => GetIsAdmin();
 
     private int GetUserId()
     {
@@ -83,5 +86,17 @@ public class CurrentUserProvider(IHttpContextAccessor httpContextAccessor) : ICu
         var name = _httpContextAccessor?.HttpContext?.User?.FindFirstValue(ClaimTypes.Name);
         _cachedUsername = name ?? "";
         return _cachedUsername;
+    }
+
+    private bool GetIsAdmin()
+    {
+        if (_cachedIsAdmin)
+        {
+            return _cachedIsAdmin;
+        }
+        var isAdmin = _httpContextAccessor?.HttpContext?.User?
+            .FindFirstValue(AuthorizationConstants.POLICY_ADMIN)?? "False";
+        _cachedIsAdmin = isAdmin.Equals("False")? false: true;
+        return _cachedIsAdmin;
     }
 }

@@ -6,11 +6,11 @@ namespace Infrastructure.Authentication
 {
     public interface ITokenClaimsService
     {
-        TokenResponseDto GetTokenAsync(int tenantId, int userId, string username, string scope);
+        TokenResponseDto GetTokenAsync(int tenantId, int userId, string username, string scope, bool isAdmin);
     }
     public class TokenClaimsService : ITokenClaimsService
     {
-        public TokenResponseDto GetTokenAsync(int tenantId, int userId, string username, string scope)
+        public TokenResponseDto GetTokenAsync(int tenantId, int userId, string username, string scope, bool isAdmin)
         {
             var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(AuthorizationConstants.JWT_SECRET_KEY));
             var claims = new List<Claim>
@@ -18,6 +18,7 @@ namespace Infrastructure.Authentication
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
                 new Claim(ClaimTypes.Name, username),
                 new Claim(AuthorizationConstants.TOKEN_CLAIMS_TENANT, tenantId.ToString()),
+                new Claim(AuthorizationConstants.POLICY_ADMIN, isAdmin == false? "False": "True"),
                 new(AuthorizationConstants.TOKEN_CLAIMS_TYPE_SCOPE, $"{scope}"),
                 new(AuthorizationConstants.TOKEN_CLAIMS_TENANT, $"{tenantId}"),
             };

@@ -20,19 +20,25 @@ namespace AccountService.Specifications
         }
     }
 
-    public class AccountListSpec : Specification<Account>
+    public class AccountListSpec : TenancySpecification<Account>
     {
-        public AccountListSpec()
+        public AccountListSpec(int tenantId): base(tenantId)
         {
             Query.OrderByDescending(m => m.Id);
         }
-        public AccountListSpec(int tenantId, string? name, string? username, string? email, int pageIndex, int pageSize)
+        public AccountListSpec(int tenantId, string? name, string? username, string? email, int pageIndex, int pageSize): base(tenantId)
         {
-            Query.Where(m => !m.IsDeleted && (m.TenantId == tenantId) &&
+            Query.Where(m => !m.IsDeleted  &&
             (string.IsNullOrEmpty(name) || m.Name.Contains(name)) &&
             (string.IsNullOrEmpty(email) || m.Email.Contains(email))
             );
             Query.OrderByDescending(m => m.Id).Skip(pageSize*(pageIndex-1)).Take(pageSize);
+        }
+    }
+    public class AccountSpecificationByTenantId: TenancySpecification<Account>
+    {
+        public AccountSpecificationByTenantId(int tenantId): base(tenantId)
+        {
         }
     }
 }

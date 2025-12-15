@@ -8,7 +8,7 @@ public class PaginatedList<T>
     public int PageSize { get; private set; }
     public List<T> Items { get; private set; }
 
-    public PaginatedList(List<T> items, int count, int pageIndex, int pageSize)
+    public PaginatedList(List<T> items, int pageIndex, int pageSize)
     {
         PageIndex = pageIndex;
         //TotalItems = count;
@@ -21,14 +21,12 @@ public class PaginatedList<T>
 }
 public interface IPaginatedRequest
 {
-    int pageIndex { get; set; }
-    int pageSize { get; set; }
-    string? sortBy { get; set; }
+    int PageIndex { get; set; }
+    int PageSize { get; set; }
 }
 
 public class PaginatedRequest : BaseRequest, IPaginatedRequest
 {
-    public string? sortBy { get; set; }
-    public int pageIndex { get; set; } = 1;
-    public int pageSize { get; set; } = 20;
+    public int PageIndex { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
 }

@@ -20,6 +20,18 @@ namespace StorageService.Endpoints
                 return await storageBusiness.UploadFileSystem(input);
             }).DisableAntiforgery()
             .AllowAnonymous();
+
+            group.MapGet("/download-file", (StorageBusiness storageBusiness, [FromQuery] string filePath) =>
+            {
+                var stream = storageBusiness.DownloadFile(filePath);
+
+                if (stream == null)
+                {
+                    return Results.NotFound(new { Message = "File not found." });
+                }
+                return Results.File(stream, contentType: "application/octet-stream");
+            })
+            .AllowAnonymous();
         }
     }
 }

@@ -18,6 +18,12 @@ namespace DocumentService.Endpoints
                 var result = await documentBusiness.HandleAndUploadDocument(file);
                 return Results.Ok(result);
             }).DisableAntiforgery();
+
+            group.MapPost("/vectorize/{documentId}", async (PromptDocumentBusiness documentBusiness, int documentId) =>
+            {
+                var result = await documentBusiness.VectorizeDocument(documentId);
+                return Results.Ok(new { success = result, documentId });
+            });
         }
     }
 }

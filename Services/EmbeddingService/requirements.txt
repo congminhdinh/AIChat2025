@@ -2,3 +2,6 @@ fastapi
 uvicorn
 sentence-transformers
 torch
+qdrant-client
+langchain
+langchain-community

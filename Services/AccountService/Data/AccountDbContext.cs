@@ -27,7 +27,7 @@ namespace AccountService.Data
                     TenantId = 1,
                     LastModifiedAt = null
                 });
-
+            modelBuilder.Entity<Account>().HasQueryFilter(a => a.TenancyActive && a.IsActive && !a.IsDeleted);
         }
     }
 }

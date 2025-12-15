@@ -62,7 +62,14 @@ namespace Infrastructure.Web
             headers.Add("Bearer", token);
             return await GetWithHeaderAsync<TResult>(uri, headers, cancellationToken);
         }
+        public async Task<Stream> GetStreamAsync(string uri, CancellationToken cancellationToken = default)
+        {
+            var response = await _httpClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content.ReadAsStreamAsync(cancellationToken);
+        }
         private async Task<string> PostStringAsync(string uri, string dataString, CancellationToken cancellationToken = default)
         {
             var httpContent = new StringContent(dataString, Encoding.UTF8, "application/json");

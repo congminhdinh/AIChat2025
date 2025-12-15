@@ -8,5 +8,6 @@
         public string AccountUrl { get; set; }
         public string StorageUrl { get; set; }
         public string DocumentFilePath { get; set; }
+        public string EmbeddingServiceUrl { get; set; }
     }
 }
