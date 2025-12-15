@@ -4,10 +4,11 @@
     //class dùng chung
     public class AppSettings
     {
-        public string TenantUrl { get; set; }
-        public string AccountUrl { get; set; }
-        public string StorageUrl { get; set; }
+        public string ApiGatewayUrl { get; set; }
         public string DocumentFilePath { get; set; }
         public string EmbeddingServiceUrl { get; set; }
+        public string RegexHeading1 { get; set; }
+        public string RegexHeading2 { get; set; }
+        public string RegexHeading3 { get; set; }
     }
 }

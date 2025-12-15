@@ -4,6 +4,7 @@ using DocumentService.Data;
 using DocumentService.Dtos;
 using DocumentService.Entities;
 using DocumentService.Enums;
+using Hangfire;
 using Infrastructure;
 using Infrastructure.Logging;
 using Infrastructure.Web;
@@ -17,15 +18,20 @@ namespace DocumentService.Features
         private readonly IRepository<PromptDocument> _documentRepository;
         private readonly ICurrentUserProvider _currentUserProvider;
         private readonly AppSettings _appSettings;
-        private readonly Regex _regexChuong = new Regex(@"^Chương\s+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private readonly Regex _regexMuc = new Regex(@"^Mục\s+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private readonly Regex _regexDieu = new Regex(@"^Điều\s+\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private readonly IBackgroundJobClient _backgroundJobClient;
+        private readonly Regex _regexHeading1;
+        private readonly Regex _regexHeading2;
+        private readonly Regex _regexHeading3;
 
-        public PromptDocumentBusiness(IRepository<PromptDocument> documentRepository, ICurrentUserProvider currentUserProvider, IOptionsMonitor<AppSettings> optionsMonitor, HttpClient httpClient, IAppLogger<BaseHttpClient> appLogger): base(httpClient, appLogger)
+        public PromptDocumentBusiness(IRepository<PromptDocument> documentRepository, ICurrentUserProvider currentUserProvider, IOptionsMonitor<AppSettings> optionsMonitor, HttpClient httpClient, IAppLogger<BaseHttpClient> appLogger, IBackgroundJobClient backgroundJobClient) : base(httpClient, appLogger)
         {
             _documentRepository = documentRepository;
             _currentUserProvider = currentUserProvider;
             _appSettings = optionsMonitor.CurrentValue;
+            _backgroundJobClient = backgroundJobClient;
+            _regexHeading1 = new Regex(_appSettings.RegexHeading1, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            _regexHeading2 = new Regex(_appSettings.RegexHeading2, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            _regexHeading3 = new Regex(_appSettings.RegexHeading3, RegexOptions.IgnoreCase | RegexOptions.Compiled);
         }
 
         public async Task<int> HandleAndUploadDocument(IFormFile file)
@@ -54,7 +60,7 @@ namespace DocumentService.Features
                 await _documentRepository.UpdateAsync(docEntity);
 
                 memoryStream.Position = 0;
-                var uploadUrl = $"{_appSettings.StorageUrl}/web-api/storage/upload-file";
+                var uploadUrl = $"{_appSettings.ApiGatewayUrl}/web-api/storage/upload-file";
 
                 using var content = new MultipartFormDataContent();
                 using var fileContent = new StreamContent(memoryStream);
@@ -104,13 +110,17 @@ namespace DocumentService.Features
 
                     string? styleId = null;
 
-                    if (_regexChuong.IsMatch(text))
+                    if (_regexHeading1.IsMatch(text))
                     {
                         styleId = "Heading1";
                     }
-                    else if (_regexMuc.IsMatch(text) || _regexDieu.IsMatch(text))
+                    else if (_regexHeading2.IsMatch(text))
                     {
                         styleId = "Heading2";
+                    }
+                    else if (_regexHeading3.IsMatch(text))
+                    {
+                        styleId = "Heading3";
                     }
 
                     if (styleId != null)
@@ -140,7 +150,8 @@ namespace DocumentService.Features
                 if (body == null) return chunks;
 
                 string currentHeading1 = string.Empty;
-                string currentHeading2 = string.Empty;
+                string? currentHeading2 = null;
+                string currentHeading3 = string.Empty;
                 var contentParagraphs = new List<string>();
 
                 foreach (var para in body.Elements<Paragraph>())
@@ -148,43 +159,49 @@ namespace DocumentService.Features
                     var text = para.InnerText.Trim();
                     if (string.IsNullOrEmpty(text)) continue;
 
-                    // Check if this is Heading 1 (Chương)
-                    if (_regexChuong.IsMatch(text))
+                    // Check if this is Heading 1 (Chapter/Chương)
+                    if (_regexHeading1.IsMatch(text))
                     {
-                        // Before updating heading1, flush any accumulated content
-                        FlushChunk(chunks, currentHeading1, currentHeading2, contentParagraphs, documentId, fileName);
+                        // Flush any pending chunk before updating Heading1
+                        FlushChunk(chunks, currentHeading1, currentHeading2, currentHeading3, contentParagraphs, documentId, fileName);
 
                         currentHeading1 = text;
-                        currentHeading2 = string.Empty;
+                        currentHeading2 = null;
+                        currentHeading3 = string.Empty;
                         contentParagraphs.Clear();
                     }
-                    else if (_regexMuc.IsMatch(text) || _regexDieu.IsMatch(text))
+                    // Check if this is Heading 2 (Section/Mục)
+                    else if (_regexHeading2.IsMatch(text))
                     {
-                        FlushChunk(chunks, currentHeading1, currentHeading2, contentParagraphs, documentId, fileName);
-                        if (!string.IsNullOrEmpty(currentHeading2) &&
-                            _regexMuc.IsMatch(currentHeading2) &&
-                            _regexDieu.IsMatch(text))
-                        {
-                            currentHeading2 = $"{currentHeading2}\n{text}";
-                        }
-                        else
-                        {
-                            currentHeading2 = text;
-                        }
+                        // Flush any pending chunk before updating Heading2
+                        FlushChunk(chunks, currentHeading1, currentHeading2, currentHeading3, contentParagraphs, documentId, fileName);
+
+                        currentHeading2 = text;
+                        currentHeading3 = string.Empty;
                         contentParagraphs.Clear();
                     }
-                    // This is content
+                    // Check if this is Heading 3 (Article/Điều)
+                    else if (_regexHeading3.IsMatch(text))
+                    {
+                        // Flush previous Article chunk before starting new one
+                        FlushChunk(chunks, currentHeading1, currentHeading2, currentHeading3, contentParagraphs, documentId, fileName);
+
+                        currentHeading3 = text;
+                        contentParagraphs.Clear();
+                    }
+                    // This is body content
                     else
                     {
-                        if (!string.IsNullOrEmpty(currentHeading1) || !string.IsNullOrEmpty(currentHeading2))
+                        // Only accumulate content if we have a Heading3 (Article)
+                        if (!string.IsNullOrEmpty(currentHeading3))
                         {
                             contentParagraphs.Add(text);
                         }
                     }
                 }
 
-                // Don't forget to flush the last chunk
-                FlushChunk(chunks, currentHeading1, currentHeading2, contentParagraphs, documentId, fileName);
+                // Flush the last chunk
+                FlushChunk(chunks, currentHeading1, currentHeading2, currentHeading3, contentParagraphs, documentId, fileName);
             }
 
             return chunks;
@@ -193,23 +210,28 @@ namespace DocumentService.Features
         private void FlushChunk(
             List<DocumentChunkDto> chunks,
             string heading1,
-            string heading2,
+            string? heading2,
+            string heading3,
             List<string> contentParagraphs,
             int documentId,
             string fileName)
         {
-            // Only create chunk if we have content
+            // Only create chunk if we have content paragraphs (skip empty chunks)
             if (contentParagraphs.Count == 0) return;
 
-            var content = string.Join("\n", contentParagraphs);
-            var fullTextParts = new List<string>();
+            // Build Content field: Heading3 text + body paragraphs
+            var contentParts = new List<string>();
+            if (!string.IsNullOrEmpty(heading3))
+                contentParts.Add(heading3);
+            contentParts.AddRange(contentParagraphs);
+            var content = string.Join("\n", contentParts);
 
+            // Build FullText: Heading1 + Heading2 (if exists) + Content
+            var fullTextParts = new List<string>();
             if (!string.IsNullOrEmpty(heading1))
                 fullTextParts.Add(heading1);
-
             if (!string.IsNullOrEmpty(heading2))
                 fullTextParts.Add(heading2);
-
             fullTextParts.Add(content);
 
             var chunk = new DocumentChunkDto
@@ -240,7 +262,7 @@ namespace DocumentService.Features
             try
             {
                 // Construct URL to download the file from Storage Service
-                var downloadUrl = $"{_appSettings.StorageUrl}/web-api/storage/download-file?filePath={document.FilePath}";
+                var downloadUrl = $"{_appSettings.ApiGatewayUrl}/web-api/storage/download-file?filePath={document.FilePath}";
 
                 // Download the file
                 var fileStream = await GetStreamAsync(downloadUrl);
@@ -272,7 +294,7 @@ namespace DocumentService.Features
                 _logger.LogInformation("Enqueueing {BatchCount} batches for document {DocumentId}", batches.Count, documentId);
                 foreach (var batch in batches)
                 {
-                    Hangfire.BackgroundJob.Enqueue<VectorizeBackgroundJob>(
+                    _backgroundJobClient.Enqueue<VectorizeBackgroundJob>(
                         job => job.ProcessBatch(batch, tenantId));
                 }
 
