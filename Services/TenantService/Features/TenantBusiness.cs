@@ -25,7 +25,8 @@ namespace TenantService.Features
                 throw new Exception("Only super admin can access this resource");
             }
             var tenants = await _repository.ListAsync(new TenantListSpec(input.Name, input.PageIndex, input.PageSize));
-            return new BaseResponse<PaginatedList<Tenant>>(new PaginatedList<Tenant>(tenants, input.PageIndex, input.PageSize),  input.CorrelationId());
+            var count = await _repository.CountAsync(new TenantListSpec(input.Name)); 
+            return new BaseResponse<PaginatedList<Tenant>>(new PaginatedList<Tenant>(tenants, count, input.PageIndex, input.PageSize),  input.CorrelationId());
         }
 
         public async Task<BaseResponse<int>> CreateTenant(CreateTenantRequest input)
@@ -39,10 +40,10 @@ namespace TenantService.Features
             {
                 throw new Exception("Tenant name already exists");
             }
-            var tenant = new Tenant(input.Name, input.Description);
+            var tenant = new Tenant(input.Name, input.Description, input.IsActive);
             await _repository.AddAsync(tenant);
             await _repository.SaveChangesAsync();
-            return new BaseResponse<Tenant>(tenant, input.CorrelationId());
+            return new BaseResponse<int>(tenant.Id, input.CorrelationId());
         }
         private bool CheckIsSuperAdmin()
         {

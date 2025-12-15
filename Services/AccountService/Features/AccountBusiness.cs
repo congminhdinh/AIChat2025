@@ -43,12 +43,12 @@ namespace AccountService.Features
                 throw new Exception("Unauthorized access");
             }
             var tenantId = _currentUserProvider.TenantId;
-            var spec = new AccountListSpec(tenantId, input.Name, input.Username, input.Email, input.PageIndex, input.PageSize);
+            var spec = new AccountListSpec(tenantId, input.Name, input.Email, input.PageIndex, input.PageSize);
             var accounts = await _repository.ListAsync(spec);
-            var count = accounts.Count;
+            var count = await _repository.CountAsync(new AccountListSpec(tenantId, input.Name, input.Email));
 
             var accountDtos = accounts.Select(account => new AccountDto(account.Id, account.Email, account.Name, account.Avatar, account.IsAdmin, account.IsActive)).ToList();
-            return new BaseResponse<PaginatedList<AccountDto>>(new PaginatedList<AccountDto>(accountDtos, input.PageIndex, input.PageSize), input.CorrelationId());
+            return new BaseResponse<PaginatedList<AccountDto>>(new PaginatedList<AccountDto>(accountDtos, count, input.PageIndex, input.PageSize), input.CorrelationId());
         }
 
         public async Task<BaseResponse<int>> CreateAccount(CreateAccountRequest input)

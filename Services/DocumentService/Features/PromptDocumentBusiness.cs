@@ -53,9 +53,7 @@ namespace DocumentService.Features
                 docEntity.Action = DocumentAction.Standardization;
                 await _documentRepository.UpdateAsync(docEntity);
 
-                memoryStream.Position = 0; // Reset position to read
-
-                // Construct URL from AppSettings
+                memoryStream.Position = 0;
                 var uploadUrl = $"{_appSettings.StorageUrl}/web-api/storage/upload-file";
 
                 using var content = new MultipartFormDataContent();
@@ -157,17 +155,12 @@ namespace DocumentService.Features
                         FlushChunk(chunks, currentHeading1, currentHeading2, contentParagraphs, documentId, fileName);
 
                         currentHeading1 = text;
-                        currentHeading2 = string.Empty; // Reset heading2 when new chapter starts
+                        currentHeading2 = string.Empty;
                         contentParagraphs.Clear();
                     }
-                    // Check if this is Heading 2 (Mục or Điều)
                     else if (_regexMuc.IsMatch(text) || _regexDieu.IsMatch(text))
                     {
-                        // Before updating heading2, flush any accumulated content
                         FlushChunk(chunks, currentHeading1, currentHeading2, contentParagraphs, documentId, fileName);
-
-                        // If we already have a Heading2 that starts with "Mục" and this is "Điều",
-                        // we should append it to form a combined heading
                         if (!string.IsNullOrEmpty(currentHeading2) &&
                             _regexMuc.IsMatch(currentHeading2) &&
                             _regexDieu.IsMatch(text))
@@ -183,7 +176,6 @@ namespace DocumentService.Features
                     // This is content
                     else
                     {
-                        // Only accumulate content if we have at least one heading
                         if (!string.IsNullOrEmpty(currentHeading1) || !string.IsNullOrEmpty(currentHeading2))
                         {
                             contentParagraphs.Add(text);
@@ -269,42 +261,27 @@ namespace DocumentService.Features
                     await _documentRepository.UpdateAsync(document);
                     return false;
                 }
-
-                // Prepare batch request for EmbeddingService
-                var batchRequest = new BatchVectorizeRequestDto
+                const int batchSize = 10;
+                var batches = new List<List<DocumentChunkDto>>();
+                for (int i = 0; i < chunks.Count; i += batchSize)
                 {
-                    Items = chunks.Select(chunk => new VectorizeRequestDto
-                    {
-                        Text = chunk.FullText,
-                        Metadata = new Dictionary<string, object>
-                        {
-                            { "document_id", chunk.DocumentId },
-                            { "file_name", chunk.FileName },
-                            { "heading1", chunk.Heading1 },
-                            { "heading2", chunk.Heading2 },
-                            { "content", chunk.Content },
-                            { "tenant_id", tenantId }
-                        }
-                    }).ToList()
-                };
-
-                // Send to EmbeddingService
-                var vectorizeUrl = $"{_appSettings.EmbeddingServiceUrl}/vectorize-batch";
-                var response = await PostAsync<BatchVectorizeRequestDto, VectorizeResponseDto>(vectorizeUrl, batchRequest);
-
-                if (response?.Success == true)
-                {
-                    document.Action = DocumentAction.Vectorize_Success;
-                    await _documentRepository.UpdateAsync(document);
-                    _logger.LogInformation("Successfully vectorized {ChunkCount} chunks for document {DocumentId}", chunks.Count, documentId);
-                    return true;
+                    var batch = chunks.Skip(i).Take(batchSize).ToList();
+                    batches.Add(batch);
                 }
-                else
+
+                _logger.LogInformation("Enqueueing {BatchCount} batches for document {DocumentId}", batches.Count, documentId);
+                foreach (var batch in batches)
                 {
-                    document.Action = DocumentAction.Vectorize_Failed;
-                    await _documentRepository.UpdateAsync(document);
-                    return false;
+                    Hangfire.BackgroundJob.Enqueue<VectorizeBackgroundJob>(
+                        job => job.ProcessBatch(batch, tenantId));
                 }
+
+
+                document.Action = DocumentAction.Vectorize_Success;
+                await _documentRepository.UpdateAsync(document);
+                _logger.LogInformation("Successfully enqueued {BatchCount} batches ({ChunkCount} chunks total) for document {DocumentId}",
+                    batches.Count, chunks.Count, documentId);
+                return true;
             }
             catch (Exception ex)
             {

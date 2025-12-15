@@ -1,12 +1,14 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from sentence_transformers import SentenceTransformer
+from optimum.onnxruntime import ORTModelForFeatureExtraction
+from transformers import AutoTokenizer
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
 import uvicorn
 import os
 from typing import List, Optional
 import uuid
+import torch
 
 app = FastAPI(title="VN Law Embedding Service")
 
@@ -17,8 +19,10 @@ QDRANT_COLLECTION = os.getenv("QDRANT_COLLECTION", "vn_law_documents")
 
 print(f"Loading model: {MODEL_NAME}...")
 try:
-    model = SentenceTransformer(MODEL_NAME)
-    print("Model loaded successfully!")
+    # Use ONNX Runtime for lighter and faster inference
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    model = ORTModelForFeatureExtraction.from_pretrained(MODEL_NAME, export=True)
+    print("Model loaded successfully with ONNX Runtime!")
 except Exception as e:
     print(f"Error loading model: {e}")
 
@@ -41,13 +45,28 @@ class BatchVectorizeRequest(BaseModel):
     items: List[VectorizeRequest]
     collection_name: Optional[str] = None
 
+def mean_pooling(model_output, attention_mask):
+    """Mean pooling to get sentence embeddings"""
+    token_embeddings = model_output[0]
+    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+    return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+
+def encode_text(text: str):
+    """Encode text to embedding vector using ONNX model"""
+    encoded_input = tokenizer(text, padding=True, truncation=True, return_tensors='pt', max_length=512)
+    model_output = model(**encoded_input)
+    sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
+    # Normalize embeddings
+    sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
+    return sentence_embeddings[0].tolist()
+
 @app.post("/embed")
 async def create_embedding(request: EmbeddingRequest):
     try:
         if not request.text:
             raise HTTPException(status_code=400, detail="Text cannot be empty")
 
-        embedding = model.encode(request.text).tolist()
+        embedding = encode_text(request.text)
 
         return {
             "vector": embedding,
@@ -66,7 +85,7 @@ async def vectorize_and_store(request: VectorizeRequest):
         collection_name = request.collection_name or QDRANT_COLLECTION
 
         # Generate embedding
-        embedding = model.encode(request.text).tolist()
+        embedding = encode_text(request.text)
 
         # Ensure collection exists
         await ensure_collection(collection_name, len(embedding))
@@ -113,7 +132,7 @@ async def vectorize_batch(request: BatchVectorizeRequest):
                 continue
 
             # Generate embedding
-            embedding = model.encode(item.text).tolist()
+            embedding = encode_text(item.text)
 
             # Ensure collection exists (only once)
             if not points:

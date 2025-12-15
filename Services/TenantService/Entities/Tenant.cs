@@ -4,7 +4,7 @@ namespace TenantService.Entities
 {
     public class Tenant: AuditableEntity
     {
-        public Tenant()
+        public  Tenant()
         {
             
         }

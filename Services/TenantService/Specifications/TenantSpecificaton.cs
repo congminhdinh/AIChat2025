@@ -10,9 +10,17 @@ namespace TenantService.Specifications
             Query.Where(m => !m.IsDeleted &&
             (string.IsNullOrEmpty(name) || m.Name.Contains(name))).OrderByDescending(m => m.Id).Skip(pageSize * (pageIndex - 1)).Take(pageSize);
         }
+        public TenantListSpec(string? name)
+        {
+            Query.Where(m => !m.IsDeleted &&
+            (string.IsNullOrEmpty(name) || m.Name.Contains(name)));
+        }
     }
-    public class TenantSpecification
+    public class TenantSpecification: Specification<Tenant>
     {
-        
+        public TenantSpecification(string name)
+        {
+            Query.Where(m => m.Name == name);
+        }
     }
 }

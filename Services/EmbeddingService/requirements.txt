@@ -1,7 +1,5 @@
 fastapi
 uvicorn
-sentence-transformers
-torch
+transformers
+optimum[onnxruntime]
 qdrant-client
-langchain
-langchain-community

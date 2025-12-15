@@ -20,7 +20,7 @@ namespace TenantService.Data
                     Name = "SuperAdmin"
 
                 });
-
+            modelBuilder.Entity<Tenant>().HasQueryFilter(t => !t.IsDeleted);
         }
     }
 }

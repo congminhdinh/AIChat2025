@@ -6,7 +6,7 @@ namespace TenantService.Data
 {
     public class EfRepository<T> : RepositoryBase<T>, IRepository<T>, IReadRepository<T> where T : class
     {
-        public EfRepository(AccountDbContext dbContext) : base(dbContext)
+        public EfRepository(TenantDbContext dbContext) : base(dbContext)
         {
 
         }

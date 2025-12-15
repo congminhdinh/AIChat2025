@@ -16,12 +16,12 @@ namespace TenantService.Endpoints
             var group = app.MapWebApiGroup("tenant");
             group.MapGet("/ok", () => Results.Ok("Tenant service is running")).AllowAnonymous();
 
-            group.MapGet("/list", async (TenantBusiness tenantBusiness, GetTenantListRequest input) =>
+            group.MapGet("/list", async ([FromServices]TenantBusiness tenantBusiness, [AsParameters]GetTenantListRequest input) =>
             {
                 return await tenantBusiness.GetTenantList(input);
             });
 
-            group.MapPost("/create", async (TenantBusiness tenantBusiness, [FromBody] CreateTenantRequest input) =>
+            group.MapPost("/create", async (TenantBusiness tenantBusiness, CreateTenantRequest input) =>
             {
                 return await tenantBusiness.CreateTenant(input);
             });

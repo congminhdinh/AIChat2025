@@ -26,13 +26,21 @@ namespace AccountService.Specifications
         {
             Query.OrderByDescending(m => m.Id);
         }
-        public AccountListSpec(int tenantId, string? name, string? username, string? email, int pageIndex, int pageSize): base(tenantId)
+        public AccountListSpec(int tenantId, string? name, string? email, int pageIndex, int pageSize): base(tenantId)
         {
             Query.Where(m => !m.IsDeleted  &&
             (string.IsNullOrEmpty(name) || m.Name.Contains(name)) &&
             (string.IsNullOrEmpty(email) || m.Email.Contains(email))
             );
             Query.OrderByDescending(m => m.Id).Skip(pageSize*(pageIndex-1)).Take(pageSize);
+        }
+
+        public AccountListSpec(int tenantId, string? name, string? email) : base(tenantId)
+        {
+            Query.Where(m => !m.IsDeleted &&
+            (string.IsNullOrEmpty(name) || m.Name.Contains(name)) &&
+            (string.IsNullOrEmpty(email) || m.Email.Contains(email))
+            );
         }
     }
     public class AccountSpecificationByTenantId: TenancySpecification<Account>
