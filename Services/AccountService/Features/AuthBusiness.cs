@@ -25,7 +25,7 @@ namespace AccountService.Features
             {
                 throw new Exception("Email already exists");
             }
-            var account = new Account(input.Email, input.Password, input.Name, null)
+            var account = new Account(input.Email, input.Password, input.Name, null, tenantId)
             {
                 TenantId = tenantId
             };

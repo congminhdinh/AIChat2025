@@ -9,12 +9,13 @@ namespace AccountService.Entities
         {
             
         }
-        public Account(string email, string password, string name, string? avatar)
+        public Account(string email, string password, string name, string? avatar, int tenantId)
         {
             Email = email;
             Password = PasswordHasher.HashPassword(password);
             Name = name;
             Avatar = avatar;
+            TenantId = tenantId;
         }
 
         public string Email { get; set; }

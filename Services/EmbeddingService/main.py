@@ -57,7 +57,6 @@ def encode_text(text: str):
     encoded_input = tokenizer(text, padding=True, truncation=True, return_tensors='pt', max_length=512)
     model_output = model(**encoded_input)
     sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
-    # Normalize embeddings
     sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
     return sentence_embeddings[0].tolist()
 
@@ -66,8 +65,6 @@ async def create_embedding(request: EmbeddingRequest):
     try:
         if not request.text:
             raise HTTPException(status_code=400, detail="Text cannot be empty")
-
-        # Offload CPU-bound inference to thread pool
         embedding = await run_in_threadpool(encode_text, request.text)
 
         return {
@@ -85,17 +82,9 @@ async def vectorize_and_store(request: VectorizeRequest):
             raise HTTPException(status_code=400, detail="Text cannot be empty")
 
         collection_name = request.collection_name or QDRANT_COLLECTION
-
-        # Offload CPU-bound inference to thread pool
         embedding = await run_in_threadpool(encode_text, request.text)
-
-        # Ensure collection exists
         await ensure_collection(collection_name, len(embedding))
-
-        # Generate unique ID
         point_id = str(uuid.uuid4())
-
-        # Store in Qdrant
         qdrant_client.upsert(
             collection_name=collection_name,
             points=[
@@ -132,15 +121,9 @@ async def vectorize_batch(request: BatchVectorizeRequest):
         for item in request.items:
             if not item.text:
                 continue
-
-            # Offload CPU-bound inference to thread pool
             embedding = await run_in_threadpool(encode_text, item.text)
-
-            # Ensure collection exists (only once)
             if not points:
                 await ensure_collection(collection_name, len(embedding))
-
-            # Generate unique ID
             point_id = str(uuid.uuid4())
 
             points.append(
@@ -153,8 +136,6 @@ async def vectorize_batch(request: BatchVectorizeRequest):
                     }
                 )
             )
-
-        # Batch insert to Qdrant
         if points:
             qdrant_client.upsert(
                 collection_name=collection_name,
@@ -170,7 +151,6 @@ async def vectorize_batch(request: BatchVectorizeRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 async def ensure_collection(collection_name: str, vector_size: int):
-    """Ensure Qdrant collection exists, create if not"""
     collections = qdrant_client.get_collections().collections
     collection_names = [c.name for c in collections]
 

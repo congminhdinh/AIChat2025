@@ -24,7 +24,7 @@ builder.Services.AddHangfire(configuration => configuration
     .UseSqlServerStorage(builder.Configuration.GetConnectionString(nameof(DocumentDbContext))));
 builder.Services.AddHangfireServer(options =>
 {
-    options.WorkerCount = 10; // Maximum 10 concurrent jobs
+    options.WorkerCount = 2; // Maximum 10 concurrent jobs
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

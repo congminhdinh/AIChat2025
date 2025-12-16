@@ -63,7 +63,7 @@ namespace AccountService.Features
             {
                 throw new Exception("Account with this email already exists");
             }
-            var newAccount = new Account(input.Email, input.Password, input.Name, null); ///123456 is default password
+            var newAccount = new Account(input.Email, input.Password, input.Name, null, tenantId); ///123456 is default password
             await _repository.AddAsync(newAccount);
             return new BaseResponse<int>(newAccount.Id, input.CorrelationId());
         }

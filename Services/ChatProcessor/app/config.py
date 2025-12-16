@@ -1,14 +1,9 @@
-"""Configuration management for ChatProcessor service."""
-
 import os
 from typing import Optional
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    """Application settings with environment variable support."""
-
-    # RabbitMQ Configuration
     rabbitmq_host: str = "localhost"
     rabbitmq_port: int = 5672
     rabbitmq_username: str = "guest"
@@ -16,14 +11,20 @@ class Settings(BaseSettings):
     rabbitmq_queue_input: str = "UserPromptReceived"
     rabbitmq_queue_output: str = "BotResponseCreated"
 
-    # Ollama Configuration
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "llama2"
-    ollama_timeout: int = 300  # 5 minutes
+    ollama_timeout: int = 300
 
-    # Service Configuration
+    qdrant_host: str = "localhost"
+    qdrant_port: int = 6333
+    qdrant_collection: str = "documents"
+    rag_top_k: int = 5
+
+    fastapi_host: str = "0.0.0.0"
+    fastapi_port: int = 8000
+
     log_level: str = "INFO"
-    prefetch_count: int = 1  # Process one message at a time
+    prefetch_count: int = 1
 
     class Config:
         env_file = ".env"
@@ -31,5 +32,4 @@ class Settings(BaseSettings):
         case_sensitive = False
 
 
-# Global settings instance
 settings = Settings()
