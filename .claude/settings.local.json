@@ -3,7 +3,8 @@
     "allow": [
       "Bash(python -c:*)",
       "Bash(py -c:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(dotnet build:*)"
     ]
   }
 }

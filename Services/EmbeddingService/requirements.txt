@@ -1,9 +1,5 @@
 fastapi
 uvicorn
-torch>=2.1.0
-transformers>=4.30.0
-optimum[onnxruntime]>=1.15.0
+# optimum[onnxruntime] sẽ tự cài transformers, onnx, onnxruntime, torch bản tương thích mới nhất
+optimum[onnxruntime] 
 qdrant-client>=1.7.0
-protobuf==3.20.3
-onnx==1.14.1
-numpy<2.0.0

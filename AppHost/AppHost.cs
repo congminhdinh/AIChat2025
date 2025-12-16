@@ -16,4 +16,10 @@ builder.AddProject<ApiGateway>("apigateway")
 //builder.AddProject<Projects.DocumentService>("documentservice");
 //// Expose the gateway's endpoint to be accessible from the browser
 //.WithExternalHttpEndpoints();
+builder.AddProject<Projects.ChatService>("chatservice");
+//// Expose the gateway's endpoint to be accessible from the browser
+//.WithExternalHttpEndpoints();
+//builder.AddProject<Projects.DocumentService>("documentservice");
+//// Expose the gateway's endpoint to be accessible from the browser
+//.WithExternalHttpEndpoints();
 builder.Build().Run();

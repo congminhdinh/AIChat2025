@@ -93,23 +93,18 @@ namespace DocumentService.Features
             }
             return docEntity.Id;
         }
-
- 
         private void StandardizeHeadings(MemoryStream stream)
         {
-            // Open the document from the stream (Editable = true)
             using (WordprocessingDocument doc = WordprocessingDocument.Open(stream, true))
             {
                 var body = doc.MainDocumentPart?.Document.Body;
                 if (body == null) return;
-
                 foreach (var para in body.Elements<Paragraph>())
                 {
                     var text = para.InnerText.Trim();
                     if (string.IsNullOrEmpty(text)) continue;
 
                     string? styleId = null;
-
                     if (_regexHeading1.IsMatch(text))
                     {
                         styleId = "Heading1";
@@ -125,17 +120,21 @@ namespace DocumentService.Features
 
                     if (styleId != null)
                     {
-                        // Assign Style to Paragraph
+                        // Apply the heading style to the paragraph
+                        // Get existing ParagraphProperties or create new one if it doesn't exist
                         var pPr = para.Elements<ParagraphProperties>().FirstOrDefault();
                         if (pPr == null)
                         {
                             pPr = new ParagraphProperties();
                             para.PrependChild(pPr);
                         }
+
+                        // Set the paragraph style ID to the determined heading level
                         pPr.ParagraphStyleId = new ParagraphStyleId() { Val = styleId };
                     }
                 }
-                // Save changes to the stream
+
+                // Save all changes back to the document stream
                 doc.MainDocumentPart.Document.Save();
             }
         }

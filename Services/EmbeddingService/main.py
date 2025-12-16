@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from optimum.onnxruntime import ORTModelForFeatureExtraction
 from transformers import AutoTokenizer
@@ -66,7 +67,8 @@ async def create_embedding(request: EmbeddingRequest):
         if not request.text:
             raise HTTPException(status_code=400, detail="Text cannot be empty")
 
-        embedding = encode_text(request.text)
+        # Offload CPU-bound inference to thread pool
+        embedding = await run_in_threadpool(encode_text, request.text)
 
         return {
             "vector": embedding,
@@ -84,8 +86,8 @@ async def vectorize_and_store(request: VectorizeRequest):
 
         collection_name = request.collection_name or QDRANT_COLLECTION
 
-        # Generate embedding
-        embedding = encode_text(request.text)
+        # Offload CPU-bound inference to thread pool
+        embedding = await run_in_threadpool(encode_text, request.text)
 
         # Ensure collection exists
         await ensure_collection(collection_name, len(embedding))
@@ -131,8 +133,8 @@ async def vectorize_batch(request: BatchVectorizeRequest):
             if not item.text:
                 continue
 
-            # Generate embedding
-            embedding = encode_text(item.text)
+            # Offload CPU-bound inference to thread pool
+            embedding = await run_in_threadpool(encode_text, item.text)
 
             # Ensure collection exists (only once)
             if not points:
