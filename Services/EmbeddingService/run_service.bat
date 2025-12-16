@@ -1,0 +1,9 @@
+@echo off
+echo Starting Qdrant Container...
+docker start qdrant || docker run -d --name qdrant -p 6333:6333 -v "%cd%/qdrant_storage:/qdrant/storage" qdrant/qdrant
+
+echo Activating virtual environment...
+call venv\Scripts\activate
+
+echo Starting EmbeddingService...
+python main.py
