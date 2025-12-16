@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from optimum.onnxruntime import ORTModelForFeatureExtraction
 from transformers import AutoTokenizer
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct
+from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
 import uvicorn
 import os
 from typing import List, Optional
@@ -44,6 +44,12 @@ class VectorizeRequest(BaseModel):
 
 class BatchVectorizeRequest(BaseModel):
     items: List[VectorizeRequest]
+    collection_name: Optional[str] = None
+
+class DeleteRequest(BaseModel):
+    source_id: str
+    tenant_id: int
+    type: int
     collection_name: Optional[str] = None
 
 def mean_pooling(model_output, attention_mask):
@@ -145,6 +151,44 @@ async def vectorize_batch(request: BatchVectorizeRequest):
         return {
             "success": True,
             "count": len(points),
+            "collection": collection_name
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/embeddings/delete")
+async def delete_document(request: DeleteRequest):
+    """Delete vectors from Qdrant by source_id, tenant_id, and type"""
+    try:
+        collection_name = request.collection_name or QDRANT_COLLECTION
+
+        # Create filter that MUST match all 3 fields
+        delete_filter = Filter(
+            must=[
+                FieldCondition(
+                    key="source_id",
+                    match=MatchValue(value=request.source_id)
+                ),
+                FieldCondition(
+                    key="tenant_id",
+                    match=MatchValue(value=request.tenant_id)
+                ),
+                FieldCondition(
+                    key="type",
+                    match=MatchValue(value=request.type)
+                )
+            ]
+        )
+
+        # Delete points matching the filter
+        result = qdrant_client.delete(
+            collection_name=collection_name,
+            points_selector=delete_filter
+        )
+
+        return {
+            "success": True,
+            "message": f"Deleted vectors for source_id={request.source_id}, tenant_id={request.tenant_id}, type={request.type}",
             "collection": collection_name
         }
     except Exception as e:

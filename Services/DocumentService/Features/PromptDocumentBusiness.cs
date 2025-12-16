@@ -312,5 +312,44 @@ namespace DocumentService.Features
                 throw;
             }
         }
+
+        public async Task<bool> DeleteDocumentAsync(int documentId)
+        {
+            var tenantId = _currentUserProvider.TenantId;
+
+            try
+            {
+                // Get document from repository
+                var document = await _documentRepository.GetByIdAsync(documentId);
+                if (document == null)
+                {
+                    _logger.LogWarning("Document with ID {DocumentId} not found", documentId);
+                    return false;
+                }
+
+                // Delete entity from SQL DB
+                await _documentRepository.DeleteAsync(document);
+                _logger.LogInformation("Deleted document {DocumentId} from database", documentId);
+
+                // Call Python API to delete vectors from Qdrant
+                var deleteUrl = $"{_appSettings.EmbeddingServiceUrl}/api/embeddings/delete";
+                var deleteRequest = new
+                {
+                    source_id = documentId.ToString(),
+                    tenant_id = tenantId,
+                    type = 1
+                };
+
+                var response = await PostAsync<object, object>(deleteUrl, deleteRequest);
+                _logger.LogInformation("Successfully deleted vectors for document {DocumentId} from Qdrant", documentId);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting document {DocumentId}", documentId);
+                throw;
+            }
+        }
     }
 }

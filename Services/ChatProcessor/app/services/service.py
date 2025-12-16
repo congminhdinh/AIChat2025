@@ -31,9 +31,13 @@ async def process_chat_message(
         )
 
         context_texts = []
+        source_ids = []
         for result in rag_results:
             if hasattr(result, 'payload') and 'text' in result.payload:
                 context_texts.append(result.payload['text'])
+                # Strictly use source_id from payload
+                if 'source_id' in result.payload:
+                    source_ids.append(result.payload['source_id'])
 
         if context_texts:
             context = "\n\n".join(context_texts)
@@ -62,7 +66,8 @@ Please answer based on the context provided above."""
             "user_id": 0,
             "timestamp": datetime.utcnow(),
             "model_used": ollama_service.model,
-            "rag_documents_used": len(context_texts)
+            "rag_documents_used": len(context_texts),
+            "source_ids": source_ids
         }
 
     except Exception as e:
