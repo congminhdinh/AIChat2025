@@ -10,5 +10,10 @@
         public string RegexHeading1 { get; set; }
         public string RegexHeading2 { get; set; }
         public string RegexHeading3 { get; set; }
+
+        // RabbitMQ Configuration
+        public string RabbitMQEndpoint { get; set; } = "localhost:5672";
+        public string RabbitMQUsername { get; set; } = "guest";
+        public string RabbitMQPassword { get; set; } = "guest";
     }
 }

@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  chatprocessor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatprocessor
+    restart: unless-stopped
+    environment:
+      # RabbitMQ Configuration
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+      - RABBITMQ_PORT=${RABBITMQ_PORT:-5672}
+      - RABBITMQ_USERNAME=${RABBITMQ_USERNAME:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
+      - RABBITMQ_QUEUE_INPUT=${RABBITMQ_QUEUE_INPUT:-UserPromptReceived}
+      - RABBITMQ_QUEUE_OUTPUT=${RABBITMQ_QUEUE_OUTPUT:-BotResponseCreated}
+
+      # Ollama Configuration
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama2}
+      - OLLAMA_TIMEOUT=${OLLAMA_TIMEOUT:-300}
+
+      # Service Configuration
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PREFETCH_COUNT=${PREFETCH_COUNT:-1}
+
+    depends_on:
+      - rabbitmq
+
+    networks:
+      - chatprocessor-network
+
+    volumes:
+      - ./logs:/app/logs
+
+  # Optional: RabbitMQ service (if not running externally)
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"  # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USERNAME:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-guest}
+    networks:
+      - chatprocessor-network
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+networks:
+  chatprocessor-network:
+    driver: bridge
+
+volumes:
+  rabbitmq-data:

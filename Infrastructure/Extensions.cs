@@ -3,11 +3,13 @@ using Infrastructure.Logging;
 using Infrastructure.OS;
 using Infrastructure.Tenancy;
 using Infrastructure.Web;
+using MassTransit;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 namespace Infrastructure
 {
@@ -69,6 +71,38 @@ namespace Infrastructure
                 await statusCodeContext.HttpContext.Response.WriteAsJsonAsync(model);
             });
 
+        }
+
+        public static void AddMassTransitWithRabbitMq(this WebApplicationBuilder builder)
+        {
+            builder.Services.AddMassTransit(x =>
+            {
+                x.UsingRabbitMq((context, cfg) =>
+                {
+                    var appSettings = context.GetRequiredService<IOptionsMonitor<AppSettings>>().CurrentValue;
+                    var rabbitMqEndpoint = appSettings.RabbitMQEndpoint ?? "localhost:5672";
+                    var username = appSettings.RabbitMQUsername ?? "guest";
+                    var password = appSettings.RabbitMQPassword ?? "guest";
+
+                    cfg.Host($"rabbitmq://{rabbitMqEndpoint}", h =>
+                    {
+                        h.Username(username);
+                        h.Password(password);
+                    });
+
+                    cfg.ConfigureEndpoints(context);
+                });
+            });
+        }
+
+        public static void AddCustomSignalR(this WebApplicationBuilder builder)
+        {
+            builder.Services.AddSignalR(options =>
+            {
+                options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+                options.MaximumReceiveMessageSize = 102400; // 100 KB
+                options.StreamBufferCapacity = 10;
+            });
         }
     }
 }
