@@ -1,20 +1,30 @@
-**Role:** Act as a Senior Backend Developer.
+Act as a Senior DevOps & .NET Developer.
 
-**Context:**
-I have updated the architecture to support **Dynamic Prompt Configuration**.
-1.  **Data:** The `PromptConfig` entity consists of `Key` and `Value` properties and inherits from `TenancyEntity`. The `UserPromptReceivedEvent` has been updated with a new property: `public List<PromptConfigDto> SystemInstruction { get; init; }`.
+i have updated task 2, see and make changes
+**Task 2: Update Dockerfiles (Root Context & Auto-Migration)**
+Modify the `Dockerfile` for each service (e.g., `Services/AccountService/Dockerfile`) with the following logic:
 
-**Tasks:**
+1.  **Build Context Adjustment:**
+    * Assume the `docker build` command runs from the **Solution Root**.
+    * Update `COPY` and `RUN dotnet restore` paths to reflect the directory structure (e.g., `COPY ["Services/AccountService/AccountService.csproj", "Services/AccountService/"]`).
 
-**1. .NET Side (`ChatService`):**
-* **Specification:** Create a `PromptConfigByMessageSpec` class that inherits strictly from **`TenancySpecification<PromptConfig>`**.
-* **Query Logic:** Implement the filter where the user's message contains the config `Key` (e.g., `Query.Where(x => message.Contains(x.Key))`).
-* **Business Logic:** Update `ChatBusiness` to use this specification to fetch the config list, map it to `List<PromptConfigDto>`, assign it to the `SystemInstruction` property of the event, and publish.
+2.  **Migration Bundle Generation (Build Stage):**
+    * Install the EF Core tool: `RUN dotnet tool install --global dotnet-ef`
+    * Add the tools path to PATH.
+    * Generate the migration bundle: `RUN dotnet ef migrations bundle -c <DbContextName> -o /app/efbundle`
 
-**2. Python Side (`ChatProcessor`):**
-* **Consumer:** Update the RabbitMQ consumer to map the `SystemInstruction` field from the JSON payload (handling the conversion from C# PascalCase/camelCase to Python snake_case).
-* **Logic:** If the list contains data, concatenate the `Value`s to construct a dynamic System Prompt.
-* **Execution:** Pass this dynamic prompt into the `ollama_service.generate` function.
+3.  **Entrypoint Logic (Runtime Stage):**
+    * Copy the `efbundle` from the build stage.
+    * Create an `entrypoint.sh` file **directly inside the Dockerfile** (using `RUN echo ...` or similar) with this logic:
+        ```bash
+        #!/bin/bash
+        ./efbundle
+        dotnet <ServiceName>.dll
+        ```
+    * Make the script executable (`chmod +x`).
+    * Set the `ENTRYPOINT` to `["./entrypoint.sh"]`.
 
-**Constraint:**
-* Preserve all existing RAG flow and logic; only implement this specific injection logic.
+**Output:**
+1.  Confirm the AppSettings updates.
+2.  Provide the full, corrected code for **one representative Dockerfile** (e.g., AccountService) explaining the Root Context paths and the Bundle/Entrypoint logic.
+3.  Apply similar changes to all other C# service Dockerfiles.
