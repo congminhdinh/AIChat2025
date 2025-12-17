@@ -1,4 +1,3 @@
-import logging
 import httpx
 from typing import List, Dict, Any, Optional
 from datetime import datetime
@@ -6,8 +5,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 
 from src.config import settings
-
-logger = logging.getLogger(__name__)
+from src.logger import logger
 
 class OllamaService:
     def __init__(self, base_url: Optional[str] = None, model: Optional[str] = None, timeout: Optional[int] = None):

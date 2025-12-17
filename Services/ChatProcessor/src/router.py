@@ -1,10 +1,8 @@
-import logging
 from fastapi import APIRouter, HTTPException
 
 from src.schemas import ChatRequest, ChatResponse
 from src.business import ChatBusiness, OllamaService, QdrantService
-
-logger = logging.getLogger(__name__)
+from src.logger import logger
 
 router = APIRouter()
 ollama_service = OllamaService()

@@ -1,5 +1,4 @@
 import json
-import logging
 from typing import Callable, Awaitable, Optional
 import aio_pika
 from aio_pika import Message, DeliveryMode
@@ -7,8 +6,7 @@ from aio_pika.abc import AbstractChannel, AbstractConnection, AbstractIncomingMe
 
 from src.config import settings
 from src.schemas import UserPromptReceivedMessage, BotResponseCreatedMessage
-
-logger = logging.getLogger(__name__)
+from src.logger import logger, set_session_id, clear_session_id, get_session_id
 
 class RabbitMQService:
     def __init__(self, host: Optional[str] = None, port: Optional[int] = None, username: Optional[str] = None, password: Optional[str] = None, input_queue: Optional[str] = None, output_queue: Optional[str] = None, prefetch_count: Optional[int] = None):
@@ -66,17 +64,51 @@ class RabbitMQService:
 
             async def on_message(message: AbstractIncomingMessage) -> None:
                 async with message.process():
+                    # Generate session ID for this message
+                    import uuid
+                    session_id = str(uuid.uuid4())[:8]
+                    set_session_id(session_id)
+
                     try:
                         body = message.body.decode()
                         data = json.loads(body)
                         prompt_message = UserPromptReceivedMessage(**data)
-                        logger.info(f"Processing ConversationId: {prompt_message.conversation_id}")
+
+                        # Log message reception with details
+                        logger.info(
+                            f"Received: Queue={self.input_queue_name} | "
+                            f"ConversationId={prompt_message.conversation_id} | "
+                            f"UserId={prompt_message.user_id} | "
+                            f"TenantId={prompt_message.tenant_id} | "
+                            f"Message={prompt_message.message[:100]}"  # Limit to 100 chars
+                        )
+
+                        # Process the message
                         await message_handler(prompt_message)
-                        logger.info(f"Processed ConversationId: {prompt_message.conversation_id}")
+
+                        # Log successful processing
+                        logger.info(
+                            f"Success: ConversationId={prompt_message.conversation_id} | "
+                            f"Status=Processed"
+                        )
+
                     except json.JSONDecodeError as e:
-                        logger.error(f"Failed to parse message: {e}", exc_info=True)
+                        logger.error(
+                            f"Error: Failed to parse message | "
+                            f"Reason=JSONDecodeError | "
+                            f"Details={str(e)}",
+                            exc_info=True
+                        )
                     except Exception as e:
-                        logger.error(f"Error processing message: {e}", exc_info=True)
+                        logger.error(
+                            f"Error: Failed to process message | "
+                            f"ConversationId={prompt_message.conversation_id if 'prompt_message' in locals() else 'Unknown'} | "
+                            f"Reason={type(e).__name__} | "
+                            f"Details={str(e)}",
+                            exc_info=True
+                        )
+                    finally:
+                        clear_session_id()
 
             await queue.consume(on_message)
             logger.info(f"Consumer registered for '{self.input_queue_name}'")

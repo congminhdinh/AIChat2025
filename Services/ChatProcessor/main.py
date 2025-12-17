@@ -1,25 +1,75 @@
 import asyncio
-import logging
 import signal
 import sys
 import platform
 import uvicorn
-from fastapi import FastAPI
+import time
+import json
+import uuid
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from src.config import settings
 from src.router import router
 from src.schemas import UserPromptReceivedMessage, BotResponseCreatedMessage
 from src.consumer import RabbitMQService
 from src.business import OllamaService, QdrantService, ChatBusiness
-
-logging.basicConfig(
-    level=getattr(logging, settings.log_level.upper()),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout), logging.FileHandler("chatprocessor.log")]
-)
-logger = logging.getLogger(__name__)
+from src.logger import logger, set_session_id, clear_session_id
 
 app = FastAPI(title="ChatProcessor API", version="1.0.0")
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Middleware to log all incoming requests and outgoing responses"""
+
+    # Generate session ID for this request
+    session_id = str(uuid.uuid4())[:8]
+    set_session_id(session_id)
+
+    # Log incoming request
+    try:
+        body = await request.body()
+        body_str = body.decode('utf-8') if body else ''
+
+        # Parse query parameters
+        query_params = dict(request.query_params)
+
+        logger.info(
+            f"Request: {request.method} {request.url.path} | "
+            f"Query: {json.dumps(query_params) if query_params else 'None'} | "
+            f"Body: {body_str[:200] if body_str else 'None'}"  # Limit body to 200 chars
+        )
+    except Exception as e:
+        logger.error(f"Error logging request: {str(e)}")
+
+    # Process request
+    start_time = time.time()
+    try:
+        response = await call_next(request)
+        process_time = time.time() - start_time
+
+        # Log response
+        logger.info(
+            f"Response: {response.status_code} | "
+            f"Process Time: {process_time:.3f}s"
+        )
+
+        return response
+    except Exception as e:
+        process_time = time.time() - start_time
+        logger.error(
+            f"Exception: {str(e)} | "
+            f"Process Time: {process_time:.3f}s",
+            exc_info=True
+        )
+        clear_session_id()
+        return JSONResponse(
+            status_code=500,
+            content={"detail": str(e)}
+        )
+    finally:
+        clear_session_id()
+
 app.include_router(router)
 
 class ChatProcessor:
