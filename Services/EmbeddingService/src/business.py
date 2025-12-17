@@ -104,7 +104,7 @@ class EmbeddingService:
 
         return len(points), collection_name
 
-    def delete_by_filter(self, source_id: str, tenant_id: int, type: int, collection_name: str = None):
+    def delete_by_filter(self, source_id: int, tenant_id: int, type: int, collection_name: str = None):
         collection_name = collection_name or settings.qdrant_collection
 
         delete_filter = Filter(
