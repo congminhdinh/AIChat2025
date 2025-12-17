@@ -37,7 +37,7 @@ namespace Infrastructure
             builder.AddCustomLogging();
             builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
             builder.Services.AddSingleton<ICurrentUserProvider, CurrentUserProvider>();
-            builder.Services.AddSingleton<ICurrentTenantProvider, CurrentTenantProvider>();
+            builder.Services.AddScoped<ICurrentTenantProvider, CurrentTenantProvider>();
             //builder.AddRepositoryExtensions();
             builder.Services.AddHttpContextAccessor();
             builder.AddCustomAuthorization();

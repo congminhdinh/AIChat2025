@@ -4,7 +4,7 @@ from typing import List
 from optimum.onnxruntime import ORTModelForFeatureExtraction
 from transformers import AutoTokenizer
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
+from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue, FilterSelector
 
 from src.config import settings
 
@@ -115,5 +115,8 @@ class EmbeddingService:
             ]
         )
 
-        self.qdrant_client.delete(collection_name=collection_name, points_selector=delete_filter)
+        self.qdrant_client.delete(
+            collection_name=collection_name,
+            points_selector=FilterSelector(filter=delete_filter)
+        )
         return collection_name

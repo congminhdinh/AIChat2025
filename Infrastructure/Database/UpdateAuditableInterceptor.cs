@@ -29,6 +29,7 @@ namespace Infrastructure.Database
                 }
                 else if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Deleted)
                 {
+                    entry.State = Microsoft.EntityFrameworkCore.EntityState.Modified;
                     entry.Entity.IsDeleted = true;
                     entry.Entity.LastModifiedAt = utcNow;
                     entry.Entity.LastModifiedBy = currentUserService.Username;

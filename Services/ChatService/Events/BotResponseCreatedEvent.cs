@@ -1,10 +1,5 @@
 namespace ChatService.Events;
 
-/// <summary>
-/// Event consumed from RabbitMQ when Python service generates a bot response.
-/// Published by Python ChatProcessor service.
-/// Queue Name: BotResponseCreated
-/// </summary>
 public record BotResponseCreatedEvent
 {
     public int ConversationId { get; init; }

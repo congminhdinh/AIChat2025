@@ -47,7 +47,7 @@ namespace DocumentService.Features
                 var vectorizeUrl = $"{_appSettings.EmbeddingServiceUrl}/vectorize-batch";
                 var response = await PostAsync<BatchVectorizeRequestDto, VectorizeResponseDto>(vectorizeUrl, batchRequest);
 
-                if (response?.Success == true)
+                if (response?.success == true)
                 {
                     _logger.LogInformation("Successfully vectorized batch of {ChunkCount} chunks", chunks.Count);
                 }

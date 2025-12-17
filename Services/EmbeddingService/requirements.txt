@@ -1,5 +1,6 @@
 fastapi
 uvicorn
+pydantic-settings
 # optimum[onnxruntime] sẽ tự cài transformers, onnx, onnxruntime, torch bản tương thích mới nhất
-optimum[onnxruntime] 
+optimum[onnxruntime]
 qdrant-client>=1.7.0

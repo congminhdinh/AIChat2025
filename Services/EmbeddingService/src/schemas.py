@@ -14,7 +14,7 @@ class BatchVectorizeRequest(BaseModel):
     collection_name: Optional[str] = None
 
 class DeleteRequest(BaseModel):
-    source_id: str
+    source_id: int
     tenant_id: int
     type: int
     collection_name: Optional[str] = None

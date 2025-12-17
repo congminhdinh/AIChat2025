@@ -32,19 +32,10 @@ namespace Infrastructure.Database
 
         private void AddSoftDeleteFilter(ModelBuilder modelBuilder, Type entityType)
         {
-            // Create the lambda parameter (e.g., "m")
             var parameter = Expression.Parameter(entityType, "m");
-
-            // Get the "IsDeleted" property from the parameter
             var property = Expression.Property(parameter, nameof(AuditableEntity.IsDeleted));
-
-            // Create the condition "m.IsDeleted == false"
             var condition = Expression.Equal(property, Expression.Constant(false));
-
-            // Build the complete lambda expression: m => m.IsDeleted == false
             var lambda = Expression.Lambda(condition, parameter);
-
-            // Apply the filter to the entity
             modelBuilder.Entity(entityType).HasQueryFilter(lambda);
         }
     }

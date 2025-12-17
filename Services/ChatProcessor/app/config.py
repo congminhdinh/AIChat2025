@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     qdrant_collection: str = "documents"
     rag_top_k: int = 5
 
+    embedding_service_url: str = "http://localhost:8000"
+
     fastapi_host: str = "0.0.0.0"
     fastapi_port: int = 8000
 

@@ -6,7 +6,8 @@
       "Bash(pip install:*)",
       "Bash(dotnet build:*)",
       "Bash(mkdir:*)",
-      "Bash(dotnet restore:*)"
+      "Bash(dotnet restore:*)",
+      "Bash(test:*)"
     ]
   }
 }

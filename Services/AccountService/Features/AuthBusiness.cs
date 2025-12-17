@@ -5,6 +5,7 @@ using AccountService.Requests;
 using AccountService.Specifications;
 using Infrastructure;
 using Infrastructure.Authentication;
+using Infrastructure.Tenancy;
 using Infrastructure.Utils;
 
 namespace AccountService.Features
@@ -13,13 +14,18 @@ namespace AccountService.Features
     {
         private readonly IRepository<Account> _repository;
         private readonly ITokenClaimsService _tokenClaimsService;
-        public AuthBusiness(IRepository<Account> repository, ITokenClaimsService tokenClaimsService)
+        private readonly ICurrentTenantProvider _currentTenantProvider;
+        public AuthBusiness(IRepository<Account> repository, ITokenClaimsService tokenClaimsService, ICurrentTenantProvider currentTenantProvider)
         {
             _repository = repository;
             _tokenClaimsService = tokenClaimsService;
+            _currentTenantProvider = currentTenantProvider;
         }
         public async Task<BaseResponse<TokenDto>> Register(RegisterRequest input, int tenantId)
         {
+            // Set tenant context before any database operations
+            _currentTenantProvider.SetTenantId(tenantId);
+
             var isExisted = await _repository.AnyAsync(new AccountSpecification(input.Email, tenantId));
             if (isExisted)
             {
@@ -37,6 +43,9 @@ namespace AccountService.Features
 
         public async Task<BaseResponse<TokenDto>> Login(LoginRequest input, int tenantId)
         {
+            // Set tenant context before any database operations
+            _currentTenantProvider.SetTenantId(tenantId);
+
             var account = await _repository.FirstOrDefaultAsync(new AccountSpecification(input.Email, tenantId));
             if (account == null || !PasswordHasher.VerifyPassword(input.Password, account.Password))
             {

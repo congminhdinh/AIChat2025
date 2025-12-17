@@ -140,28 +140,6 @@ public class ChatBusiness
             UserId = userId,
             Timestamp = message.Timestamp
         };
-
-        // ═══ CONSOLE LOG: PUBLISHING TO RABBITMQ ═══
-        Console.WriteLine("\n" + new string('═', 80));
-        Console.WriteLine("📤 PUBLISHING MESSAGE TO RABBITMQ");
-        Console.WriteLine(new string('═', 80));
-        Console.WriteLine($"  Queue:           UserPromptReceived");
-        Console.WriteLine($"  Conversation ID: {userPromptEvent.ConversationId}");
-        Console.WriteLine($"  User ID:         {userPromptEvent.UserId}");
-        Console.WriteLine($"  Message:         {userPromptEvent.Message.Substring(0, Math.Min(100, userPromptEvent.Message.Length))}{(userPromptEvent.Message.Length > 100 ? "..." : "")}");
-        Console.WriteLine($"  Timestamp:       {userPromptEvent.Timestamp:yyyy-MM-dd HH:mm:ss}");
-        Console.WriteLine(new string('═', 80) + "\n");
-
-        await _publishEndpoint.Publish(userPromptEvent, ct);
-
-        // ═══ CONSOLE LOG: PUBLISH SUCCESS ═══
-        Console.WriteLine("\n" + new string('─', 80));
-        Console.WriteLine("✅ MESSAGE PUBLISHED SUCCESSFULLY");
-        Console.WriteLine(new string('─', 80));
-        Console.WriteLine($"  Conversation ID: {userPromptEvent.ConversationId}");
-        Console.WriteLine($"  Status:          Sent to RabbitMQ");
-        Console.WriteLine(new string('─', 80) + "\n");
-
         return new MessageDto
         {
             Id = message.Id,

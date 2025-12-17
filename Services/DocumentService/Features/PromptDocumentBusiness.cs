@@ -4,9 +4,12 @@ using DocumentService.Data;
 using DocumentService.Dtos;
 using DocumentService.Entities;
 using DocumentService.Enums;
+using DocumentService.Requests;
+using DocumentService.Specifications;
 using Hangfire;
 using Infrastructure;
 using Infrastructure.Logging;
+using Infrastructure.Paging;
 using Infrastructure.Web;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
@@ -33,6 +36,256 @@ namespace DocumentService.Features
             _regexHeading2 = new Regex(_appSettings.RegexHeading2, RegexOptions.IgnoreCase | RegexOptions.Compiled);
             _regexHeading3 = new Regex(_appSettings.RegexHeading3, RegexOptions.IgnoreCase | RegexOptions.Compiled);
         }
+
+        // CRUD Methods
+
+        private DocumentDto MapToDto(PromptDocument entity)
+        {
+            return new DocumentDto(
+                entity.Id,
+                entity.FileName,
+                entity.FilePath,
+                entity.Action,
+                entity.IsApproved,
+                entity.UploadedBy,
+                entity.ApprovedBy,
+                entity.CreatedAt,
+                entity.LastModifiedAt
+            )
+            {
+                TenantId = entity.TenantId
+            };
+        }
+
+        public async Task<BaseResponse<DocumentDto>> GetDocumentById(GetDocumentByIdRequest input)
+        {
+            var tenantId = _currentUserProvider.TenantId;
+            var document = await _documentRepository.FirstOrDefaultAsync(
+                new DocumentSpecificationById(input.DocumentId, tenantId));
+
+            if (document == null)
+                throw new Exception($"Document with ID {input.DocumentId} not found");
+
+            return new BaseResponse<DocumentDto>(MapToDto(document), input.CorrelationId());
+        }
+
+        public async Task<BaseResponse<PaginatedList<DocumentDto>>> GetDocumentList(GetDocumentListRequest input)
+        {
+            var tenantId = _currentUserProvider.TenantId;
+
+            var spec = new DocumentListSpec(
+                tenantId, input.FileName, input.UploadedBy,
+                input.Action, input.IsApproved, input.PageIndex, input.PageSize);
+
+            var documents = await _documentRepository.ListAsync(spec);
+
+            var countSpec = new DocumentListSpec(
+                tenantId, input.FileName, input.UploadedBy, input.Action, input.IsApproved);
+            var count = await _documentRepository.CountAsync(countSpec);
+
+            var documentDtos = documents.Select(MapToDto).ToList();
+            var paginatedList = new PaginatedList<DocumentDto>(
+                documentDtos, count, input.PageIndex, input.PageSize);
+
+            return new BaseResponse<PaginatedList<DocumentDto>>(paginatedList, input.CorrelationId());
+        }
+
+        public async Task<BaseResponse<int>> CreateDocument(CreateDocumentRequest input)
+        {
+            var tenantId = _currentUserProvider.TenantId;
+            var uploadedBy = _currentUserProvider.Username;
+
+            var docEntity = new PromptDocument
+            {
+                FileName = input.File.FileName,
+                UploadedBy = uploadedBy,
+                TenantId = tenantId,
+                Action = DocumentAction.Upload,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _documentRepository.AddAsync(docEntity);
+
+            try
+            {
+                using var memoryStream = new MemoryStream();
+                await input.File.CopyToAsync(memoryStream);
+
+                memoryStream.Position = 0;
+                StandardizeHeadings(memoryStream);
+                docEntity.Action = DocumentAction.Standardization;
+                await _documentRepository.UpdateAsync(docEntity);
+
+                memoryStream.Position = 0;
+                var uploadUrl = $"{_appSettings.ApiGatewayUrl}/web-api/storage/upload-file";
+
+                using var content = new MultipartFormDataContent();
+                using var fileContent = new StreamContent(memoryStream);
+                content.Add(fileContent, "File", input.File.FileName);
+                content.Add(new StringContent(input.File.FileName), "FileName");
+                content.Add(new StringContent("documents"), "Directory");
+
+                var response = await PostFormDataAsync<BaseResponse<StringValueDto>>(uploadUrl, content);
+                var uploadedPath = response?.Data?.Value;
+
+                if (!string.IsNullOrEmpty(uploadedPath))
+                {
+                    docEntity.FilePath = uploadedPath;
+                    docEntity.LastModifiedAt = DateTime.UtcNow;
+                    docEntity.Action = DocumentAction.Upload;
+                    await _documentRepository.UpdateAsync(docEntity);
+                }
+                else
+                {
+                    throw new Exception("Upload failed: No path returned from Storage Service.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing document upload for file {FileName}", input.File.FileName);
+                docEntity.Action = DocumentAction.Vectorize_Failed;
+                await _documentRepository.UpdateAsync(docEntity);
+                throw;
+            }
+
+            return new BaseResponse<int>(docEntity.Id, input.CorrelationId());
+        }
+
+        public async Task<BaseResponse<int>> UpdateDocument(UpdateDocumentRequest input)
+        {
+            var tenantId = _currentUserProvider.TenantId;
+            var document = await _documentRepository.FirstOrDefaultAsync(
+                new DocumentSpecificationById(input.DocumentId, tenantId));
+
+            if (document == null)
+                throw new Exception($"Document with ID {input.DocumentId} not found");
+
+            document.IsApproved = input.IsApproved;
+            document.ApprovedBy = input.ApprovedBy;
+
+            if (input.Action.HasValue)
+                document.Action = input.Action.Value;
+
+            document.LastModifiedAt = DateTime.UtcNow;
+            document.LastModifiedBy = _currentUserProvider.Username;
+
+            await _documentRepository.UpdateAsync(document);
+
+            return new BaseResponse<int>(document.Id, input.CorrelationId());
+        }
+
+        public async Task<BaseResponse<bool>> DeleteDocument(DeleteDocumentRequest input)
+        {
+            var tenantId = _currentUserProvider.TenantId;
+            var document = await _documentRepository.FirstOrDefaultAsync(
+                new DocumentSpecificationById(input.DocumentId, tenantId));
+
+            if (document == null)
+                throw new Exception($"Document with ID {input.DocumentId} not found");
+
+            try
+            {
+                // Step 1: Delete from SQL (soft delete)
+                await _documentRepository.DeleteAsync(document);
+                _logger.LogInformation("Deleted document {DocumentId} from database", input.DocumentId);
+
+                // Step 2: Delete from Vector DB (Qdrant) - isolated error handling
+                try
+                {
+                    var deleteUrl = $"{_appSettings.EmbeddingServiceUrl}/api/embeddings/delete";
+                    var deleteRequest = new
+                    {
+                        source_id = input.DocumentId,
+                        tenant_id = tenantId,
+                        type = 1,
+                        collection_name = "vn_law_documents"
+                    };
+
+                    await PostAsync<object, object>(deleteUrl, deleteRequest);
+                    _logger.LogInformation(
+                        "Successfully deleted vectors for document {DocumentId}", input.DocumentId);
+                }
+                catch (Exception vectorEx)
+                {
+                    // Log error but DO NOT rollback DB transaction (soft consistency)
+                    _logger.LogError(
+                        vectorEx,
+                        "VECTOR_DELETE_FAILED: Document {DocumentId} deleted from SQL but vector deletion failed. " +
+                        "Manual cleanup may be required for tenant {TenantId}",
+                        input.DocumentId, tenantId);
+                }
+
+                return new BaseResponse<bool>(true, input.CorrelationId());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting document {DocumentId}", input.DocumentId);
+                throw;
+            }
+        }
+
+        public async Task<BaseResponse<bool>> VectorizeDocument(VectorizeDocumentRequest input)
+        {
+            var tenantId = _currentUserProvider.TenantId;
+            var document = await _documentRepository.FirstOrDefaultAsync(
+                new DocumentSpecificationById(input.DocumentId, tenantId));
+
+            if (document == null)
+                throw new Exception($"Document with ID {input.DocumentId} not found");
+
+            document.Action = DocumentAction.Vectorize_Start;
+            await _documentRepository.UpdateAsync(document);
+
+            try
+            {
+                var downloadUrl = $"{_appSettings.ApiGatewayUrl}/web-api/storage/download-file?filePath={document.FilePath}";
+                var fileStream = await GetStreamAsync(downloadUrl);
+
+                if (fileStream == null)
+                    throw new Exception("Failed to download file from Storage Service");
+
+                using var memoryStream = new MemoryStream();
+                await fileStream.CopyToAsync(memoryStream);
+                memoryStream.Position = 0;
+
+                var chunks = ExtractHierarchicalChunks(memoryStream, input.DocumentId, document.FileName);
+
+                if (chunks.Count == 0)
+                {
+                    _logger.LogWarning("No chunks extracted from document {DocumentId}", input.DocumentId);
+                    document.Action = DocumentAction.Vectorize_Failed;
+                    await _documentRepository.UpdateAsync(document);
+                    return new BaseResponse<bool>(false, input.CorrelationId());
+                }
+
+                const int batchSize = 10;
+                var batches = new List<List<DocumentChunkDto>>();
+                for (int i = 0; i < chunks.Count; i += batchSize)
+                {
+                    batches.Add(chunks.Skip(i).Take(batchSize).ToList());
+                }
+
+                foreach (var batch in batches)
+                {
+                    _backgroundJobClient.Enqueue<VectorizeBackgroundJob>(
+                        job => job.ProcessBatch(batch, tenantId));
+                }
+
+                document.Action = DocumentAction.Vectorize_Success;
+                await _documentRepository.UpdateAsync(document);
+
+                return new BaseResponse<bool>(true, input.CorrelationId());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error vectorizing document {DocumentId}", input.DocumentId);
+                document.Action = DocumentAction.Vectorize_Failed;
+                await _documentRepository.UpdateAsync(document);
+                throw;
+            }
+        }
+
+        // Legacy Methods (for backward compatibility)
 
         public async Task<int> HandleAndUploadDocument(IFormFile file)
         {

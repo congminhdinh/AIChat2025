@@ -81,7 +81,18 @@ class QdrantService:
         return results
 
     def get_embedding(self, text: str) -> List[float]:
-        return [0.0] * 384
+        try:
+            response = httpx.post(
+                f"{settings.embedding_service_url}/embed",
+                json={"text": text},
+                timeout=30.0
+            )
+            response.raise_for_status()
+            result = response.json()
+            return result["vector"]
+        except Exception as e:
+            logger.error(f"Failed to get embedding from service: {e}")
+            raise
 
     def health_check(self) -> bool:
         try:
