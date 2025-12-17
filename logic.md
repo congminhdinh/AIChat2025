@@ -1663,9 +1663,841 @@ FASTAPI_PORT=8001
 
 ---
 
+---
+
+# 5. Prompt Configuration Management
+
+## 5.1 Overview
+
+AIChat2025 uses a centralized prompt configuration system that allows runtime modification of AI prompts without code deployment. This enables rapid iteration on prompt engineering and A/B testing.
+
+### Key Features
+- **Runtime Updates**: Modify prompts without restarting services
+- **Version Control**: Track prompt changes over time
+- **Tenant-Specific Overrides**: Customize prompts per tenant
+- **Role-Based Templates**: Different prompts for different user roles
+
+## 5.2 Prompt Storage Architecture
+
+### Database Schema
+
+**Location**: `Services/DocumentService/Entities/PromptConfig.cs`
+
+```csharp
+public class PromptConfig : TenancyEntity
+{
+    public string ConfigKey { get; set; }          // e.g., "system_prompt", "rag_template"
+    public string ConfigValue { get; set; }        // The actual prompt text
+    public string? Description { get; set; }       // Human-readable description
+    public bool IsActive { get; set; }             // Enable/disable without deletion
+    public int Priority { get; set; }              // For override resolution
+    public int TenantId { get; set; }              // Inherited from TenancyEntity
+}
+```
+
+### Configuration Keys
+
+| Config Key | Purpose | Default Value |
+|------------|---------|---------------|
+| `system_prompt` | Base system instruction for LLM | "You are a helpful AI assistant..." |
+| `rag_template` | Template for RAG context injection | "Context: {context}\n\nQuestion: {question}" |
+| `legal_analysis_prompt` | Specialized prompt for legal analysis | "Analyze the following legal documents..." |
+| `comparison_prompt` | Prompt for comparing regulations | "Compare the following regulations..." |
+
+### Priority Resolution
+
+When multiple prompts exist for the same key:
+1. **Tenant-specific** (TenantId = current user) - Highest priority
+2. **Default** (TenantId = 1) - Fallback
+3. **Hardcoded** - Last resort if database unavailable
+
+```csharp
+// Location: Services/ChatProcessor/src/business.py:135-148
+async def get_prompt_template(config_key: str, tenant_id: int):
+    # Try tenant-specific first
+    tenant_config = await db.query(PromptConfig)
+        .filter(config_key=config_key, tenant_id=tenant_id, is_active=True)
+        .order_by(priority.desc())
+        .first()
+
+    if tenant_config:
+        return tenant_config.config_value
+
+    # Fallback to default (tenant_id=1)
+    default_config = await db.query(PromptConfig)
+        .filter(config_key=config_key, tenant_id=1, is_active=True)
+        .first()
+
+    return default_config.config_value if default_config else HARDCODED_DEFAULT
+```
+
+## 5.3 Prompt Management API
+
+**Base Path**: `/web-api/document/prompt-config`
+
+### Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | List all prompt configs for current tenant |
+| GET | `/{id}` | Get specific prompt config |
+| POST | `/` | Create new prompt config |
+| PUT | `/{id}` | Update prompt config |
+| DELETE | `/{id}` | Soft-delete prompt config |
+| POST | `/{id}/activate` | Activate prompt config |
+| POST | `/{id}/deactivate` | Deactivate prompt config |
+
+### Example Request: Create Prompt Config
+
+```http
+POST /web-api/document/prompt-config
+Authorization: Bearer <JWT with tenant_id=2>
+Content-Type: application/json
+
+{
+  "configKey": "system_prompt",
+  "configValue": "You are a Vietnamese labor law expert. Answer questions based on Vietnamese Labor Code and company regulations. Always cite specific articles.",
+  "description": "Custom system prompt for legal analysis",
+  "isActive": true,
+  "priority": 10
+}
+```
+
+### Example Response
+
+```json
+{
+  "id": 789,
+  "configKey": "system_prompt",
+  "configValue": "You are a Vietnamese labor law expert...",
+  "description": "Custom system prompt for legal analysis",
+  "isActive": true,
+  "priority": 10,
+  "tenantId": 2,
+  "createdAt": "2025-12-18T10:30:00Z",
+  "lastModifiedAt": null
+}
+```
+
+## 5.4 Integration with Chat Processing
+
+**Location**: `Services/ChatProcessor/src/business.py:175-195`
+
+```python
+async def process_chat_message(conversation_id, user_id, message, tenant_id,
+                                ollama_service, qdrant_service, config_service):
+    # Step 1: Retrieve prompt templates
+    system_prompt = await config_service.get_prompt("system_prompt", tenant_id)
+    rag_template = await config_service.get_prompt("rag_template", tenant_id)
+
+    # Step 2: Perform dual-query RAG
+    legal_base_results = await qdrant_service.search_exact_tenant(
+        query_vector=query_embedding, tenant_id=1, limit=1
+    )
+    company_rule_results = await qdrant_service.search_exact_tenant(
+        query_vector=query_embedding, tenant_id=tenant_id, limit=1
+    )
+
+    # Step 3: Build context using template
+    context = rag_template.format(
+        legal_base=legal_base_results[0].payload['text'] if legal_base_results else "",
+        company_rules=company_rule_results[0].payload['text'] if company_rule_results else "",
+        question=message
+    )
+
+    # Step 4: Generate response with system prompt
+    response = await ollama_service.generate_response(
+        system_prompt=system_prompt,
+        user_message=context
+    )
+
+    return response
+```
+
+## 5.5 Prompt Versioning & Audit Trail
+
+All prompt changes are tracked through `AuditableEntity` base class:
+
+```sql
+-- Query to view prompt history
+SELECT
+    Id,
+    ConfigKey,
+    LEFT(ConfigValue, 50) AS ConfigValuePreview,
+    CreatedBy,
+    CreatedAt,
+    LastModifiedBy,
+    LastModifiedAt,
+    IsDeleted
+FROM PromptConfigs
+WHERE ConfigKey = 'system_prompt' AND TenantId = 2
+ORDER BY LastModifiedAt DESC;
+```
+
+**Output Example**:
+```
+Id  | ConfigKey      | ConfigValuePreview                    | CreatedBy | CreatedAt           | LastModifiedBy | LastModifiedAt
+----|----------------|---------------------------------------|-----------|---------------------|----------------|-------------------
+789 | system_prompt  | You are a Vietnamese labor law expert | admin@... | 2025-12-18 10:30:00 | admin@...      | 2025-12-18 14:20:00
+788 | system_prompt  | You are a helpful AI assistant that...| admin@... | 2025-12-15 09:15:00 | NULL           | NULL
+```
+
+---
+
+# 6. DevOps & Docker Deployment Strategy
+
+## 6.1 Overview
+
+AIChat2025 uses a **Docker-based microservices deployment** strategy with automatic database migrations on container startup. This enables zero-downtime deployments and consistent environments across development, staging, and production.
+
+### Deployment Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    DOCKER HOST (Windows/Linux)                   │
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────┐    │
+│  │              DOCKER COMPOSE ORCHESTRATION              │    │
+│  │                (aichat-network bridge)                 │    │
+│  │                                                        │    │
+│  │  Infrastructure Layer:                                 │    │
+│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐ │    │
+│  │  │ SQL     │  │RabbitMQ │  │ Qdrant  │  │ Ollama  │ │    │
+│  │  │ Server  │  │ :5672   │  │ :6333   │  │ :11434  │ │    │
+│  │  │ :1433   │  │ :15672  │  │         │  │         │ │    │
+│  │  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘ │    │
+│  │       │            │            │            │       │    │
+│  │  ─────┴────────────┴────────────┴────────────┴─────  │    │
+│  │                                                        │    │
+│  │  Application Layer (.NET 9):                          │    │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐│    │
+│  │  │ Account  │ │ Tenant   │ │Document  │ │ Storage  ││    │
+│  │  │ :5050    │ │ :5062    │ │ :5165    │ │ :5113    ││    │
+│  │  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘│    │
+│  │       │            │            │            │       │    │
+│  │       └────────────┴────────────┴────────────┘       │    │
+│  │                         │                             │    │
+│  │  ┌──────────┐          │                             │    │
+│  │  │  Chat    │──────────┤                             │    │
+│  │  │  :5218   │          │                             │    │
+│  │  └────┬─────┘          │                             │    │
+│  │       │                │                             │    │
+│  │  ─────┴────────────────┴───────────────────────────  │    │
+│  │                                                        │    │
+│  │  Gateway Layer:                                        │    │
+│  │  ┌──────────────────────────────────────────────┐    │    │
+│  │  │         API Gateway (YARP)                   │    │    │
+│  │  │              :5000                            │    │    │
+│  │  │  Routes all traffic to microservices         │    │    │
+│  │  └──────────────────────────────────────────────┘    │    │
+│  │                         │                             │    │
+│  │  ─────────────────────────────────────────────────── │    │
+│  │                                                        │    │
+│  │  AI Services Layer (Python):                          │    │
+│  │  ┌──────────┐          ┌──────────┐                  │    │
+│  │  │Embedding │          │  Chat    │                  │    │
+│  │  │ Service  │          │Processor │                  │    │
+│  │  │  :8000   │          │  :8001   │                  │    │
+│  │  └──────────┘          └──────────┘                  │    │
+│  └────────────────────────────────────────────────────┘    │
+│                                                              │
+│  Exposed Ports:                                              │
+│  - 5000: API Gateway (main entry point)                     │
+│  - 5050-5218: Individual services (direct access)           │
+│  - 1433: SQL Server                                          │
+│  - 5672, 15672: RabbitMQ                                     │
+│  - 6333: Qdrant                                              │
+│  - 11434: Ollama                                             │
+│  - 8000-8001: Python AI services                            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## 6.2 Docker Configuration
+
+### Connection String Configuration
+
+All .NET microservices use the following connection string structure:
+
+**Development (Local SQL Express)**:
+```json
+{
+  "ConnectionStrings": {
+    "AccountDbContext": "Data Source=DESKTOP-NHAT11T\\SQLEXPRESS;Initial Catalog=AIChat2025;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False"
+  }
+}
+```
+
+**Production (Docker SQL Server)**:
+```bash
+# Environment variable override in docker-compose.yml
+ConnectionStrings__AccountDbContext=Server=sqlserver;Database=AIChat2025;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;MultipleActiveResultSets=true
+```
+
+### Configuration Files Updated
+
+| Service | Config Files | Connection String Key |
+|---------|--------------|----------------------|
+| AccountService | `Config/appsettings.json`, `Config/appsettings.Development.json` | `AccountDbContext` |
+| TenantService | `Config/appsettings.json`, `Config/appsettings.Development.json` | `TenantDbContext` |
+| DocumentService | `Config/appsettings.json`, `Config/appsettings.Development.json` | `DocumentDbContext` |
+| ChatService | `Config/appsettings.json`, `Config/appsettings.Development.json` | `ChatDbContext` |
+| StorageService | No database | N/A |
+
+**Note**: `appsettings.Development.json` is used for local development, while `appsettings.json` (Production) is used in Docker containers.
+
+## 6.3 Dockerfile Architecture
+
+### Multi-Stage Build with Migration Bundle
+
+All .NET microservice Dockerfiles follow this pattern:
+
+**Location**: `Services/{ServiceName}/Dockerfile`
+
+```dockerfile
+# Base Stage (Runtime)
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+USER root
+WORKDIR /app
+EXPOSE 8080
+EXPOSE 8081
+
+# Build Stage (Compilation + Migration Bundle Generation)
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
+
+# Copy project files (paths relative to solution root)
+COPY ["Services/AccountService/AccountService.csproj", "Services/AccountService/"]
+COPY ["Infrastructure/Infrastructure.csproj", "Infrastructure/"]
+RUN dotnet restore "./Services/AccountService/AccountService.csproj"
+
+# Copy all source code
+COPY . .
+WORKDIR "/src/Services/AccountService"
+
+# Build the project
+RUN dotnet build "./AccountService.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+# Install EF Core tools for migration bundle generation
+RUN dotnet tool install --global dotnet-ef
+ENV PATH="${PATH}:/root/.dotnet/tools"
+
+# Generate self-contained migration bundle
+RUN dotnet ef migrations bundle -c AccountDbContext -o /app/efbundle --self-contained
+
+# Publish Stage
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "./AccountService.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+# Final Stage (Production Image)
+FROM base AS final
+WORKDIR /app
+
+# Copy published application
+COPY --from=publish /app/publish .
+
+# Copy migration bundle from build stage
+COPY --from=build /app/efbundle ./efbundle
+
+# Create entrypoint script that runs migrations before starting the application
+RUN echo '#!/bin/bash' > /app/entrypoint.sh && \
+    echo './efbundle' >> /app/entrypoint.sh && \
+    echo 'dotnet AccountService.dll' >> /app/entrypoint.sh && \
+    chmod +x /app/entrypoint.sh && \
+    chmod +x /app/efbundle
+
+# Set entrypoint to the custom script
+ENTRYPOINT ["./entrypoint.sh"]
+```
+
+### Key Features
+
+1. **Solution Root Context**: All `COPY` paths assume Docker build runs from solution root
+   ```bash
+   docker build -t accountservice -f Services/AccountService/Dockerfile .
+   ```
+
+2. **Migration Bundle**: Self-contained executable that applies EF Core migrations
+   - Generated during build stage using `dotnet ef migrations bundle`
+   - Runs automatically on container startup before application starts
+   - Uses connection string from environment variables
+
+3. **Automatic Migrations**: Eliminates manual migration scripts
+   ```bash
+   # Traditional approach (manual)
+   dotnet ef database update --project AccountService
+
+   # Docker approach (automatic)
+   docker run accountservice
+   # → Migration bundle runs automatically
+   # → Application starts with up-to-date schema
+   ```
+
+4. **Zero-Downtime Deployments**: New containers apply migrations before serving traffic
+
+## 6.4 Docker Compose Configuration
+
+**Location**: `docker-compose.yml` (solution root)
+
+### Infrastructure Services
+
+```yaml
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong!Passw0rd
+    networks:
+      - aichat-network
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    networks:
+      - aichat-network
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - G:/Mount/qdrant:/qdrant/storage  # Persistent storage
+    networks:
+      - aichat-network
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - G:/Mount/ollama:/root/.ollama    # Model storage
+    networks:
+      - aichat-network
+    restart: always
+```
+
+### .NET Microservices
+
+```yaml
+  accountservice:
+    build:
+      context: .                                          # Solution root
+      dockerfile: Services/AccountService/Dockerfile      # Relative path
+    container_name: accountservice
+    ports:
+      - "5050:8080"                                       # Host:Container
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production                 # Use appsettings.json
+      - ASPNETCORE_HTTP_PORTS=8080                        # Internal port
+      - ConnectionStrings__AccountDbContext=Server=sqlserver;Database=AIChat2025;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;MultipleActiveResultSets=true
+    depends_on:
+      - sqlserver                                         # Wait for SQL Server
+      - rabbitmq                                          # Wait for RabbitMQ
+    networks:
+      - aichat-network
+    restart: unless-stopped
+```
+
+**Service-Specific Connection Strings**:
+- AccountService: `ConnectionStrings__AccountDbContext`
+- TenantService: `ConnectionStrings__TenantDbContext`
+- DocumentService: `ConnectionStrings__DocumentDbContext`
+- ChatService: `ConnectionStrings__ChatDbContext`
+
+### API Gateway
+
+```yaml
+  apigateway:
+    build:
+      context: .
+      dockerfile: ApiGateway/Dockerfile
+    container_name: apigateway
+    ports:
+      - "5000:8080"  # Main entry point for all API traffic
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_HTTP_PORTS=8080
+    depends_on:
+      - accountservice
+      - tenantservice
+      - documentservice
+      - storageservice
+      - chatservice
+    networks:
+      - aichat-network
+    restart: unless-stopped
+```
+
+**YARP Configuration** (`ApiGateway/Config/appsettings.json`):
+```json
+{
+  "ReverseProxy": {
+    "Routes": {
+      "account-route": {
+        "ClusterId": "account-cluster",
+        "Match": { "Path": "/web-api/account/{**catch-all}" }
+      }
+    },
+    "Clusters": {
+      "account-cluster": {
+        "Destinations": {
+          "destination1": {
+            "Address": "http://accountservice:8080/"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**Updated Destinations**:
+- `localhost:5050` → `http://accountservice:8080/`
+- `localhost:5062` → `http://tenantservice:8080/`
+- `localhost:5165` → `http://documentservice:8080/`
+- `localhost:5113` → `http://storageservice:8080/`
+- `localhost:5218` → `http://chatservice:8080/`
+
+### Python AI Services
+
+```yaml
+  embeddingservice:
+    build:
+      context: .
+      dockerfile: Services/EmbeddingService/Dockerfile
+    container_name: embeddingservice
+    ports:
+      - "8000:8000"
+    environment:
+      - QDRANT_HOST=qdrant          # Use Docker service name
+      - QDRANT_PORT=6333
+    depends_on:
+      - qdrant
+    networks:
+      - aichat-network
+    restart: unless-stopped
+
+  chatprocessor:
+    build:
+      context: .
+      dockerfile: Services/ChatProcessor/Dockerfile
+    container_name: chatprocessor
+    ports:
+      - "8001:8001"
+    environment:
+      - RABBITMQ_HOST=rabbitmq      # Use Docker service name
+      - QDRANT_HOST=qdrant
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      - rabbitmq
+      - qdrant
+      - ollama
+    networks:
+      - aichat-network
+    restart: unless-stopped
+```
+
+### Network Configuration
+
+```yaml
+networks:
+  aichat-network:
+    driver: bridge
+```
+
+**Service Discovery**: All services communicate using Docker service names (e.g., `sqlserver`, `rabbitmq`) instead of `localhost`.
+
+## 6.5 Deployment Scripts
+
+### Build All Docker Images
+
+**Location**: `build_images.ps1` (solution root)
+
+```powershell
+# Build all service images using solution root as context
+docker build -t accountservice -f Services/AccountService/Dockerfile .
+docker build -t chatservice -f Services/ChatService/Dockerfile .
+docker build -t documentservice -f Services/DocumentService/Dockerfile .
+docker build -t storageservice -f Services/StorageService/Dockerfile .
+docker build -t tenantservice -f Services/TenantService/Dockerfile .
+docker build -t embeddingservice -f Services/EmbeddingService/Dockerfile .
+docker build -t chatprocessor -f Services/ChatProcessor/Dockerfile .
+docker build -t apigateway -f ApiGateway/Dockerfile .
+```
+
+**Usage**:
+```powershell
+.\build_images.ps1
+```
+
+### Update Local Databases (Development)
+
+**Location**: `update_databases.ps1` (solution root)
+
+```powershell
+# Run EF Core migrations for all services (local development)
+$services = @("AccountService", "ChatService", "DocumentService", "TenantService")
+
+foreach ($service in $services) {
+    Push-Location "Services\$service"
+    dotnet ef database update
+    Pop-Location
+}
+```
+
+**Usage**:
+```powershell
+.\update_databases.ps1
+```
+
+**Note**: In Docker deployment, migrations run automatically via migration bundles.
+
+## 6.6 Deployment Workflow
+
+### Development Environment
+
+```bash
+# 1. Start infrastructure only
+docker compose up -d sqlserver rabbitmq qdrant ollama
+
+# 2. Run services locally with Visual Studio or dotnet CLI
+dotnet run --project Services/AccountService
+
+# 3. Apply migrations manually
+.\update_databases.ps1
+```
+
+### Production/Staging Environment
+
+```bash
+# 1. Build all images
+.\build_images.ps1
+
+# 2. Start entire stack
+docker compose up -d
+
+# 3. Verify migrations
+docker logs accountservice | grep "Applying migration"
+docker logs chatservice | grep "Applying migration"
+
+# 4. Check service health
+curl http://localhost:5000/health  # API Gateway
+curl http://localhost:5050/health  # AccountService
+curl http://localhost:8000/health  # EmbeddingService
+
+# 5. View logs
+docker compose logs -f
+
+# 6. Stop all services
+docker compose down
+
+# 7. Stop and remove volumes (full cleanup)
+docker compose down -v
+```
+
+## 6.7 Volume Mounts
+
+### Persistent Data Storage
+
+| Service | Local Path | Container Path | Purpose |
+|---------|-----------|----------------|---------|
+| Qdrant | `G:/Mount/qdrant` | `/qdrant/storage` | Vector database persistence |
+| Ollama | `G:/Mount/ollama` | `/root/.ollama` | LLM models cache |
+
+**Important**: Ensure these directories exist before running `docker compose up`:
+```powershell
+New-Item -ItemType Directory -Force -Path "G:\Mount\qdrant"
+New-Item -ItemType Directory -Force -Path "G:\Mount\ollama"
+```
+
+## 6.8 Database Migration Strategy
+
+### Migration Bundle Workflow
+
+```
+┌────────────────────────────────────────────────────────────┐
+│ 1. DEVELOPER CREATES MIGRATION (Local Development)         │
+│    dotnet ef migrations add AddNewColumn --project Service │
+└────────────────────┬───────────────────────────────────────┘
+                     │
+                     ↓
+┌────────────────────────────────────────────────────────────┐
+│ 2. COMMIT TO GIT                                            │
+│    Migrations/{timestamp}_AddNewColumn.cs                   │
+└────────────────────┬───────────────────────────────────────┘
+                     │
+                     ↓
+┌────────────────────────────────────────────────────────────┐
+│ 3. CI/CD BUILDS DOCKER IMAGE                               │
+│    - Compile code                                           │
+│    - Run: dotnet ef migrations bundle -o /app/efbundle     │
+│    - Package migration bundle in image                      │
+└────────────────────┬───────────────────────────────────────┘
+                     │
+                     ↓
+┌────────────────────────────────────────────────────────────┐
+│ 4. CONTAINER STARTS                                         │
+│    entrypoint.sh:                                           │
+│      ./efbundle  ← Runs all pending migrations             │
+│      dotnet AccountService.dll  ← Starts application       │
+└────────────────────┬───────────────────────────────────────┘
+                     │
+                     ↓
+┌────────────────────────────────────────────────────────────┐
+│ 5. DATABASE UPDATED                                         │
+│    __EFMigrationsHistory table tracks applied migrations    │
+└────────────────────────────────────────────────────────────┘
+```
+
+### Benefits
+
+1. **No Manual Scripts**: Eliminates SQL migration scripts
+2. **Rollback Support**: Bundle supports `--connection` flag for rollback
+3. **Idempotent**: Safe to run multiple times (only applies pending migrations)
+4. **Version Control**: Migrations versioned with code
+5. **Zero-Downtime**: New containers migrate before serving traffic
+
+### Migration Bundle Commands
+
+```bash
+# Generate migration bundle during build
+dotnet ef migrations bundle -c AccountDbContext -o /app/efbundle --self-contained
+
+# Run bundle in container (automatic via entrypoint.sh)
+./efbundle --connection "Server=sqlserver;Database=AIChat2025;..."
+
+# View bundle help
+./efbundle --help
+```
+
+## 6.9 Monitoring & Logging
+
+### Centralized Logging with Serilog
+
+All .NET services use Serilog for structured logging:
+
+```json
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Warning",
+        "Microsoft.Hosting.Lifetime": "Information"
+      }
+    },
+    "WriteTo": [
+      {
+        "Name": "Console"
+      },
+      {
+        "Name": "File",
+        "Args": {
+          "path": "./logs/log-.txt",
+          "rollingInterval": "Day",
+          "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SessionId} {Message:lj}{NewLine}{Exception}"
+        }
+      }
+    ]
+  }
+}
+```
+
+### Log Collection
+
+```bash
+# View logs from all services
+docker compose logs -f
+
+# View logs from specific service
+docker compose logs -f accountservice
+
+# View last 100 lines
+docker compose logs --tail=100 chatprocessor
+
+# Follow logs with timestamp
+docker compose logs -f -t
+```
+
+### Health Checks
+
+```bash
+# API Gateway health
+curl http://localhost:5000/health
+
+# Individual service health
+curl http://localhost:5050/health  # AccountService
+curl http://localhost:5218/health  # ChatService
+curl http://localhost:8000/health  # EmbeddingService
+
+# RabbitMQ Management UI
+open http://localhost:15672  # guest/guest
+
+# Qdrant Dashboard
+open http://localhost:6333/dashboard
+```
+
+## 6.10 Scaling Strategy
+
+### Horizontal Scaling
+
+```yaml
+# docker-compose.yml - Scale specific services
+services:
+  chatservice:
+    deploy:
+      replicas: 3  # Run 3 instances of ChatService
+    # ... rest of config
+```
+
+**Scaling Command**:
+```bash
+docker compose up -d --scale chatservice=3 --scale chatprocessor=2
+```
+
+### Load Balancing
+
+API Gateway (YARP) automatically load balances across multiple service instances:
+
+```json
+{
+  "Clusters": {
+    "chat-cluster": {
+      "LoadBalancingPolicy": "RoundRobin",
+      "Destinations": {
+        "destination1": { "Address": "http://chatservice1:8080" },
+        "destination2": { "Address": "http://chatservice2:8080" },
+        "destination3": { "Address": "http://chatservice3:8080" }
+      }
+    }
+  }
+}
+```
+
+### Database Considerations
+
+- **SQL Server**: Single instance (scale vertically or use Always On Availability Groups)
+- **Qdrant**: Supports clustering for horizontal scaling
+- **RabbitMQ**: Supports clustering for high availability
+
+---
+
 **Document End**
 
-**Version**: 2.0.0
-**Last Updated**: 2025-12-17
+**Version**: 3.0.0
+**Last Updated**: 2025-12-18
 **Authors**: AI Chat Development Team
-**Primary Focus**: Multitenancy Data Management Strategy
+**Primary Focus**: Multitenancy, Prompt Configuration, DevOps & Docker Deployment

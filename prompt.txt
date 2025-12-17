@@ -1,30 +1,76 @@
-Act as a Senior DevOps & .NET Developer.
+Act as a Senior DevOps Architect. We are finalized the strategy for the Docker deployment.
 
-i have updated task 2, see and make changes
-**Task 2: Update Dockerfiles (Root Context & Auto-Migration)**
-Modify the `Dockerfile` for each service (e.g., `Services/AccountService/Dockerfile`) with the following logic:
+**Task 1: Cleanup**
+Recursively scan all sub-directories. **Delete** any existing `docker-compose.yml` or `docker-compose.override.yml` files.
 
-1.  **Build Context Adjustment:**
-    * Assume the `docker build` command runs from the **Solution Root**.
-    * Update `COPY` and `RUN dotnet restore` paths to reflect the directory structure (e.g., `COPY ["Services/AccountService/AccountService.csproj", "Services/AccountService/"]`).
+**Task 2: Update API Gateway Configuration**
+Locate the `appsettings.json` (Production config) in the `ApiGateway` project.
+* **Goal:** Update the YARP "Destinations" to point to the internal Docker service names instead of `localhost`.
+* **Mapping Rule:**
+    * Change `localhost:5050` → `http://accountservice:8080`
+    * Change `localhost:5062` → `http://tenantservice:8080`
+    * Change `localhost:5165` → `http://documentservice:8080`
+    * Change `localhost:5113` → `http://storageservice:8080`
+    * Change `localhost:5218` → `http://chatservice:8080`
+* *Note:* We assume the .NET 8 containers listen on port 8080 internally by default.
 
-2.  **Migration Bundle Generation (Build Stage):**
-    * Install the EF Core tool: `RUN dotnet tool install --global dotnet-ef`
-    * Add the tools path to PATH.
-    * Generate the migration bundle: `RUN dotnet ef migrations bundle -c <DbContextName> -o /app/efbundle`
+**Task 3: Create Master `docker-compose.yml`**
+Create a single file in the **Solution Root** (`AIChat2025`).
 
-3.  **Entrypoint Logic (Runtime Stage):**
-    * Copy the `efbundle` from the build stage.
-    * Create an `entrypoint.sh` file **directly inside the Dockerfile** (using `RUN echo ...` or similar) with this logic:
-        ```bash
-        #!/bin/bash
-        ./efbundle
-        dotnet <ServiceName>.dll
-        ```
-    * Make the script executable (`chmod +x`).
-    * Set the `ENTRYPOINT` to `["./entrypoint.sh"]`.
+**Service Configuration Requirements:**
+
+**1. Infrastructure:**
+* **`sqlserver`:**
+    * Image: `mcr.microsoft.com/mssql/server:2022-latest`
+    * Ports: `1433:1433`
+    * Env: `ACCEPT_EULA=Y`, `SA_PASSWORD=YourStrong!Passw0rd`
+* **`rabbitmq`:**
+    * Image: `rabbitmq:3-management`
+    * Ports: `5672:5672`, `15672:15672`
+* **`qdrant`:**
+    * Image: `qdrant/qdrant:latest`
+    * Ports: `6333:6333`
+    * **Volume:** Bind mount `G:/Mount/qdrant` to `/qdrant/storage`
+* **`ollama`:**
+    * Image: `ollama/ollama:latest`
+    * Ports: `11434:11434`
+    * **Volume:** Bind mount `G:/Mount/ollama` to `/root/.ollama`
+    * Restart: `always`
+
+**2. .NET Microservices (Account, Tenant, Document, Storage, Chat):**
+* **Context:** `.` (Root)
+* **Environment Variables (Production Override):**
+    * `ASPNETCORE_ENVIRONMENT=Production` (This ensures we use `appsettings.json`, NOT Development).
+    * `ASPNETCORE_HTTP_PORTS=8080`
+    * `ConnectionStrings__DefaultConnection`: `Server=sqlserver;Database=AIChat2025;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;MultipleActiveResultSets=true`
+* **Port Mapping (Host:Container):**
+    * Account: `5050:8080`
+    * Tenant: `5062:8080`
+    * Document: `5165:8080`
+    * Storage: `5113:8080`
+    * Chat: `5218:8080`
+* **Dependencies:** `sqlserver`, `rabbitmq`
+
+**3. API Gateway:**
+* **Context:** `.` (Root)
+* **Env:** `ASPNETCORE_ENVIRONMENT=Production`
+* **Port Mapping:** `5000:8080`
+* **Dependencies:** All .NET microservices.
+
+**4. Python Services:**
+* **`embeddingservice`:**
+    * Port: `8000:8000`
+    * Env: `QDRANT_HOST=qdrant`, `QDRANT_PORT=6333`
+* **`chatprocessor`:**
+    * Port: `8001:8001`
+    * Env:
+        * `RABBITMQ_HOST=rabbitmq`
+        * `QDRANT_HOST=qdrant`
+        * `OLLAMA_BASE_URL=http://ollama:11434`
+
+**5. Network:**
+* Use a bridge network named `aichat-network`.
 
 **Output:**
-1.  Confirm the AppSettings updates.
-2.  Provide the full, corrected code for **one representative Dockerfile** (e.g., AccountService) explaining the Root Context paths and the Bundle/Entrypoint logic.
-3.  Apply similar changes to all other C# service Dockerfiles.
+1.  Confirm the `ApiGateway/appsettings.json` update.
+2.  Provide the full `docker-compose.yml`.
