@@ -21,13 +21,15 @@ public class ChatBusiness
 
     private readonly IRepository<ChatConversation> _conversationRepo;
     private readonly IRepository<ChatMessage> _messageRepo;
+    private readonly IRepository<PromptConfig> _promptConfigRepo;
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly ICurrentUserProvider _currentUserProvider;
 
-    public ChatBusiness(IRepository<ChatConversation> conversationRepo, IRepository<ChatMessage> messageRepo, IPublishEndpoint publishEndpoint, ICurrentUserProvider currentUserProvider)
+    public ChatBusiness(IRepository<ChatConversation> conversationRepo, IRepository<ChatMessage> messageRepo, IRepository<PromptConfig> promptConfigRepo, IPublishEndpoint publishEndpoint, ICurrentUserProvider currentUserProvider)
     {
         _conversationRepo = conversationRepo;
         _messageRepo = messageRepo;
+        _promptConfigRepo = promptConfigRepo;
         _publishEndpoint = publishEndpoint;
         _currentUserProvider = currentUserProvider;
     }
@@ -62,7 +64,7 @@ public class ChatBusiness
     public async Task<List<ConversationDto>> GetConversationsAsync(CancellationToken ct = default)
     {
         var userId = _currentUserProvider.UserId;
-        var spec = new GetConversationsByUserSpec(userId);
+        var spec = new GetConversationsByUserSpec(userId, _currentUserProvider.TenantId);
         var conversations = await _conversationRepo.ListAsync(spec, ct);
 
         return conversations.Select(c => new ConversationDto
@@ -81,7 +83,7 @@ public class ChatBusiness
     /// </summary>
     public async Task<ConversationDto?> GetConversationByIdAsync(int conversationId, CancellationToken ct = default)
     {
-        var spec = new GetConversationWithMessagesSpec(conversationId);
+        var spec = new GetConversationWithMessagesSpec(conversationId, _currentUserProvider.TenantId);
         var conversation = await _conversationRepo.FirstOrDefaultAsync(spec, ct);
 
         if (conversation == null)
@@ -135,6 +137,17 @@ public class ChatBusiness
 
         await _messageRepo.SaveChangesAsync(ct);
 
+        // Fetch prompt configurations that match the user's message
+        var promptConfigSpec = new PromptConfigByMessageSpec(request.Message, _currentUserProvider.TenantId);
+        var promptConfigs = await _promptConfigRepo.ListAsync(promptConfigSpec, ct);
+
+        // Map to DTOs
+        var systemInstructions = promptConfigs.Select(pc => new PromptConfigDto
+        {
+            Key = pc.Key,
+            Value = pc.Value
+        }).ToList();
+
         // Publish to RabbitMQ for Python service to process
         var userPromptEvent = new UserPromptReceivedEvent
         {
@@ -142,7 +155,8 @@ public class ChatBusiness
             Message = request.Message,
             UserId = userId,
             Timestamp = message.Timestamp,
-            TenantId = _currentUserProvider.TenantId
+            TenantId = _currentUserProvider.TenantId,
+            SystemInstruction = systemInstructions
         };
 
         await _publishEndpoint.Publish(userPromptEvent, ct);

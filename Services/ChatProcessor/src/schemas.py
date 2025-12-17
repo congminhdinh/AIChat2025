@@ -1,6 +1,10 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict
 from pydantic import BaseModel, Field, ConfigDict
+
+class PromptConfigDto(BaseModel):
+    key: str
+    value: str
 
 class UserPromptReceivedMessage(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
@@ -10,6 +14,7 @@ class UserPromptReceivedMessage(BaseModel):
     user_id: int = Field(alias="userId")
     tenant_id: Optional[int] = Field(default=0, alias="tenantId")  # Optional for backwards compatibility
     timestamp: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    system_instruction: Optional[List[PromptConfigDto]] = Field(default_factory=list, alias="systemInstruction")
 
 class BotResponseCreatedMessage(BaseModel):
     model_config = ConfigDict(populate_by_name=True)

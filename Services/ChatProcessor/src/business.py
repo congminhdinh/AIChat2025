@@ -146,7 +146,7 @@ class QdrantService:
 
 class ChatBusiness:
     @staticmethod
-    async def process_chat_message(conversation_id: int, user_id: int, message: str, tenant_id: int, ollama_service: OllamaService, qdrant_service: QdrantService) -> Dict[str, Any]:
+    async def process_chat_message(conversation_id: int, user_id: int, message: str, tenant_id: int, ollama_service: OllamaService, qdrant_service: QdrantService, system_instruction: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
         try:
             logger.info(f"[ConversationId: {conversation_id}] Processing message from User {user_id}, Tenant {tenant_id}: '{message[:50]}...'")
 
@@ -224,7 +224,17 @@ Please answer based on the context provided above. If both STATE LAW and COMPANY
                 logger.warning(f"[ConversationId: {conversation_id}] No documents retrieved from either source. Using raw query.")
                 enhanced_prompt = message
 
-            ai_response = await ollama_service.generate_response(prompt=enhanced_prompt, conversation_history=None)
+            # Build conversation history with system instruction if provided
+            conversation_history = []
+            if system_instruction and len(system_instruction) > 0:
+                # Concatenate all Values to construct dynamic system prompt
+                system_prompt_parts = [item['value'] for item in system_instruction if 'value' in item]
+                if system_prompt_parts:
+                    dynamic_system_prompt = "\n\n".join(system_prompt_parts)
+                    conversation_history.append({"role": "system", "content": dynamic_system_prompt})
+                    logger.info(f"[ConversationId: {conversation_id}] Applied dynamic system instruction with {len(system_prompt_parts)} parts")
+
+            ai_response = await ollama_service.generate_response(prompt=enhanced_prompt, conversation_history=conversation_history if conversation_history else None)
             logger.info(f"[ConversationId: {conversation_id}] Generated response (length: {len(ai_response)})")
 
             return {

@@ -82,13 +82,19 @@ class ChatProcessor:
 
     async def process_prompt(self, prompt_message: UserPromptReceivedMessage) -> None:
         try:
+            # Convert system_instruction to list of dicts for business logic
+            system_instruction = None
+            if prompt_message.system_instruction:
+                system_instruction = [{"key": item.key, "value": item.value} for item in prompt_message.system_instruction]
+
             result = await ChatBusiness.process_chat_message(
                 conversation_id=prompt_message.conversation_id,
                 user_id=prompt_message.user_id,
                 message=prompt_message.message,
                 tenant_id=prompt_message.tenant_id,
                 ollama_service=self.ollama_service,
-                qdrant_service=self.qdrant_service
+                qdrant_service=self.qdrant_service,
+                system_instruction=system_instruction
             )
             response_message = BotResponseCreatedMessage(
                 conversation_id=result["conversation_id"],

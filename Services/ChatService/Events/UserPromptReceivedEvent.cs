@@ -1,3 +1,5 @@
+using ChatService.Dtos;
+
 namespace ChatService.Events;
 
 public record UserPromptReceivedEvent
@@ -7,4 +9,5 @@ public record UserPromptReceivedEvent
     public int UserId { get; init; }
     public int TenantId { get; init; }
     public DateTime Timestamp { get; init; } = DateTime.UtcNow;
+    public List<PromptConfigDto> SystemInstruction { get; init; } = new();
 }

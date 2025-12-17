@@ -12,6 +12,7 @@ namespace ChatService.Data
 
         public DbSet<ChatConversation> ChatConversations { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<PromptConfig> PromptConfigs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -45,6 +46,22 @@ namespace ChatService.Data
                     .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasQueryFilter(m => !m.IsDeleted);
+            });
+
+            // PromptConfig configuration
+            modelBuilder.Entity<PromptConfig>(entity =>
+            {
+                entity.Property(e => e.Key)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.Value)
+                    .IsRequired();
+
+                entity.HasIndex(e => e.TenantId);
+                entity.HasIndex(e => e.Key);
+
+                entity.HasQueryFilter(p => !p.IsDeleted);
             });
         }
     }

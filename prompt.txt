@@ -1,0 +1,20 @@
+**Role:** Act as a Senior Backend Developer.
+
+**Context:**
+I have updated the architecture to support **Dynamic Prompt Configuration**.
+1.  **Data:** The `PromptConfig` entity consists of `Key` and `Value` properties and inherits from `TenancyEntity`. The `UserPromptReceivedEvent` has been updated with a new property: `public List<PromptConfigDto> SystemInstruction { get; init; }`.
+
+**Tasks:**
+
+**1. .NET Side (`ChatService`):**
+* **Specification:** Create a `PromptConfigByMessageSpec` class that inherits strictly from **`TenancySpecification<PromptConfig>`**.
+* **Query Logic:** Implement the filter where the user's message contains the config `Key` (e.g., `Query.Where(x => message.Contains(x.Key))`).
+* **Business Logic:** Update `ChatBusiness` to use this specification to fetch the config list, map it to `List<PromptConfigDto>`, assign it to the `SystemInstruction` property of the event, and publish.
+
+**2. Python Side (`ChatProcessor`):**
+* **Consumer:** Update the RabbitMQ consumer to map the `SystemInstruction` field from the JSON payload (handling the conversion from C# PascalCase/camelCase to Python snake_case).
+* **Logic:** If the list contains data, concatenate the `Value`s to construct a dynamic System Prompt.
+* **Execution:** Pass this dynamic prompt into the `ollama_service.generate` function.
+
+**Constraint:**
+* Preserve all existing RAG flow and logic; only implement this specific injection logic.

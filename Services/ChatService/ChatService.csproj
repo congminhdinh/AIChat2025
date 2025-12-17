@@ -12,9 +12,7 @@
 
   <ItemGroup>
     <Folder Include="Endpoints\" />
-    <Folder Include="Entities\" />
     <Folder Include="Features\" />
-    <Folder Include="Dtos\" />
     <Folder Include="Specifications\" />
     <Folder Include="Requests\" />
   </ItemGroup>
