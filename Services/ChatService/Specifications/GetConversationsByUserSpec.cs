@@ -1,7 +1,7 @@
 using Ardalis.Specification;
 using ChatService.Entities;
 
-namespace ChatService.Features;
+namespace ChatService.Specifications;
 
 /// <summary>
 /// Specification to get conversations for a specific user, ordered by last message time.

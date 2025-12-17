@@ -64,56 +64,142 @@ query_embedding = qdrant_service.get_embedding(message)
 - **Output**: 768-dimensional vector from `truro7/vn-law-embedding` model
 - **Purpose**: Convert text to vector for semantic search
 
-### Step 2: Retrieve Relevant Documents (RAG)
-**Location**: `src/business.py:113`
+### Step 2: Retrieve Relevant Documents (RAG) - Dual Query Strategy
+**Location**: `src/business.py:154-175`
+
+#### 2.1: Execute Parallel Queries
 
 ```python
-rag_results = await qdrant_service.search_with_tenant_filter(
+# Query A: Legal Base (tenant_id = 1)
+legal_base_task = qdrant_service.search_exact_tenant(
+    query_vector=query_embedding,
+    tenant_id=1,
+    limit=1
+)
+
+# Query B: Company Rule (tenant_id = current_user_tenant)
+company_rule_task = qdrant_service.search_exact_tenant(
     query_vector=query_embedding,
     tenant_id=tenant_id,
-    limit=settings.rag_top_k
+    limit=1
+)
+
+# Execute both queries in parallel
+legal_base_results, company_rule_results = await asyncio.gather(
+    legal_base_task,
+    company_rule_task,
+    return_exceptions=True
 )
 ```
 
-- **Action**: Searches Qdrant vector database
+- **Action**: Executes TWO separate queries in parallel using `asyncio.gather`
 - **Collection**: `vn_law_documents`
-- **Multi-tenant Filter**:
-  - `tenant_id = 1` (Shared/System documents) **OR**
-  - `tenant_id = input_tenant_id` (Private tenant documents)
-- **Limit**: Top K documents (default: 5)
-- **Purpose**: Find relevant context documents for the user's question
+- **Query A (Legal Base)**:
+  - `tenant_id = 1` (State law documents)
+  - Limit: 1 document
+  - Filter: Exact match using `must` condition
+- **Query B (Company Rule)**:
+  - `tenant_id = current_user_tenant` (Company-specific documents)
+  - Limit: 1 document
+  - Filter: Exact match using `must` condition
+- **Purpose**: Guarantee retrieval from BOTH sources for strict cross-referencing
 
-### Step 3: Extract Context & Source IDs
-**Location**: `src/business.py:115-121`
+#### Why Dual Queries?
 
+**Problem with Previous Approach** (`search_with_tenant_filter` using OR logic):
 ```python
-context_texts = []
-source_ids = []
-for result in rag_results:
-    if hasattr(result, 'payload') and 'text' in result.payload:
-        context_texts.append(result.payload['text'])
-        if 'source_id' in result.payload:
-            source_ids.append(result.payload['source_id'])
+# Old approach - PROBLEMATIC
+search_filter = Filter(
+    should=[  # OR condition
+        FieldCondition(key="tenant_id", match=MatchValue(value=1)),
+        FieldCondition(key="tenant_id", match=MatchValue(value=tenant_id))
+    ]
+)
+```
+- Could return 2 Law chunks OR 2 Company chunks based on similarity scores
+- No guarantee of cross-referencing both sources
+- LLM might miss comparison opportunities
+
+**Solution with Dual Queries**:
+- Separate queries with `must` (exact match) filters
+- Always retrieves from BOTH sources when available
+- Enables true comparison and compliance checking
+- Vector similarity cannot bias results toward one source
+
+### Step 3: Build Labeled Context from Dual Results
+**Location**: `src/business.py:177-212`
+
+#### 3.1: Handle Query Errors
+```python
+# Handle potential errors from parallel execution
+if isinstance(legal_base_results, Exception):
+    logger.error(f"Legal base query failed: {legal_base_results}")
+    legal_base_results = []
+if isinstance(company_rule_results, Exception):
+    logger.error(f"Company rule query failed: {company_rule_results}")
+    company_rule_results = []
 ```
 
-- **Action**: Extract text content and source tracking IDs
-- **Purpose**: Prepare context for prompt and track document sources
+#### 3.2: Process Results with Labels
+```python
+context_sections = []
+source_ids = []
+documents_used = 0
 
-### Step 4: Build Enhanced Prompt
-**Location**: `src/business.py:123-132`
+# Process legal base results
+if legal_base_results and len(legal_base_results) > 0:
+    for result in legal_base_results:
+        if hasattr(result, 'payload') and 'text' in result.payload:
+            context_sections.append(f"[STATE LAW]\n{result.payload['text']}")
+            if 'source_id' in result.payload:
+                source_ids.append(result.payload['source_id'])
+            documents_used += 1
 
-**If documents found**:
+# Process company rule results
+if company_rule_results and len(company_rule_results) > 0:
+    for result in company_rule_results:
+        if hasattr(result, 'payload') and 'text' in result.payload:
+            context_sections.append(f"[COMPANY REGULATION]\n{result.payload['text']}")
+            if 'source_id' in result.payload:
+                source_ids.append(result.payload['source_id'])
+            documents_used += 1
+```
+
+- **Action**: Extract text content with source-specific labels
+- **Labels**:
+  - `[STATE LAW]`: Documents from tenant_id=1 (legal base)
+  - `[COMPANY REGULATION]`: Documents from user's tenant_id
+- **Error Handling**: Logs warnings when documents are missing from either source
+- **Purpose**: Provide clear attribution and enable LLM to compare sources
+
+### Step 4: Build Enhanced Prompt with Cross-Reference Instructions
+**Location**: `src/business.py:214-225`
+
+**If documents found from both sources**:
 ```
 Context information:
-[Document 1 text]
+[STATE LAW]
+Điều 10. Hợp đồng lao động
+Hợp đồng lao động phải được ký kết bằng văn bản...
 
-[Document 2 text]
-
-...
+[COMPANY REGULATION]
+Quy định nội bộ về hợp đồng
+Công ty yêu cầu tất cả hợp đồng phải có xác nhận từ phòng nhân sự...
 
 User question: What are the regulations about labor contracts?
 
-Please answer based on the context provided above.
+Please answer based on the context provided above. If both STATE LAW and COMPANY REGULATION are provided, compare and contrast them in your response.
+```
+
+**If only one source found**:
+```
+Context information:
+[STATE LAW]
+Điều 10. Hợp đồng lao động...
+
+User question: What are the regulations about labor contracts?
+
+Please answer based on the context provided above. If both STATE LAW and COMPANY REGULATION are provided, compare and contrast them in your response.
 ```
 
 **If no documents found**:
@@ -121,10 +207,14 @@ Please answer based on the context provided above.
 What are the regulations about labor contracts?
 ```
 
-- **Purpose**: Enhance the original question with relevant context from RAG
+- **Purpose**:
+  - Enhance question with labeled context from both sources
+  - Instruct LLM to compare and contrast when both sources available
+  - Enable compliance checking (company rules vs state law)
+- **Labels**: Clear attribution helps LLM and users identify source of each statement
 
 ### Step 5: Generate AI Response
-**Location**: `src/business.py:134`
+**Location**: `src/business.py:227`
 
 ```python
 ai_response = await ollama_service.generate_response(
@@ -137,10 +227,10 @@ ai_response = await ollama_service.generate_response(
 - **Model**: `ontocord/vistral:latest` (Vietnamese 7B LLM, Q4_0 quantization)
 - **Timeout**: 300 seconds
 - **Mode**: Stateless (no conversation history)
-- **Purpose**: Generate natural language response based on context
+- **Purpose**: Generate natural language response based on dual-source context
 
 ### Output Response
-**Location**: `src/business.py:137-144`
+**Location**: `src/business.py:230-237`
 
 ```json
 {
@@ -582,21 +672,51 @@ FullText: "CHƯƠNG I: QUY ĐỊNH CHUNG\nMục 2: Quyền và nghĩa vụ\nĐi�
 
 ## Key Features
 
-### Multi-Tenancy Support
-**Implementation**: `src/business.py:73-78`
+### Multi-Tenancy Support - Dual Query Architecture
+**Implementation**: `src/business.py:107-121, 154-175`
 
+#### Exact Tenant Search Method
 ```python
+async def search_exact_tenant(self, query_vector: List[float], tenant_id: int, limit: int = 1):
+    """Search for documents with exact tenant_id match"""
+    search_filter = Filter(
+        must=[
+            FieldCondition(key="tenant_id", match=MatchValue(value=tenant_id))
+        ]
+    )
+    results = self.client.search(
+        collection_name=self.collection_name,
+        query_vector=query_vector,
+        query_filter=search_filter,
+        limit=limit
+    )
+    return results
+```
+
+#### Dual Query Execution
+- **Query A**: Searches tenant_id=1 (State law - shared across all tenants)
+- **Query B**: Searches tenant_id=current_user (Company-specific regulations)
+- **Filter Type**: `must` (exact match) - not `should` (OR)
+- **Execution**: Parallel using `asyncio.gather` for performance
+- **Guarantee**: Always attempts to retrieve from BOTH sources
+
+#### Legacy Method (Deprecated for Chat Processing)
+```python
+# Old approach - still available but not used in main chat flow
 search_filter = Filter(
-    should=[
+    should=[  # OR condition - can return all from one source
         FieldCondition(key="tenant_id", match=MatchValue(value=1)),
         FieldCondition(key="tenant_id", match=MatchValue(value=tenant_id))
     ]
 )
 ```
 
-- **Tenant 1**: Shared/system documents accessible to all users
-- **Other Tenants**: Private tenant-specific documents
-- **Logic**: Each query searches both shared and tenant-private documents
+#### Benefits of Dual Query Architecture
+1. **Guaranteed Cross-Reference**: Always retrieves from both legal base and company rules
+2. **No Vector Bias**: Similarity scores can't cause one source to dominate results
+3. **Compliance Focus**: Ensures LLM can compare company rules against legal requirements
+4. **Clear Attribution**: Each document labeled with its source type
+5. **Graceful Degradation**: System continues if one source has no matches
 
 ### Stateless Processing
 - Each message processed independently
@@ -605,9 +725,106 @@ search_filter = Filter(
 - Simplifies scaling and reduces memory usage
 
 ### Conditional RAG Enhancement
-- **Documents found**: Adds context to prompt for informed responses
+- **Both sources found**: Adds labeled context from legal base and company rules
+- **One source found**: Uses available source with appropriate label
 - **No documents found**: Passes original message directly to LLM
 - Graceful fallback ensures system always responds
+
+## Complete Example: Dual-Query RAG Flow
+
+### Scenario
+**User**: Company employee (tenant_id=2) asks about overtime regulations
+
+### Input Message
+```json
+{
+  "conversation_id": 1,
+  "user_id": 123,
+  "message": "What are the overtime compensation rules?",
+  "tenant_id": 2
+}
+```
+
+### Processing Steps
+
+#### 1. Generate Embedding
+```python
+query_embedding = [0.123, -0.456, 0.789, ...]  # 768 dimensions
+```
+
+#### 2. Execute Dual Queries in Parallel
+```python
+# Query A: State Law (tenant_id=1)
+legal_base_results = search_exact_tenant(query_embedding, tenant_id=1, limit=1)
+# → Returns: Điều 98. Làm thêm giờ...
+
+# Query B: Company Rules (tenant_id=2)
+company_rule_results = search_exact_tenant(query_embedding, tenant_id=2, limit=1)
+# → Returns: Quy định tăng ca công ty...
+```
+
+#### 3. Build Labeled Context
+```
+Context information:
+[STATE LAW]
+Điều 98. Làm thêm giờ
+1. Làm thêm giờ là thời gian làm việc vượt quá thời giờ làm việc bình thường...
+2. Người sử dụng lao động trả lương làm thêm giờ như sau:
+   a) Ngày thường: ít nhất bằng 150% tiền lương
+   b) Ngày nghỉ hàng tuần: ít nhất bằng 200% tiền lương
+   c) Ngày lễ, tết: ít nhất bằng 300% tiền lương
+
+[COMPANY REGULATION]
+Quy định về tăng ca
+1. Nhân viên làm thêm giờ được hưởng:
+   - Ngày thường: 160% lương cơ bản
+   - Cuối tuần: 220% lương cơ bản
+   - Lễ tết: 350% lương cơ bản
+2. Phải đăng ký trước qua hệ thống HR
+
+User question: What are the overtime compensation rules?
+
+Please answer based on the context provided above. If both STATE LAW and COMPANY REGULATION are provided, compare and contrast them in your response.
+```
+
+#### 4. LLM Response
+```
+Về quy định tăng ca:
+
+**Theo luật lao động (Điều 98):**
+- Ngày thường: tối thiểu 150% lương
+- Ngày nghỉ hàng tuần: tối thiểu 200% lương
+- Ngày lễ, tết: tối thiểu 300% lương
+
+**Quy định của công ty:**
+- Ngày thường: 160% lương cơ bản (cao hơn mức tối thiểu)
+- Cuối tuần: 220% lương cơ bản (cao hơn mức tối thiểu)
+- Lễ tết: 350% lương cơ bản (cao hơn mức tối thiểu)
+- Yêu cầu: Phải đăng ký trước qua hệ thống HR
+
+**Kết luận:** Công ty đang áp dụng mức lương tăng ca cao hơn quy định pháp luật,
+đảm bảo tuân thủ và có lợi cho người lao động.
+```
+
+#### 5. Output
+```json
+{
+  "conversation_id": 1,
+  "message": "Về quy định tăng ca...",
+  "user_id": 0,
+  "timestamp": "2025-12-17T10:30:45.123456",
+  "model_used": "ontocord/vistral:latest",
+  "rag_documents_used": 2,
+  "source_ids": ["doc-state-law-98", "doc-company-overtime"]
+}
+```
+
+### Key Observations
+- **Both sources retrieved**: System guarantees cross-referencing
+- **Clear labels**: User can see which is law vs company policy
+- **Comparison enabled**: LLM explicitly compares compliance
+- **2 documents tracked**: `rag_documents_used: 2` confirms dual retrieval
+- **Source traceability**: `source_ids` array contains both document IDs
 
 ### Error Handling
 - Comprehensive logging at each step
@@ -776,6 +993,63 @@ Response:
   - `curl http://localhost:11434/api/tags` (Ollama)
   - `rabbitmqctl status` (RabbitMQ)
 
+## Architecture Upgrade History
+
+### v1.1.0 - Dual Query Cross-Referencing (2025-12-17)
+
+#### Motivation
+The original single-query approach using `Filter(should=[...])` (OR logic) did not guarantee retrieval from both legal base and company rules. Vector similarity scores could bias results toward one source, preventing effective compliance checking.
+
+#### Changes Made
+
+**Before (Single Query)**:
+```python
+# Could return 2 law chunks OR 2 company chunks
+search_filter = Filter(
+    should=[
+        FieldCondition(key="tenant_id", match=MatchValue(value=1)),
+        FieldCondition(key="tenant_id", match=MatchValue(value=tenant_id))
+    ]
+)
+rag_results = await qdrant_service.search_with_tenant_filter(
+    query_vector=query_embedding, tenant_id=tenant_id, limit=5
+)
+```
+
+**After (Dual Query)**:
+```python
+# Guarantees retrieval from BOTH sources
+legal_base_task = qdrant_service.search_exact_tenant(
+    query_vector=query_embedding, tenant_id=1, limit=1
+)
+company_rule_task = qdrant_service.search_exact_tenant(
+    query_vector=query_embedding, tenant_id=tenant_id, limit=1
+)
+legal_base_results, company_rule_results = await asyncio.gather(
+    legal_base_task, company_rule_task, return_exceptions=True
+)
+```
+
+#### New Components
+1. **`search_exact_tenant()` method** - Uses `must` filter for exact tenant_id match
+2. **Parallel execution** - `asyncio.gather` for optimal performance
+3. **Labeled context** - `[STATE LAW]` and `[COMPANY REGULATION]` tags
+4. **Comparison instruction** - LLM prompted to compare and contrast sources
+5. **Graceful degradation** - Handles missing results from either source
+
+#### Benefits
+- ✅ Guaranteed cross-referencing when documents exist in both sources
+- ✅ No bias from vector similarity scores
+- ✅ Clear source attribution in responses
+- ✅ Better compliance checking capabilities
+- ✅ Improved answer quality for legal/regulation queries
+
+#### Migration Notes
+- **Backward compatible**: Legacy `search_with_tenant_filter()` method still available
+- **No breaking changes**: API interface unchanged
+- **Performance**: Parallel queries maintain similar response times
+- **Monitoring**: Track `rag_documents_used` field - should typically be 2
+
 ## Future Enhancements
 
 1. **Conversation History**: Maintain context across multiple messages
@@ -784,8 +1058,10 @@ Response:
 4. **Hybrid Search**: Combine vector search with keyword search
 5. **Response Quality Scoring**: Track and improve response accuracy
 6. **A/B Testing**: Compare different prompting strategies
+7. **Dynamic Source Weighting**: Adjust retrieval based on query type
+8. **Multi-source Expansion**: Support more than 2 document sources
 
 ---
 
 **Last Updated**: 2025-12-17
-**Version**: 1.0.0
+**Version**: 1.1.0 - Dual Query Cross-Referencing Architecture

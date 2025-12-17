@@ -6,11 +6,6 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace ChatService.Consumers;
 
-/// <summary>
-/// MassTransit consumer that listens to BotResponseCreated queue.
-/// Processes bot responses from Python ChatProcessor service.
-/// Queue Name: BotResponseCreated
-/// </summary>
 public class BotResponseConsumer(
     ChatBusiness chatBusiness,
     IHubContext<ChatHub> hubContext,
@@ -23,9 +18,16 @@ public class BotResponseConsumer(
         try
         {
             logger.LogInformation(
+                "RAW: Received bot response - ConversationId={ConversationId}, UserId={UserId}, ModelUsed={ModelUsed}, MessageLength={MessageLength}",
+                botResponse.ConversationId,
+                botResponse.UserId,
+                botResponse.ModelUsed ?? "null",
+                botResponse.Message?.Length ?? 0);
+
+            logger.LogInformation(
                 "Received bot response for conversation {ConversationId}: {MessagePreview}",
                 botResponse.ConversationId,
-                botResponse.Message.Length > 50 ? $"{botResponse.Message[..50]}..." : botResponse.Message);
+                botResponse.Message?.Length > 50 ? $"{botResponse.Message[..50]}..." : botResponse.Message ?? "");
             var messageDto = await chatBusiness.SaveBotMessageAsync(botResponse, context.CancellationToken);
             await ChatHub.BroadcastBotResponse(hubContext, botResponse.ConversationId, messageDto);
 

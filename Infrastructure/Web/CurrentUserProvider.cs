@@ -17,11 +17,6 @@ public interface ICurrentUserProvider
 public class CurrentUserProvider(IHttpContextAccessor httpContextAccessor) : ICurrentUserProvider
 {
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
-    private int _cachedUserId;
-    private int _cachedTenantId;
-    private string _cachedScope ="";
-    private string _cachedUsername = "";
-    private bool _cachedIsAdmin = false;
 
     public int UserId => GetUserId();
 
@@ -34,69 +29,43 @@ public class CurrentUserProvider(IHttpContextAccessor httpContextAccessor) : ICu
 
     private int GetUserId()
     {
-        if (_cachedUserId > 0)
-        {
-            return _cachedUserId;
-        }
-
         var nameIdentifier = _httpContextAccessor?.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (int.TryParse(nameIdentifier, out int userId))
         {
-            _cachedUserId = userId;
             return userId;
         }
         return 0;
     }
     private int GetTenantId()
     {
-        if (_cachedTenantId > 0)
-        {
-            return _cachedTenantId;
-        }
         var tenantClaim = _httpContextAccessor?.HttpContext?.User?
             .FindFirstValue(AuthorizationConstants.TOKEN_CLAIMS_TENANT);
 
         if (int.TryParse(tenantClaim, out int tenantId))
         {
-            _cachedTenantId = tenantId;
             return tenantId;
         }
         return 0;
     }
     private string GetScope()
     {
-        if (!string.IsNullOrEmpty(_cachedScope))
-        {
-            return _cachedScope;
-        }
+
 
         var scope = _httpContextAccessor?.HttpContext?.User?.FindFirstValue(AuthorizationConstants.TOKEN_CLAIMS_TYPE_SCOPE);
-        _cachedScope = scope ?? "";
-        return _cachedScope;
+        return scope ?? "";
     }
 
     private string GetUsername()
     {
-        if (!string.IsNullOrEmpty(_cachedUsername))
-        {
-            return _cachedUsername;
-        }
-
         var name = _httpContextAccessor?.HttpContext?.User?.FindFirstValue(ClaimTypes.Name);
-        _cachedUsername = name ?? "";
-        return _cachedUsername;
+        return name ?? "";
     }
 
     private bool GetIsAdmin()
     {
-        if (_cachedIsAdmin)
-        {
-            return _cachedIsAdmin;
-        }
         var isAdmin = _httpContextAccessor?.HttpContext?.User?
             .FindFirstValue(AuthorizationConstants.POLICY_ADMIN)?? "False";
-        _cachedIsAdmin = isAdmin.Equals("False")? false: true;
-        return _cachedIsAdmin;
+        return isAdmin.Equals("False") ? false : true;
     }
 }

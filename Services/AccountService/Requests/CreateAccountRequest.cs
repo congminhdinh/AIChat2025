@@ -8,4 +8,8 @@ namespace AccountService.Requests
         public string Password { get; set; }
         public string? Name { get; set; } = string.Empty;
     }
+    public class CreateAdminAccountRequest : CreateAccountRequest
+    {
+        public int TenantId { get; set; }
+    }
 }

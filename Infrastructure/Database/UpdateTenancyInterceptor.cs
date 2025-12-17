@@ -16,9 +16,12 @@ namespace Infrastructure.Database
             var entries = context.ChangeTracker.Entries<TenancyEntity>();
             var tenantProvider = _serviceScopeFactory.CreateScope().ServiceProvider.GetRequiredService<ICurrentUserProvider>();
             var utcNow = DateTime.UtcNow;
-            foreach (var entry in entries)
+            if(tenantProvider.TenantId != 1)
             {
-                entry.Entity.TenantId = tenantProvider.TenantId;
+                foreach (var entry in entries)
+                {
+                    entry.Entity.TenantId = tenantProvider.TenantId;
+                }
             }
             return base.SavingChangesAsync(eventData, result);
         }

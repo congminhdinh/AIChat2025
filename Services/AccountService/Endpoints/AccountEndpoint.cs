@@ -30,6 +30,11 @@ namespace AccountService.Endpoints
             {
                 return await accountBusiness.CreateAccount(input);
             });
+
+            group.MapPost("/admin-account", async (AccountBusiness accountBusiness, [FromBody] CreateAdminAccountRequest input) =>
+            {
+                return await accountBusiness.CreateAdminAccount(input);
+            });
             group.MapPut("/change-password", async (AccountBusiness accountBusiness, [FromBody] ChangePasswordRequest input) =>
             {
                 return await accountBusiness.ChangePassword(input);

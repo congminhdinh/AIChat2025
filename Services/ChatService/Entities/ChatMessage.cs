@@ -1,3 +1,4 @@
+using ChatService.Enums;
 using Infrastructure.Entities;
 
 namespace ChatService.Entities
@@ -19,6 +20,7 @@ namespace ChatService.Entities
         public string Message { get; set; } = string.Empty;
         public int UserId { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public ChatType Type { get; set; }
         public virtual ChatConversation? Conversation { get; set; }
     }
 }

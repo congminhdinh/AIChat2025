@@ -1,7 +1,7 @@
 using Ardalis.Specification;
 using ChatService.Entities;
 
-namespace ChatService.Features;
+namespace ChatService.Specifications;
 
 /// <summary>
 /// Specification to get a single conversation with all its messages.
@@ -12,6 +12,6 @@ public sealed class GetConversationWithMessagesSpec : Specification<ChatConversa
     {
         Query
             .Where(c => c.Id == conversationId)
-            .Include(c => c.Messages);
+            .Include(c => c.Messages).OrderByDescending(c => c.Id);
     }
 }

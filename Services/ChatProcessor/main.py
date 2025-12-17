@@ -102,6 +102,21 @@ class ChatProcessor:
         except Exception as e:
             logger.error(f"[ConversationId: {prompt_message.conversation_id}] Failed to process prompt: {e}", exc_info=True)
 
+            # Publish error message to RabbitMQ
+            try:
+                from datetime import datetime
+                error_response = BotResponseCreatedMessage(
+                    conversation_id=prompt_message.conversation_id,
+                    message="Có lỗi xảy ra, vui lòng thử lại",
+                    user_id=prompt_message.user_id,
+                    timestamp=datetime.utcnow(),
+                    model_used="error"
+                )
+                await self.rabbitmq_service.publish_response(error_response)
+                logger.info(f"[ConversationId: {prompt_message.conversation_id}] Published error message to user")
+            except Exception as publish_error:
+                logger.error(f"[ConversationId: {prompt_message.conversation_id}] Failed to publish error message: {publish_error}", exc_info=True)
+
     async def run_rabbitmq(self) -> None:
         try:
             logger.info("Starting ChatProcessor Service")

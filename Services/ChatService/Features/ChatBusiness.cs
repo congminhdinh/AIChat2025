@@ -1,8 +1,10 @@
 using ChatService.Data;
 using ChatService.Dtos;
 using ChatService.Entities;
+using ChatService.Enums;
 using ChatService.Events;
 using ChatService.Requests;
+using ChatService.Specifications;
 using Infrastructure.Tenancy;
 using Infrastructure.Web;
 using MassTransit;
@@ -100,8 +102,8 @@ public class ChatBusiness
                     ConversationId = m.ConversationId,
                     Content = m.Message,
                     Timestamp = m.Timestamp,
-                    IsBot = m.UserId == 0, // Bot user ID is 0
-                    UserId = m.UserId
+                    UserId = m.UserId,
+                    Type = m.Type
                 })
                 .ToList()
         };
@@ -117,7 +119,8 @@ public class ChatBusiness
         var message = new ChatMessage(request.ConversationId, request.Message, userId)
         {
             TenantId = _currentUserProvider.TenantId,
-            Timestamp = DateTime.UtcNow
+            Timestamp = DateTime.UtcNow,
+            Type = ChatType.Request
         };
 
         await _messageRepo.AddAsync(message, ct);
@@ -138,16 +141,20 @@ public class ChatBusiness
             ConversationId = request.ConversationId,
             Message = request.Message,
             UserId = userId,
-            Timestamp = message.Timestamp
+            Timestamp = message.Timestamp,
+            TenantId = _currentUserProvider.TenantId
         };
+
+        await _publishEndpoint.Publish(userPromptEvent, ct);
+
         return new MessageDto
         {
             Id = message.Id,
             ConversationId = message.ConversationId,
             Content = message.Message,
             Timestamp = message.Timestamp,
-            IsBot = false,
-            UserId = message.UserId
+            UserId = message.UserId,
+            Type = message.Type
         };
     }
 
@@ -161,7 +168,8 @@ public class ChatBusiness
         var message = new ChatMessage(botResponse.ConversationId, botResponse.Message, botResponse.UserId)
         {
             TenantId = _currentUserProvider.TenantId,
-            Timestamp = botResponse.Timestamp
+            Timestamp = botResponse.Timestamp,
+            Type = ChatType.Response
         };
 
         await _messageRepo.AddAsync(message, ct);
@@ -182,8 +190,8 @@ public class ChatBusiness
             ConversationId = message.ConversationId,
             Content = message.Message,
             Timestamp = message.Timestamp,
-            IsBot = true,
-            UserId = message.UserId
+            UserId = message.UserId,
+            Type = message.Type
         };
     }
 }

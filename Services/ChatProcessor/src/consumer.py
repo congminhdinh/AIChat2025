@@ -30,13 +30,13 @@ class RabbitMQService:
             self.channel = await self.connection.channel()
             await self.channel.set_qos(prefetch_count=self.prefetch_count)
 
+            # Consumer: Bind to UserPromptReceived exchange (published by .NET)
             input_exchange = await self.channel.declare_exchange(name=self.input_queue_name, type=aio_pika.ExchangeType.FANOUT, durable=True)
-            output_exchange = await self.channel.declare_exchange(name=self.output_queue_name, type=aio_pika.ExchangeType.FANOUT, durable=True)
             input_queue = await self.channel.declare_queue(name=self.input_queue_name, durable=True)
-            output_queue = await self.channel.declare_queue(name=self.output_queue_name, durable=True)
-
             await input_queue.bind(exchange=input_exchange, routing_key="")
-            await output_queue.bind(exchange=output_exchange, routing_key="")
+
+            # Publisher: Declare output queue for direct publishing
+            output_queue = await self.channel.declare_queue(name=self.output_queue_name, durable=True)
 
             logger.info("RabbitMQ topology configured")
         except Exception as e:
@@ -66,13 +66,28 @@ class RabbitMQService:
                 async with message.process():
                     # Generate session ID for this message
                     import uuid
+                    import traceback
                     session_id = str(uuid.uuid4())[:8]
                     set_session_id(session_id)
 
                     try:
+                        # RAW LOG: Log raw message before parsing
                         body = message.body.decode()
+                        logger.info(f"RAW: {body}")
+
+                        # Parse JSON
                         data = json.loads(body)
-                        prompt_message = UserPromptReceivedMessage(**data)
+
+                        # ENVELOPE HANDLING: Check if MassTransit wrapped the payload
+                        if "message" in data:
+                            logger.info("Detected MassTransit envelope, extracting payload")
+                            payload = data["message"]
+                        else:
+                            logger.info("No envelope detected, using raw data as payload")
+                            payload = data
+
+                        # Parse the actual message
+                        prompt_message = UserPromptReceivedMessage(**payload)
 
                         # Log message reception with details
                         logger.info(
@@ -96,18 +111,20 @@ class RabbitMQService:
                         logger.error(
                             f"Error: Failed to parse message | "
                             f"Reason=JSONDecodeError | "
-                            f"Details={str(e)}",
-                            exc_info=True
+                            f"Details={str(e)}"
                         )
+                        logger.error(f"Full traceback:\n{traceback.format_exc()}")
                     except Exception as e:
                         logger.error(
                             f"Error: Failed to process message | "
                             f"ConversationId={prompt_message.conversation_id if 'prompt_message' in locals() else 'Unknown'} | "
                             f"Reason={type(e).__name__} | "
-                            f"Details={str(e)}",
-                            exc_info=True
+                            f"Details={str(e)}"
                         )
+                        logger.error(f"Full traceback:\n{traceback.format_exc()}")
                     finally:
+                        # Message is auto-acknowledged by message.process() context manager
+                        # even if errors occur, preventing queue blocking
                         clear_session_id()
 
             await queue.consume(on_message)
@@ -121,10 +138,37 @@ class RabbitMQService:
             raise RuntimeError("Channel not initialized")
 
         try:
-            message_body = response.model_dump_json()
+            import uuid
+            from datetime import datetime, timezone
+
+            # Serialize the payload using camelCase aliases
+            payload = response.model_dump(by_alias=True, mode='json')
+
+            # Wrap in MassTransit envelope format
+            envelope = {
+                "messageId": str(uuid.uuid4()),
+                "conversationId": None,
+                "sourceAddress": f"rabbitmq://localhost/{self.input_queue_name}",
+                "destinationAddress": f"rabbitmq://localhost/{self.output_queue_name}",
+                "messageType": [
+                    "urn:message:ChatService.Events:BotResponseCreatedEvent"
+                ],
+                "message": payload,
+                "sentTime": datetime.now(timezone.utc).isoformat(),
+                "headers": {},
+                "host": {
+                    "machineName": "ChatProcessor",
+                    "processName": "python",
+                    "assembly": "ChatProcessor",
+                    "assemblyVersion": "1.0.0"
+                }
+            }
+
+            message_body = json.dumps(envelope)
+            logger.info(f"Publishing MassTransit envelope to queue '{self.output_queue_name}': {message_body}")
             message = Message(body=message_body.encode(), delivery_mode=DeliveryMode.PERSISTENT, content_type="application/json")
-            output_exchange = await self.channel.get_exchange(self.output_queue_name)
-            await output_exchange.publish(message, routing_key="")
+            # Publish directly to BotResponseCreated queue using default exchange (built-in property)
+            await self.channel.default_exchange.publish(message, routing_key=self.output_queue_name)
             logger.info(f"Published response - ConversationId: {response.conversation_id}")
         except Exception as e:
             logger.error(f"Failed to publish response: {e}", exc_info=True)

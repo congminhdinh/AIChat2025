@@ -52,11 +52,6 @@ def setup_logger():
     # Add handler to logger
     logger.addHandler(handler)
 
-    # Also add console handler for debugging
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
-
     return logger
 
 # Initialize logger

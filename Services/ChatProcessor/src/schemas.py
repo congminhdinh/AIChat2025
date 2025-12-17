@@ -1,20 +1,24 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class UserPromptReceivedMessage(BaseModel):
-    conversation_id: int
+    model_config = ConfigDict(populate_by_name=True)
+
+    conversation_id: int = Field(alias="conversationId")
     message: str
-    user_id: int
-    tenant_id: int
+    user_id: int = Field(alias="userId")
+    tenant_id: Optional[int] = Field(default=0, alias="tenantId")  # Optional for backwards compatibility
     timestamp: Optional[datetime] = Field(default_factory=datetime.utcnow)
 
 class BotResponseCreatedMessage(BaseModel):
-    conversation_id: int
+    model_config = ConfigDict(populate_by_name=True)
+
+    conversation_id: int = Field(alias="conversationId")
     message: str
-    user_id: int
+    user_id: int = Field(alias="userId")
     timestamp: Optional[datetime] = Field(default_factory=datetime.utcnow)
-    model_used: Optional[str] = None
+    model_used: Optional[str] = Field(default=None, alias="modelUsed")
 
 class ChatRequest(BaseModel):
     conversation_id: int

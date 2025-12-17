@@ -104,6 +104,26 @@ namespace AccountService.Features
             return new BaseResponse<int>(account.Id, input.CorrelationId());
         }
 
+        public async Task<BaseResponse<int>> CreateAdminAccount(CreateAdminAccountRequest input)
+        {
+            if (!CheckIsSuperAdmin())
+            {
+                throw new Exception("Unauthorized access");
+            }
+            var tenantId = _currentUserProvider.TenantId;
+            var account = await _repository.FirstOrDefaultAsync(new AccountSpecification(input.Email, tenantId));
+            if (account != null)
+            {
+                throw new Exception("Account with this email already exists");
+            }
+            var newAccount = new Account(input.Email, input.Password, input.Name, null, input.TenantId)
+            {
+                IsAdmin = true
+            };
+            await _repository.AddAsync(newAccount);
+            return new BaseResponse<int>(newAccount.Id, input.CorrelationId());
+        }
+
         public async Task<BaseResponse<int>> DisableTenancy(int tenancyId)
         {
             if(!CheckIsSuperAdmin())
