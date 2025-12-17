@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(Remove-Item \"D:\\Project\\AIChat2025\\Services\\ChatProcessor\\docker-compose.yml\" -Force)",
-      "Bash(python3:*)",
-      "Bash(py clean_code.py:*)"
-    ]
-  }
-}
