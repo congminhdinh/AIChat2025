@@ -6,6 +6,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 from src.config import settings
 from src.logger import logger
+from src.evaluation_logger import get_evaluation_logger
 
 class OllamaService:
 
@@ -305,12 +306,41 @@ Lưu ý: Hiện không tìm thấy tài liệu tham khảo liên quan. Hãy tr�
             )
             logger.info(f'[ConversationId: {conversation_id}] Generated response (length: {len(ai_response)})')
 
+            # Step 6: Extract contexts for evaluation logging
+            contexts_list = []
+            # Collect company rule texts
+            for result in company_rule_results:
+                if hasattr(result, 'payload') and 'text' in result.payload:
+                    contexts_list.append(result.payload['text'])
+            # Collect legal framework texts
+            for result in legal_base_results:
+                if hasattr(result, 'payload') and 'text' in result.payload:
+                    contexts_list.append(result.payload['text'])
+
+            # Step 7: Log evaluation metadata asynchronously (non-blocking)
+            timestamp = datetime.utcnow()
+            evaluation_logger = get_evaluation_logger()
+
+            # Fire and forget - don't await to avoid blocking the response
+            asyncio.create_task(
+                evaluation_logger.log_interaction_async(
+                    question=message,
+                    contexts=contexts_list,
+                    answer=ai_response,
+                    conversation_id=conversation_id,
+                    user_id=user_id,
+                    tenant_id=tenant_id,
+                    timestamp=timestamp
+                )
+            )
+            logger.debug(f'[ConversationId: {conversation_id}] Scheduled evaluation metadata logging')
+
             return {
                 'conversation_id': conversation_id,
                 'message': ai_response,
                 'user_id': 0,
                 'tenant_id': tenant_id,
-                'timestamp': datetime.utcnow(),
+                'timestamp': timestamp,
                 'model_used': ollama_service.model,
                 'rag_documents_used': documents_used,
                 'source_ids': source_ids
