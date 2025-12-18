@@ -35,6 +35,17 @@ namespace StorageService.Endpoints
             {
                 return await storageBusiness.UploadObject(input);
             }).DisableAntiforgery();
+
+            group.MapGet("/download-minio-file", async (StorageBusiness storageBusiness, [FromQuery] string filePath) =>
+            {
+                var stream = await storageBusiness.DownloadMinioFile(filePath);
+
+                if (stream == null)
+                {
+                    return Results.NotFound(new { Message = "File not found in MinIO." });
+                }
+                return Results.File(stream, contentType: "application/octet-stream");
+            });
         }
     }
 }

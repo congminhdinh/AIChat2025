@@ -49,6 +49,22 @@ services:
       - aichat-network
     restart: always
 
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=password
+    command: server /data --console-address ":9001"
+    volumes:
+      - G:/Mount/minio:/data
+    networks:
+      - aichat-network
+    restart: unless-stopped
+
   # ============================================
   # .NET Microservices
   # ============================================
@@ -117,9 +133,17 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_HTTP_PORTS=8080
+      - MinioEndpoint=minio:9000
+      - MinioAccessKey=admin
+      - MinioSecretKey=password
+      - MinioBucket=ai-chat-2025
+      - DocumentFilePath=/app/storages
+    volumes:
+      - storageservice-data:/app/storages
     depends_on:
       - sqlserver
       - rabbitmq
+      - minio
     networks:
       - aichat-network
     restart: unless-stopped
@@ -212,3 +236,10 @@ services:
 networks:
   aichat-network:
     driver: bridge
+
+# ============================================
+# Volumes
+# ============================================
+
+volumes:
+  storageservice-data:

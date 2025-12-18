@@ -100,6 +100,47 @@ namespace StorageService.Features
             }
         }
 
+        public async Task<Stream?> DownloadMinioFile(string objectName)
+        {
+            try
+            {
+                var minioClient = NewMinIOClient();
+
+                // Check if object exists
+                var statObjectArgs = new StatObjectArgs()
+                    .WithBucket(_appSettings.MinioBucket)
+                    .WithObject(objectName);
+
+                await minioClient.StatObjectAsync(statObjectArgs);
+
+                // Get object stream
+                var memoryStream = new MemoryStream();
+                var getObjectArgs = new GetObjectArgs()
+                    .WithBucket(_appSettings.MinioBucket)
+                    .WithObject(objectName)
+                    .WithCallbackStream((stream) =>
+                    {
+                        stream.CopyTo(memoryStream);
+                    });
+
+                await minioClient.GetObjectAsync(getObjectArgs);
+                memoryStream.Position = 0;
+
+                _logger.LogInformation($"File {objectName} downloaded successfully from MinIO");
+                return memoryStream;
+            }
+            catch (MinioException e)
+            {
+                _logger.LogError(e, $"Error downloading file from MinIO: {objectName}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error downloading file: {objectName}");
+                return null;
+            }
+        }
+
         public async Task<bool> SetPolicy(string bucketname)
         {
             string policyJson = $@"{{""Version"":""2012-10-17"",""Statement"":[{{""Effect"":""Allow"",""Principal"":{{""AWS"":[""*""]}},""Action"":[""s3:ListBucket"",""s3:ListBucketMultipartUploads"",""s3:GetBucketLocation""],""Resource"":[""arn:aws:s3:::{bucketname}""]}},{{""Effect"":""Allow"",""Principal"":{{""AWS"":[""*""]}},""Action"":[""s3:ListMultipartUploadParts"",""s3:PutObject"",""s3:AbortMultipartUpload"",""s3:DeleteObject"",""s3:GetObject""],""Resource"":[""arn:aws:s3:::{bucketname}/*""]}}]}}";

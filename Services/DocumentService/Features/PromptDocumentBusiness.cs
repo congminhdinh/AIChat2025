@@ -240,7 +240,7 @@ namespace DocumentService.Features
 
             try
             {
-                var downloadUrl = $"{_appSettings.ApiGatewayUrl}/web-api/storage/download-file?filePath={document.FilePath}";
+                var downloadUrl = $"{_appSettings.ApiGatewayUrl}/web-api/storage/download-minio-file?filePath={document.FilePath}";
 
                 var token = _currentUserProvider.Token;
                 if (string.IsNullOrEmpty(token))
