@@ -23,7 +23,6 @@ namespace AccountService.Features
         }
         public async Task<BaseResponse<TokenDto>> Register(RegisterRequest input, int tenantId)
         {
-            // Set tenant context before any database operations
             _currentTenantProvider.SetTenantId(tenantId);
 
             var isExisted = await _repository.AnyAsync(new AccountSpecification(input.Email, tenantId));
@@ -43,7 +42,6 @@ namespace AccountService.Features
 
         public async Task<BaseResponse<TokenDto>> Login(LoginRequest input, int tenantId)
         {
-            // Set tenant context before any database operations
             _currentTenantProvider.SetTenantId(tenantId);
 
             var account = await _repository.FirstOrDefaultAsync(new AccountSpecification(input.Email, tenantId));

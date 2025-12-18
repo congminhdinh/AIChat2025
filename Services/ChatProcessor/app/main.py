@@ -26,7 +26,7 @@ class ChatProcessor:
     async def process_prompt(self, prompt_message: UserPromptReceivedMessage) -> None:
         try:
             result = await process_chat_message(conversation_id=prompt_message.conversation_id, user_id=prompt_message.user_id, message=prompt_message.message, tenant_id=prompt_message.tenant_id, ollama_service=self.ollama_service, qdrant_service=self.qdrant_service)
-            response_message = BotResponseCreatedMessage(conversation_id=result['conversation_id'], message=result['message'], user_id=result['user_id'], timestamp=result['timestamp'], model_used=result['model_used'])
+            response_message = BotResponseCreatedMessage(conversation_id=result['conversation_id'], message=result['message'], user_id=result['user_id'], tenant_id=result['tenant_id'], timestamp=result['timestamp'], model_used=result['model_used'])
             await self.rabbitmq_service.publish_response(response_message)
             logger.info(f'[ConversationId: {prompt_message.conversation_id}] Successfully published response')
         except Exception as e:

@@ -13,5 +13,6 @@ class BotResponseCreatedMessage(BaseModel):
     conversation_id: int
     message: str
     user_id: int
+    tenant_id: int
     timestamp: Optional[datetime] = Field(default_factory=datetime.utcnow)
     model_used: Optional[str] = None

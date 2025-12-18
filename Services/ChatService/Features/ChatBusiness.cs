@@ -9,6 +9,7 @@ using Infrastructure.Tenancy;
 using Infrastructure.Web;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace ChatService.Features;
 
@@ -24,14 +25,16 @@ public class ChatBusiness
     private readonly IRepository<PromptConfig> _promptConfigRepo;
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly ICurrentUserProvider _currentUserProvider;
+    private readonly ILogger<ChatBusiness> _logger;
 
-    public ChatBusiness(IRepository<ChatConversation> conversationRepo, IRepository<ChatMessage> messageRepo, IRepository<PromptConfig> promptConfigRepo, IPublishEndpoint publishEndpoint, ICurrentUserProvider currentUserProvider)
+    public ChatBusiness(IRepository<ChatConversation> conversationRepo, IRepository<ChatMessage> messageRepo, IRepository<PromptConfig> promptConfigRepo, IPublishEndpoint publishEndpoint, ICurrentUserProvider currentUserProvider, ILogger<ChatBusiness> logger)
     {
         _conversationRepo = conversationRepo;
         _messageRepo = messageRepo;
         _promptConfigRepo = promptConfigRepo;
         _publishEndpoint = publishEndpoint;
         _currentUserProvider = currentUserProvider;
+        _logger = logger;
     }
 
     /// <summary>
@@ -117,7 +120,6 @@ public class ChatBusiness
     public async Task<MessageDto> SaveUserMessageAndPublishAsync(SendMessageRequest request, CancellationToken ct = default)
     {
         var userId = _currentUserProvider.UserId;
-        // Save user message to database
         var message = new ChatMessage(request.ConversationId, request.Message, userId)
         {
             TenantId = _currentUserProvider.TenantId,
@@ -127,7 +129,6 @@ public class ChatBusiness
 
         await _messageRepo.AddAsync(message, ct);
 
-        // Update conversation's LastMessageAt
         var conversation = await _conversationRepo.GetByIdAsync(request.ConversationId, ct);
         if (conversation != null)
         {
@@ -136,8 +137,6 @@ public class ChatBusiness
         }
 
         await _messageRepo.SaveChangesAsync(ct);
-
-        // Fetch prompt configurations that match the user's message
         var promptConfigSpec = new PromptConfigByMessageSpec(request.Message, _currentUserProvider.TenantId);
         var promptConfigs = await _promptConfigRepo.ListAsync(promptConfigSpec, ct);
 
@@ -148,7 +147,6 @@ public class ChatBusiness
             Value = pc.Value
         }).ToList();
 
-        // Publish to RabbitMQ for Python service to process
         var userPromptEvent = new UserPromptReceivedEvent
         {
             ConversationId = request.ConversationId,
@@ -158,7 +156,7 @@ public class ChatBusiness
             TenantId = _currentUserProvider.TenantId,
             SystemInstruction = systemInstructions
         };
-
+        _logger.LogInformation($"Publishing UserPromptReceivedEvent: {JsonSerializer.Serialize(userPromptEvent)}");
         await _publishEndpoint.Publish(userPromptEvent, ct);
 
         return new MessageDto
@@ -171,17 +169,12 @@ public class ChatBusiness
             Type = message.Type
         };
     }
-
-    /// <summary>
-    /// Saves a bot response message to the database.
-    /// Called by BotResponseConsumer when receiving from RabbitMQ.
-    /// </summary>
     public async Task<MessageDto> SaveBotMessageAsync(BotResponseCreatedEvent botResponse, CancellationToken ct = default)
     {
-        // Save bot message to database
+        _logger.LogInformation($"Saving bot response: {JsonSerializer.Serialize(botResponse)}");
         var message = new ChatMessage(botResponse.ConversationId, botResponse.Message, botResponse.UserId)
         {
-            TenantId = _currentUserProvider.TenantId,
+            TenantId = botResponse.TenantId, // Use TenantId from the event (passed through RabbitMQ)
             Timestamp = botResponse.Timestamp,
             Type = ChatType.Response
         };

@@ -57,14 +57,14 @@ class ChatProcessor:
             if prompt_message.system_instruction:
                 system_instruction = [{'key': item.key, 'value': item.value} for item in prompt_message.system_instruction]
             result = await ChatBusiness.process_chat_message(conversation_id=prompt_message.conversation_id, user_id=prompt_message.user_id, message=prompt_message.message, tenant_id=prompt_message.tenant_id, ollama_service=self.ollama_service, qdrant_service=self.qdrant_service, system_instruction=system_instruction)
-            response_message = BotResponseCreatedMessage(conversation_id=result['conversation_id'], message=result['message'], user_id=result['user_id'], timestamp=result['timestamp'], model_used=result['model_used'])
+            response_message = BotResponseCreatedMessage(conversation_id=result['conversation_id'], message=result['message'], user_id=result['user_id'], tenant_id=result['tenant_id'], timestamp=result['timestamp'], model_used=result['model_used'])
             await self.rabbitmq_service.publish_response(response_message)
             logger.info(f'[ConversationId: {prompt_message.conversation_id}] Successfully published response')
         except Exception as e:
             logger.error(f'[ConversationId: {prompt_message.conversation_id}] Failed to process prompt: {e}', exc_info=True)
             try:
                 from datetime import datetime
-                error_response = BotResponseCreatedMessage(conversation_id=prompt_message.conversation_id, message='Có lỗi xảy ra, vui lòng thử lại', user_id=prompt_message.user_id, timestamp=datetime.utcnow(), model_used='error')
+                error_response = BotResponseCreatedMessage(conversation_id=prompt_message.conversation_id, message='Có lỗi xảy ra, vui lòng thử lại', user_id=prompt_message.user_id, tenant_id=prompt_message.tenant_id, timestamp=datetime.utcnow(), model_used='error')
                 await self.rabbitmq_service.publish_response(error_response)
                 logger.info(f'[ConversationId: {prompt_message.conversation_id}] Published error message to user')
             except Exception as publish_error:

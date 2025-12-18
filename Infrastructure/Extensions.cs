@@ -37,8 +37,8 @@ namespace Infrastructure
             builder.AddCustomLogging();
             builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
             builder.Services.AddSingleton<ICurrentUserProvider, CurrentUserProvider>();
-            builder.Services.AddScoped<ICurrentTenantProvider, CurrentTenantProvider>();
-            //builder.AddRepositoryExtensions();
+            builder.Services.AddScoped<ICurrentTenantProvider>(sp =>
+                new CurrentTenantProvider(sp.GetRequiredService<ICurrentUserProvider>()));
             builder.Services.AddHttpContextAccessor();
             builder.AddCustomAuthorization();
             builder.AddCustomOpenApi();
@@ -48,7 +48,6 @@ namespace Infrastructure
 
         public static void UseInfrastructure(this WebApplication app)
         {
-            //app.UseHttpsRedirection();
             app.UseCustomAuthentication();
             app.UseMiddleware<ExceptionMiddleware>();
             app.MapOpenApi();
@@ -56,15 +55,11 @@ namespace Infrastructure
             app.UseStatusCodePages(async statusCodeContext =>
             {
                 var message = $"Có lỗi xảy ra ({statusCodeContext.HttpContext.Response.StatusCode})";
-                // statusCodeContext.HttpContext.Response.w
                 switch (statusCodeContext.HttpContext.Response.StatusCode)
                 {
                     case 401:
                         message = "Thông tin token không đúng";
                         break;
-                        //case 403:
-                        //    statusCodeContext.HttpContext.Response.StatusCode = 400;
-                        //    break;
                 }
                 var model = new { code = (int)statusCodeContext.HttpContext.Response.StatusCode, message };
                 statusCodeContext.HttpContext.Response.StatusCode = 200;

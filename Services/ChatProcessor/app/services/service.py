@@ -25,7 +25,7 @@ async def process_chat_message(conversation_id: int, user_id: int, message: str,
             enhanced_prompt = message
         ai_response = await ollama_service.generate_response(prompt=enhanced_prompt, conversation_history=None)
         logger.info(f'[ConversationId: {conversation_id}] Generated response (length: {len(ai_response)})')
-        return {'conversation_id': conversation_id, 'message': ai_response, 'user_id': 0, 'timestamp': datetime.utcnow(), 'model_used': ollama_service.model, 'rag_documents_used': len(context_texts), 'source_ids': source_ids}
+        return {'conversation_id': conversation_id, 'message': ai_response, 'user_id': 0, 'tenant_id': tenant_id, 'timestamp': datetime.utcnow(), 'model_used': ollama_service.model, 'rag_documents_used': len(context_texts), 'source_ids': source_ids}
     except Exception as e:
         logger.error(f'[ConversationId: {conversation_id}] Failed to process message: {e}', exc_info=True)
         raise

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(py test_compliance_standalone.py:*)",
+      "Bash(del test_compliance_workflow.py test_compliance_standalone.py)"
+    ]
+  }
+}
