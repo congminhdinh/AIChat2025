@@ -31,6 +31,7 @@ builder.AddCustomDbContext<ChatDbContext>(
 
 // Add Business Logic
 builder.Services.AddScoped<ChatBusiness>();
+builder.Services.AddScoped<PromptConfigBusiness>();
 
 // Add SignalR
 builder.AddCustomSignalR();
@@ -103,5 +104,6 @@ app.MapHub<ChatHub>("/hubs/chat");
 
 // Map REST API Endpoints
 app.MapChatEndpoints();
+app.MapPromptConfigEndpoints();
 
 app.Run();

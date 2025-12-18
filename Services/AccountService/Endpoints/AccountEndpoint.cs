@@ -17,6 +17,10 @@ namespace AccountService.Endpoints
 
             var group = app.MapWebApiGroup("account");
 
+            group.MapGet("/current-user", async (AccountBusiness accountBusiness) =>
+            {
+                return await accountBusiness.GetCurrentUser();
+            });
             group.MapGet("/{id}", async (AccountBusiness accountBusiness, int id) =>
             {
                 return await accountBusiness.GetAccountById(new GetAccountByIdRequest { AccountId = id });

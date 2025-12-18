@@ -20,6 +20,18 @@ namespace AccountService.Features
             _currentUserProvider = currentUserProvider;
         }
 
+
+        public async Task<BaseResponse<CurrentUserDto>> GetCurrentUser()
+        {
+            var currentUserDto = new CurrentUserDto(
+                _currentUserProvider.UserId,
+                _currentUserProvider.TenantId,
+                _currentUserProvider.Username,
+                _currentUserProvider.Scope,
+                _currentUserProvider.IsAdmin,
+                _currentUserProvider.Token);
+            return new BaseResponse<CurrentUserDto>(currentUserDto, new Guid());
+        }
         public async Task<BaseResponse<AccountDto>> GetAccountById(GetAccountByIdRequest input)
         {
             if (!CheckIsAdmin())

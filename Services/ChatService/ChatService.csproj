@@ -14,10 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Endpoints\" />
-    <Folder Include="Features\" />
     <Folder Include="Specifications\" />
-    <Folder Include="Requests\" />
   </ItemGroup>
 
   <ItemGroup>
