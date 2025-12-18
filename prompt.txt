@@ -1,22 +1,16 @@
-Act as a Senior .NET Developer.
+Act as a Senior Python AI Developer.
 
-**Context:**
-We need to finalize the configuration for the **Storage Service** to run in the Production/Docker environment.
-Currently, the S3/MinIO configuration is in `appsettings.Development.json` (pointing to `localhost`).
+**Task:** Update the `ChatProcessor` logic to enforce concise AI responses.
 
-**Task:**
-Create or Update the `Services/StorageService/appsettings.json` file (Production configuration).
+**Scope:**
+* **Target:** ONLY modify the function responsible for constructing the final prompt string sent to Ollama (likely inside `business.py` or `services/llm_service.py`).
+* **Strict Constraint:** Do NOT modify the RabbitMQ consumer, Qdrant search logic, configuration loading, or logger setup. Preserve the existing RAG flow (Context retrieval) exactly as it is.
 
-**Requirements:**
-1.  **Replicate Structure:** Copy the exact S3 configuration structure (Section keys) from `appsettings.Development.json`.
-2.  **Adjust Values for Docker:**
-    * **ServiceUrl:** Change from `http://localhost:9000` to `http://minio:9000` (Use the container name defined in docker-compose).
-    * **ExternalUrl:** If there is a key for public access (used for browser redirects), keep it as `http://localhost:9000` or adapt as needed, but the internal communication URL must use the container name.
-    * **Credentials:** You can set placeholders (e.g., "Set_By_Env_Var") or default values for `AccessKey` and `SecretKey`, as these should be overridden by Docker Environment variables for security.
-3.  **Docker Compose Verification:**
-    * Review the `storageservice` section in the root `docker-compose.yml`.
-    * Ensure that we are injecting the specific values (AccessKey, SecretKey) using the double-underscore syntax (e.g., `StorageSettings__AccessKey`) so they override whatever is in the json file.
+**Action:**
+1.  Locate the code where `system_instruction`, `context` (from Qdrant), and `user_message` are combined.
+2.  Inject the following specific instruction into the final prompt to the model:
+    > **"IMPORTANT: Answer based on the context provided. Keep the answer concise, roughly 2-3 sentences only."**
+3.  Ensure the retrieved `context` is still included in the prompt.
 
 **Output:**
-1.  Provide the full content for `Services/StorageService/appsettings.json`.
-2.  Confirm the environment variable mapping in `docker-compose.yml`.
+Provide ONLY the modified Python function code.

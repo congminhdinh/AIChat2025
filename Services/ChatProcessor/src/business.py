@@ -161,10 +161,10 @@ class ChatBusiness:
                 logger.warning(f'[ConversationId: {conversation_id}] No COMPANY REGULATION documents found for tenant {tenant_id}')
             if context_sections:
                 context = '\n\n'.join(context_sections)
-                enhanced_prompt = f'Context information:\n{context}\n\nUser question: {message}\n\nPlease answer based on the context provided above. If both STATE LAW and COMPANY REGULATION are provided, compare and contrast them in your response.'
+                enhanced_prompt = f'Context information:\n{context}\n\nUser question: {message}\n\nIMPORTANT: Answer based on the context provided. Keep the answer concise, roughly 2-3 sentences only. If both STATE LAW and COMPANY REGULATION are provided, compare and contrast them in your response.'
             else:
                 logger.warning(f'[ConversationId: {conversation_id}] No documents retrieved from either source. Using raw query.')
-                enhanced_prompt = message
+                enhanced_prompt = f'{message}\n\nIMPORTANT: Answer based on the context provided. Keep the answer concise, roughly 2-3 sentences only.'
             conversation_history = []
             if system_instruction and len(system_instruction) > 0:
                 system_prompt_parts = [item['value'] for item in system_instruction if 'value' in item]
