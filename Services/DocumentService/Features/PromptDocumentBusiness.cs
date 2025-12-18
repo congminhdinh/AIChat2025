@@ -37,8 +37,6 @@ namespace DocumentService.Features
             _regexHeading3 = new Regex(_appSettings.RegexHeading3, RegexOptions.IgnoreCase | RegexOptions.Compiled);
         }
 
-        // CRUD Methods
-
         private DocumentDto MapToDto(PromptDocument entity)
         {
             return new DocumentDto(
@@ -117,7 +115,7 @@ namespace DocumentService.Features
                 await _documentRepository.UpdateAsync(docEntity);
 
                 memoryStream.Position = 0;
-                var uploadUrl = $"{_appSettings.ApiGatewayUrl}/web-api/storage/upload-file";
+                var uploadUrl = $"{_appSettings.ApiGatewayUrl}/web-api/storage/upload-minio-file";
 
                 using var content = new MultipartFormDataContent();
                 using var fileContent = new StreamContent(memoryStream);
@@ -125,7 +123,11 @@ namespace DocumentService.Features
                 content.Add(new StringContent(input.File.FileName), "FileName");
                 content.Add(new StringContent("documents"), "Directory");
 
-                var response = await PostFormDataAsync<BaseResponse<StringValueDto>>(uploadUrl, content);
+                var token = _currentUserProvider.Token;
+                if (string.IsNullOrEmpty(token))
+                    throw new Exception("Authentication token not found");
+
+                var response = await PostFormDataWithTokenAsync<BaseResponse<StringValueDto>>(uploadUrl, content, token);
                 var uploadedPath = response?.Data?.Value;
 
                 if (!string.IsNullOrEmpty(uploadedPath))
@@ -239,7 +241,12 @@ namespace DocumentService.Features
             try
             {
                 var downloadUrl = $"{_appSettings.ApiGatewayUrl}/web-api/storage/download-file?filePath={document.FilePath}";
-                var fileStream = await GetStreamAsync(downloadUrl);
+
+                var token = _currentUserProvider.Token;
+                if (string.IsNullOrEmpty(token))
+                    throw new Exception("Authentication token not found");
+
+                var fileStream = await GetStreamWithTokenAsync(downloadUrl, token);
 
                 if (fileStream == null)
                     throw new Exception("Failed to download file from Storage Service");
@@ -285,67 +292,6 @@ namespace DocumentService.Features
             }
         }
 
-        // Legacy Methods (for backward compatibility)
-
-        public async Task<int> HandleAndUploadDocument(IFormFile file)
-        {
-            var tenantId = _currentUserProvider.TenantId;
-            var uploadedBy = _currentUserProvider.Username;
-            // 1. Create Initial Entity
-            var docEntity = new PromptDocument
-            {
-                FileName = file.FileName,
-                UploadedBy = uploadedBy,
-                TenantId = tenantId, // Handle nullable if necessary
-                Action = DocumentAction.Upload,
-                CreatedAt = DateTime.UtcNow
-            };
-            await _documentRepository.AddAsync(docEntity);
-
-            try
-            {
-                using var memoryStream = new MemoryStream();
-                await file.CopyToAsync(memoryStream);
-
-                memoryStream.Position = 0;
-                StandardizeHeadings(memoryStream);
-                docEntity.Action = DocumentAction.Standardization;
-                await _documentRepository.UpdateAsync(docEntity);
-
-                memoryStream.Position = 0;
-                var uploadUrl = $"{_appSettings.ApiGatewayUrl}/web-api/storage/upload-file";
-
-                using var content = new MultipartFormDataContent();
-                using var fileContent = new StreamContent(memoryStream);
-                content.Add(fileContent, "File", file.FileName);
-                content.Add(new StringContent(file.FileName), "FileName");
-                content.Add(new StringContent("documents"), "Directory");
-
-                var response = await PostFormDataAsync<BaseResponse<StringValueDto>>(uploadUrl, content);
-                var uploadedPath = response?.Data?.Value;
-                if (!string.IsNullOrEmpty(uploadedPath))
-                {
-                    docEntity.FilePath = uploadedPath;
-                    docEntity.LastModifiedAt = DateTime.UtcNow;
-                    docEntity.Action = DocumentAction.Upload;
-
-                    await _documentRepository.UpdateAsync(docEntity);
-                }
-                else
-                {
-                    throw new Exception("Upload failed: No path returned from Storage Service.");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error processing document upload for file {FileName}", file.FileName);
-                docEntity.Action = DocumentAction.Vectorize_Failed;
-                await _documentRepository.UpdateAsync(docEntity);
-
-                throw;
-            }
-            return docEntity.Id;
-        }
         private void StandardizeHeadings(MemoryStream stream)
         {
             using (WordprocessingDocument doc = WordprocessingDocument.Open(stream, true))
@@ -499,110 +445,5 @@ namespace DocumentService.Features
             chunks.Add(chunk);
         }
 
-        public async Task<bool> VectorizeDocument(int documentId)
-        {
-            var tenantId = _currentUserProvider.TenantId;
-            // Get document from repository
-            var document = await _documentRepository.GetByIdAsync(documentId);
-            if (document == null)
-                throw new Exception($"Document with ID {documentId} not found");
-
-            // Update status to Vectorize_Start
-            document.Action = DocumentAction.Vectorize_Start;
-            await _documentRepository.UpdateAsync(document);
-
-            try
-            {
-                // Construct URL to download the file from Storage Service
-                var downloadUrl = $"{_appSettings.ApiGatewayUrl}/web-api/storage/download-file?filePath={document.FilePath}";
-
-                // Download the file
-                var fileStream = await GetStreamAsync(downloadUrl);
-                if (fileStream == null)
-                    throw new Exception("Failed to download file from Storage Service");
-
-                using var memoryStream = new MemoryStream();
-                await fileStream.CopyToAsync(memoryStream);
-                memoryStream.Position = 0;
-
-                // Extract hierarchical chunks
-                var chunks = ExtractHierarchicalChunks(memoryStream, documentId, document.FileName);
-
-                if (chunks.Count == 0)
-                {
-                    _logger.LogWarning("No chunks extracted from document {DocumentId}", documentId);
-                    document.Action = DocumentAction.Vectorize_Failed;
-                    await _documentRepository.UpdateAsync(document);
-                    return false;
-                }
-                const int batchSize = 10;
-                var batches = new List<List<DocumentChunkDto>>();
-                for (int i = 0; i < chunks.Count; i += batchSize)
-                {
-                    var batch = chunks.Skip(i).Take(batchSize).ToList();
-                    batches.Add(batch);
-                }
-
-                _logger.LogInformation("Enqueueing {BatchCount} batches for document {DocumentId}", batches.Count, documentId);
-                foreach (var batch in batches)
-                {
-                    _backgroundJobClient.Enqueue<VectorizeBackgroundJob>(
-                        job => job.ProcessBatch(batch, tenantId));
-                }
-
-
-                document.Action = DocumentAction.Vectorize_Success;
-                await _documentRepository.UpdateAsync(document);
-                _logger.LogInformation("Successfully enqueued {BatchCount} batches ({ChunkCount} chunks total) for document {DocumentId}",
-                    batches.Count, chunks.Count, documentId);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error vectorizing document {DocumentId}", documentId);
-                document.Action = DocumentAction.Vectorize_Failed;
-                await _documentRepository.UpdateAsync(document);
-                throw;
-            }
-        }
-
-        public async Task<bool> DeleteDocumentAsync(int documentId)
-        {
-            var tenantId = _currentUserProvider.TenantId;
-
-            try
-            {
-                // Get document from repository
-                var document = await _documentRepository.GetByIdAsync(documentId);
-                if (document == null)
-                {
-                    _logger.LogWarning("Document with ID {DocumentId} not found", documentId);
-                    return false;
-                }
-
-                // Delete entity from SQL DB
-                await _documentRepository.DeleteAsync(document);
-                _logger.LogInformation("Deleted document {DocumentId} from database", documentId);
-
-                // Call Python API to delete vectors from Qdrant
-                var deleteUrl = $"{_appSettings.EmbeddingServiceUrl}/api/embeddings/delete";
-                var deleteRequest = new
-                {
-                    source_id = documentId.ToString(),
-                    tenant_id = tenantId,
-                    type = 1
-                };
-
-                var response = await PostAsync<object, object>(deleteUrl, deleteRequest);
-                _logger.LogInformation("Successfully deleted vectors for document {DocumentId} from Qdrant", documentId);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting document {DocumentId}", documentId);
-                throw;
-            }
-        }
     }
 }

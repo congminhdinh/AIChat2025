@@ -15,5 +15,12 @@
         public string RabbitMQEndpoint { get; set; } = "localhost:5672";
         public string RabbitMQUsername { get; set; } = "guest";
         public string RabbitMQPassword { get; set; } = "guest";
+
+
+        //Minio Configuration
+        public string MinioEndpoint { get; set; }
+        public string MinioAccessKey { get; set; }
+        public string MinioSecretKey { get; set; }
+        public string MinioBucket { get; set; }
     }
 }

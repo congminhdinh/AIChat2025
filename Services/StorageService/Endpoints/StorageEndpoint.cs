@@ -18,8 +18,7 @@ namespace StorageService.Endpoints
             {
                 
                 return await storageBusiness.UploadFileSystem(input);
-            }).DisableAntiforgery()
-            .AllowAnonymous();
+            }).DisableAntiforgery();
 
             group.MapGet("/download-file", (StorageBusiness storageBusiness, [FromQuery] string filePath) =>
             {
@@ -30,8 +29,12 @@ namespace StorageService.Endpoints
                     return Results.NotFound(new { Message = "File not found." });
                 }
                 return Results.File(stream, contentType: "application/octet-stream");
-            })
-            .AllowAnonymous();
+            });
+
+            group.MapPost("/upload-minio-file", async (StorageBusiness storageBusiness, [FromForm]UploadMinioRequest input) =>
+            {
+                return await storageBusiness.UploadObject(input);
+            }).DisableAntiforgery();
         }
     }
 }

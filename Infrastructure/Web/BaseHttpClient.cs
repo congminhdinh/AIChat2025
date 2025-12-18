@@ -70,6 +70,17 @@ namespace Infrastructure.Web
 
             return await response.Content.ReadAsStreamAsync(cancellationToken);
         }
+        public async Task<Stream> GetStreamWithTokenAsync(string uri, string token, CancellationToken cancellationToken = default)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content.ReadAsStreamAsync(cancellationToken);
+        }
         private async Task<string> PostStringAsync(string uri, string dataString, CancellationToken cancellationToken = default)
         {
             var httpContent = new StringContent(dataString, Encoding.UTF8, "application/json");

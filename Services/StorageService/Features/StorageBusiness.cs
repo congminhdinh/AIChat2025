@@ -1,5 +1,9 @@
 ﻿using Infrastructure;
+using Infrastructure.Utils;
 using Microsoft.Extensions.Options;
+using Minio;
+using Minio.DataModel.Args;
+using Minio.Exceptions;
 using StorageService.Dtos;
 using StorageService.Requests;
 
@@ -15,7 +19,7 @@ namespace StorageService.Features
             _logger = logger;
             _appSettings = optionsMonitor.CurrentValue;
         }
-
+        // local file system
         public async Task<BaseResponse<StringValueDto>> UploadFileSystem(UploadFileSystemRequest input)
         {
             if (input.File == null)
@@ -39,27 +43,95 @@ namespace StorageService.Features
             return new BaseResponse<StringValueDto>(new StringValueDto { Value = relativePath }, input.CorrelationId());
         }
 
-        public Stream? DownloadFile(string relativeFilePath)
+        public Stream? DownloadFile(string relativeDirectory)
         {
             try
             {
                 var baseDir = _appSettings.DocumentFilePath;
-                var fullPath = Path.Combine(baseDir, relativeFilePath);
+                var fullPath = Path.Combine(baseDir, relativeDirectory);
 
                 if (!File.Exists(fullPath))
                 {
                     _logger.LogWarning($"File not found: {fullPath}");
                     return null;
                 }
-
-                // Lưu ý: Dùng FileShare.Read để tránh khóa file nếu đang có tiến trình khác đọc
                 return new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error downloading file: {relativeFilePath}");
+                _logger.LogError(ex, $"Error downloading file: {relativeDirectory}");
                 return null;
             }
         }
+
+        // Minio
+        public async Task<BaseResponse<StringValueDto>> UploadObject(UploadMinioRequest file)
+        {
+            
+            try
+            {
+
+                var minioClient = NewMinIOClient();
+                var fileName = string.IsNullOrWhiteSpace(file.FileName) ? file.File.FileName : file.FileName;
+                var newFileName = $"{Path.GetFileNameWithoutExtension(fileName)}_{new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds()}{Path.GetExtension(fileName)}";
+                var filePath = !string.IsNullOrEmpty(file.Directory) ? Path.Combine(file.Directory, newFileName) : newFileName;
+
+
+                using (var stream = file.File.OpenReadStream())
+                {
+                    PutObjectArgs putObjectArgs = new PutObjectArgs()
+                                                  .WithBucket(_appSettings.MinioBucket)
+                                                  .WithObject(filePath)
+                                                  .WithStreamData(stream)
+                                                  .WithObjectSize(stream.Length)
+                                                  .WithContentType(fileName.GetMimeType());
+                    var result = await minioClient.PutObjectAsync(putObjectArgs);
+                }
+                ;
+
+                _logger.LogInformation($"{filePath} is uploaded successfully");
+                return new BaseResponse<StringValueDto>(new StringValueDto { Value = filePath }, file.CorrelationId());
+
+            }
+            catch (MinioException e)
+            {
+                _logger.LogWarning("Error occurred: " + e);
+                return new BaseResponse<StringValueDto>("Upload file failed", BaseResponseStatus.Error, file.CorrelationId());
+            }
+        }
+
+        public async Task<bool> SetPolicy(string bucketname)
+        {
+            string policyJson = $@"{{""Version"":""2012-10-17"",""Statement"":[{{""Effect"":""Allow"",""Principal"":{{""AWS"":[""*""]}},""Action"":[""s3:ListBucket"",""s3:ListBucketMultipartUploads"",""s3:GetBucketLocation""],""Resource"":[""arn:aws:s3:::{bucketname}""]}},{{""Effect"":""Allow"",""Principal"":{{""AWS"":[""*""]}},""Action"":[""s3:ListMultipartUploadParts"",""s3:PutObject"",""s3:AbortMultipartUpload"",""s3:DeleteObject"",""s3:GetObject""],""Resource"":[""arn:aws:s3:::{bucketname}/*""]}}]}}";
+
+            try
+            {
+                var minioClient = NewMinIOClient();
+
+                SetPolicyArgs args = new SetPolicyArgs()
+                                         .WithBucket(bucketname)
+                                         .WithPolicy(policyJson);
+                await minioClient.SetPolicyAsync(args);
+
+                return true;
+            }
+
+            catch (MinioException e)
+            {
+                _logger.LogWarning("Error occurred: " + e);
+                return false;
+            }
+        }
+
+        private IMinioClient NewMinIOClient()
+        {
+            var minioClient = new MinioClient()
+                    .WithEndpoint(_appSettings.MinioEndpoint)
+                    .WithCredentials(_appSettings.MinioAccessKey, _appSettings.MinioSecretKey)
+                    .WithSSL(false)
+                    .Build();
+            return minioClient;
+        }
+
     }
 }
