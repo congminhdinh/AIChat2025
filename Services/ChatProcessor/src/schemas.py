@@ -29,6 +29,7 @@ class ChatRequest(BaseModel):
     message: str
     user_id: int
     tenant_id: int
+    system_instruction: Optional[List[PromptConfigDto]] = Field(default_factory=list)
 
 class ChatResponse(BaseModel):
     conversation_id: int
@@ -38,3 +39,4 @@ class ChatResponse(BaseModel):
     model_used: str
     rag_documents_used: int
     source_ids: Optional[List] = []
+    scenario: Optional[str] = None  # NEW: Scenario for debugging (BOTH, COMPANY_ONLY, LEGAL_ONLY, NONE)

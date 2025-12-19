@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     fastapi_port: int = 8001
     log_level: str = 'INFO'
     prefetch_count: int = 1
+    openai_api_key: str = ''  # Required for Ragas evaluation
 
     class Config:
         env_file = '.env'

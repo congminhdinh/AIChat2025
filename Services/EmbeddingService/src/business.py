@@ -1,6 +1,6 @@
 import torch
 import uuid
-from typing import List
+from typing import List, Any
 from optimum.onnxruntime import ORTModelForFeatureExtraction
 from transformers import AutoTokenizer
 from qdrant_client import QdrantClient
@@ -81,3 +81,36 @@ class EmbeddingService:
         delete_filter = Filter(must=[FieldCondition(key='source_id', match=MatchValue(value=source_id)), FieldCondition(key='tenant_id', match=MatchValue(value=tenant_id)), FieldCondition(key='type', match=MatchValue(value=type))])
         self.qdrant_client.delete(collection_name=collection_name, points_selector=FilterSelector(filter=delete_filter))
         return collection_name
+
+    def search_similarity(self, query: str, tenant_id: int, limit: int = 3, score_threshold: float = 0.0, collection_name: str = None) -> List[Any]:
+        
+        if not query:
+            return []
+
+        collection_name = collection_name or settings.qdrant_collection
+        
+        # 1. Embed câu query
+        query_vector = self.encode_text(query)
+
+        # 2. Tạo filter theo tenant
+        search_filter = Filter(
+            must=[
+                FieldCondition(
+                    key="tenant_id", 
+                    match=MatchValue(value=tenant_id)
+                )
+            ]
+        )
+
+        # 3. Search Qdrant (Có trả về Payload và Score)
+        search_result = self.qdrant_client.search(
+            collection_name=collection_name,
+            query_vector=query_vector,
+            query_filter=search_filter,
+            limit=limit,
+            score_threshold=score_threshold, 
+            with_payload=True,
+            with_vectors=True
+        )
+
+        return search_result

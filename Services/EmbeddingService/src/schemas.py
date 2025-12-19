@@ -30,3 +30,9 @@ class VectorizeResponse(BaseModel):
     dimensions: Optional[int] = None
     collection: str
     message: Optional[str] = None
+
+class SearchRequest(BaseModel):
+    query: str
+    tenant_id: int
+    limit: int
+    score_threshold: float

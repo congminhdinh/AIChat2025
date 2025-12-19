@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.concurrency import run_in_threadpool
-from src.schemas import EmbeddingRequest, EmbeddingResponse, VectorizeRequest, VectorizeResponse, BatchVectorizeRequest, DeleteRequest
+from src.schemas import EmbeddingRequest, EmbeddingResponse, VectorizeRequest, VectorizeResponse, BatchVectorizeRequest, DeleteRequest, SearchRequest
 from src.business import EmbeddingService
 from src.config import settings
+from typing import List
 router = APIRouter()
 embedding_service = EmbeddingService()
 
@@ -38,6 +39,36 @@ async def delete_document(request: DeleteRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post('/search', response_model=List[EmbeddingResponse])
+async def search_documents(request: SearchRequest):
+    try:
+        # 1. Gọi Service (Yêu cầu Service phải bật with_vectors=True)
+        raw_results = await run_in_threadpool(
+            embedding_service.search_similarity,
+            query=request.query,
+            tenant_id=request.tenant_id,
+            limit=request.limit,
+            score_threshold=request.score_threshold
+        )
+        
+        # 2. Map từ ScoredPoint sang EmbeddingResponse gốc
+        mapped_response = []
+        for item in raw_results:
+            # Lấy vector ra (nếu None thì trả về list rỗng để tránh lỗi)
+            vec = item.vector if item.vector else []
+            
+            # Tạo object đúng khuôn EmbeddingResponse
+            mapped_item = EmbeddingResponse(
+                vector=vec, 
+                dimensions=len(vec)
+            )
+            mapped_response.append(mapped_item)
+
+        # Trả về danh sách các vector
+        return mapped_response
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 @router.get('/health')
 def health_check():
     return {'status': 'ok', 'model': settings.model_name, 'qdrant': f'{settings.qdrant_host}:{settings.qdrant_port}'}

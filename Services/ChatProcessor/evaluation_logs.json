@@ -1,0 +1,95 @@
+[
+  {
+    "question": "Lương làm thêm giờ ngày thường tính bao nhiêu % lương thực trả của công việc",
+    "contexts": [
+      "CHƯƠNG II: THỜI GIỜ LÀM VIỆC VÀ NGHỈ NGƠI\nĐiều 3. Làm thêm giờ (OT)\n1. Công ty hạn chế tối đa việc làm thêm giờ.\n2. Mức chi trả lương làm thêm giờ (Cao hơn luật định):\na) Làm thêm vào ngày thường: 160% lương thực trả (Luật quy định tối thiểu 150%).\nb) Làm thêm vào ngày nghỉ hàng tuần (Thứ 7, CN): 210% lương thực trả (Luật quy định tối thiểu 200%).\nc) Làm thêm vào ngày Lễ, Tết: 400% lương thực trả (Luật quy định tối thiểu 300%).",
+      "Chương VI\nĐiều 98. Tiền lương làm thêm giờ, làm việc vào ban đêm\n1. Người lao động làm thêm giờ được trả lương tính theo đơn giá tiền lương hoặc tiền lương thực trả theo công việc đang làm như sau:\na) Vào ngày thường, ít nhất bằng 150%;\nb) Vào ngày nghỉ hằng tuần, ít nhất bằng 200%;\nc) Vào ngày nghỉ lễ, tết, ngày nghỉ có hưởng lương, ít nhất bằng 300% chưa kể tiền lương ngày lễ, tết, ngày nghỉ có hưởng lương đối với người lao động hưởng lương ngày.\n2. Người lao động làm việc vào ban đêm thì được trả thêm ít nhất bằng 30% tiền lương tính theo đơn giá tiền lương hoặc tiền lương thực trả theo công việc của ngày làm việc bình thường.\n3. Người lao động làm thêm giờ vào ban đêm thì ngoài việc trả lương theo quy định tại khoản 1 và khoản 2 Điều này, người lao động còn được trả thêm 20% tiền lương tính theo đơn giá tiền lương hoặc tiền lương theo công việc làm vào ban ngày của ngày làm việc bình thường hoặc của ngày nghỉ hằng tuần hoặc của ngày nghỉ lễ, tết.\n4. Chính phủ quy định chi tiết Điều này."
+    ],
+    "answer": "Theo [Quy định #1] trong Nội quy Công ty, mức chi trả cho làm thêm giờ vào ngày thường là 160% lương thực trả (Luật quy định tối thiểu 150%). Do đó, công ty đang quy định một tỷ lệ cao hơn so với luật.",
+    "conversation_id": 6,
+    "user_id": 10,
+    "tenant_id": 6,
+    "timestamp": "2025-12-19T04:02:16.346785"
+  },
+  {
+    "question": "Anh Bắc có quyền hạn gì trong phê duyệt và đầu tư?",
+    "contexts": [
+      "CHƯƠNG VI: QUYỀN HẠN VÀ TRÁCH NHIỆM ĐIỀU HÀNH CỦA TỔNG GIÁM ĐỐC\nĐiều 8. Thẩm quyền quản trị và quyết định vận hành\nĐại diện pháp luật và Quan hệ đối ngoại:\nTổng Giám đốc là người đại diện theo pháp luật duy nhất của Công ty A trong mọi giao dịch dân sự, kinh tế và tố tụng.\nCó toàn quyền quyết định chiến lược truyền thông và đại diện công ty ký kết các văn bản hợp tác chiến lược với các đối tác trong và ngoài nước.\nQuyền hạn về Tổ chức và Nhân sự:\nQuyết định sơ đồ tổ chức, thành lập hoặc giải thể các phòng ban, bộ phận dưới cấp Chi nhánh/Trung tâm dựa trên nhu cầu vận hành thực tế.\nCó thẩm quyền bổ nhiệm, miễn nhiệm và điều động các vị trí quản lý từ cấp Trưởng phòng đến Giám đốc khối (trừ các vị trí do Hội đồng Quản trị bổ nhiệm).\nPhê duyệt các điều chỉnh về khung lương và chính sách phúc lợi chung cho toàn thể nhân viên.\nThẩm quyền Tài chính và Đầu tư (Mô phỏng hạn mức thực tế):\nPhê duyệt chi phí vận hành (OPEX): Có quyền phê duyệt các khoản chi nằm trong kế hoạch ngân sách năm đã được duyệt mà không giới hạn định mức đơn lẻ.\nPhê duyệt đầu tư (CAPEX): Quyết định các dự án đầu tư công nghệ, mua sắm tài sản cố định có giá trị lên đến 20.000.000.000 VNĐ (Hai mươi tỷ đồng) cho mỗi gói thầu/hợp đồng. Các khoản chi vượt định mức này phải trình Hội đồng Quản trị phê duyệt.\nKý kết hợp đồng kinh tế: Toàn quyền ký kết các hợp đồng cung cấp dịch vụ công nghệ cho khách hàng với giá trị không giới hạn, đảm bảo tính sinh lời và phù hợp với định hướng công ty.\nQuản lý rủi ro và Kỷ luật:\nLà người có quyền quyết định cuối cùng trong việc áp dụng hình thức kỷ luật sa thải đối với nhân viên vi phạm quy định tại Điều 7.\nCó quyền tạm dừng hoạt động của bất kỳ dự án hoặc bộ phận nào nếu phát hiện có nguy cơ gây thiệt hại nghiêm trọng về tài chính hoặc uy tín của công ty.",
+      "Điều 7. Thẩm quyền quản lý nhà nước về việc làm\n1. Chính phủ thống nhất quản lý nhà nước về việc làm trong phạm vi cả nước.\n2. Bộ Lao động - Thương binh và Xã hội chịu trách nhiệm trước Chính phủ thực hiện quản lý nhà nước về việc làm.\nBộ, cơ quan ngang bộ trong phạm vi nhiệm vụ, quyền hạn của mình có trách nhiệm phối hợp với Bộ Lao động - Thương binh và Xã hội thực hiện quản lý nhà nước về việc làm.\n3. Ủy ban nhân dân các cấp trong phạm vi nhiệm vụ, quyền hạn của mình, thực hiện quản lý nhà nước về việc làm tại địa phương."
+    ],
+    "answer": "Theo Điều 8 Quy định #1 Nội quy Công ty, Tổng Giám đốc (Anh Bắc) là người đại diện theo pháp luật duy nhất của Công ty A trong mọi giao dịch dân sự, kinh tế và tố tụng. Anh Bắc có toàn quyền quyết định chiến lược truyền thông và đại diện công ty ký kết các văn bản hợp tác chiến lược với các đối tác trong và ngoài nước.\n\nVề phê duyệt chi phí vận hành (OPEX), Tổng Giám đốc có thẩm quyền phê duyệt các khoản chi nằm trong kế hoạch ngân sách năm đã được duyệt mà không giới hạn định mức đơn lẻ. Về đầu tư (CAPEX), Anh Bắc quyết định các dự án đầu tư công nghệ, mua sắm tài sản cố định có giá trị lên đến 20.000.000.000 VNĐ (Hai mươi tỷ đồng) cho mỗi gói thầu/hợp đồng. Các khoản chi vượt định mức này phải trình Hội đồng Quản trị phê duyệt.\n\nVề ký kết hợp đồng kinh tế, Tổng Giám đốc có quyền quyết định cuối cùng trong việc áp dụng hình thức kỷ luật sa thải đối với nhân viên vi phạm quy định tại Điều 7. Anh Bắc cũng là người có quyền tạm dừng hoạt động của bất kỳ dự án hoặc bộ phận nào nếu phát hiện có nguy cơ gây thiệt hại nghiêm trọng về tài chính hoặc uy tín của công ty.\n\nSo sánh với [Văn bản #1] Luật Nhà nước, Tổng Giám đốc (Anh Bắc) có thẩm quyền phê duyệt và đầu tư trong phạm vi quy định tại Quy định Nội quy Công ty cao hơn so với mức tối thiểu được quy định bởi luật pháp nhà nước.",
+    "conversation_id": 7,
+    "user_id": 10,
+    "tenant_id": 6,
+    "timestamp": "2025-12-19T05:27:54.399505"
+  },
+  {
+    "question": "Lương của sếp Bắc là bao nhiêu?",
+    "contexts": [
+      "CHƯƠNG IV: QUY ĐỊNH BẢO MẬT (CONFIDENTIAL)\nĐiều 6. Thông tin thu nhập lãnh đạo (Tuyệt Mật)\n1. Bảng lương của Ban Giám đốc được quản lý riêng biệt.\n2. Cụ thể mức thu nhập năm 2025:\n- Tổng Giám đốc: 800.000.000 VNĐ/tháng (Tám trăm triệu đồng).\n- Phó Tổng Giám đốc: 600.000.000 VNĐ/tháng.\n3. Nghiêm cấm mọi hành vi sao chép, chia sẻ thông tin này ra bên ngoài.",
+      "Chương VI\nĐiều 90. Tiền lương\n1. Tiền lương là số tiền mà người sử dụng lao động trả cho người lao động theo thỏa thuận để thực hiện công việc, bao gồm mức lương theo công việc hoặc chức danh, phụ cấp lương và các khoản bổ sung khác.\n2. Mức lương theo công việc hoặc chức danh không được thấp hơn mức lương tối thiểu.\n3. Người sử dụng lao động phải bảo đảm trả lương bình đẳng, không phân biệt giới tính đối với người lao động làm công việc có giá trị như nhau."
+    ],
+    "answer": "Theo [Quy định #1], mức thu nhập năm 2025 cho Tổng Giám đốc (CEO) là 800.000.000 VNĐ/tháng và Phó Tổng Giám đốc (CFO) là 600.000.000 VNĐ/tháng.\nTheo [Văn bản #1], mức lương theo công việc hoặc chức danh không được thấp hơn mức lương tối thiểu. Tuy nhiên, thông tin này không cung cấp chi tiết về mức lương tối thiểu cho các vị trí lãnh đạo như CEO và CFO. Do đó, so sánh giữa Nội quy Công ty và Luật Nhà nước là không thể thực hiện trong trường hợp này.\nTuy nhiên, nếu người dùng hỏi cụ thể về mức thu nhập của sếp Bắc (CEO hoặc CFO), câu trả lời sẽ là: 800.000.000 VNĐ/tháng cho CEO và 600.000.000 VNĐ/tháng cho CFO.",
+    "conversation_id": 7,
+    "user_id": 10,
+    "tenant_id": 6,
+    "timestamp": "2025-12-19T05:36:07.484565"
+  },
+  {
+    "question": "Công ty thưởng tết 3 tháng có đúng luật không??",
+    "contexts": [
+      "CHƯƠNG III: TIỀN LƯƠNG VÀ THƯỞNG\nĐiều 5. Thưởng Tết Nguyên Đán (Thưởng năm)\n1. Mức thưởng cố định: 03 (ba) tháng lương thực lĩnh cho nhân viên làm đủ 12 tháng.\n2. Thời gian chi trả: Trước ngày nghỉ Tết Âm lịch 10 ngày.\n3. Khoản thưởng này là cam kết cứng, không phụ thuộc vào lợi nhuận công ty.",
+      "Chương VI\nĐiều 104. Thưởng\n1. Thưởng là số tiền hoặc tài sản hoặc bằng các hình thức khác mà người sử dụng lao động thưởng cho người lao động căn cứ vào kết quả sản xuất, kinh doanh, mức độ hoàn thành công việc của người lao động.\n2. Quy chế thưởng do người sử dụng lao động quyết định và công bố công khai tại nơi làm việc sau khi tham khảo ý kiến của tổ chức đại diện người lao động tại cơ sở đối với nơi có tổ chức đại diện người lao động tại cơ sở."
+    ],
+    "answer": "Theo Điều 5 Quy định nội bộ [Quy định #1], công ty đang quy định mức thưởng Tết Nguyên Đán (Thưởng năm) là cố định 03 tháng lương thực lĩnh cho nhân viên làm đủ 12 tháng. Mức này cao hơn so với quy định của Luật Nhà nước tại Điều 104 Văn bản #1, trong đó chỉ nói rằng \"thưởng là số tiền hoặc tài sản hoặc bằng các hình thức khác mà người sử dụng lao động thưởng cho người lao động căn cứ vào kết quả sản xuất, kinh doanh, mức độ hoàn thành công việc của người lao động.\" Do đó, quy định về thưởng tết 3 tháng lương thực lĩnh của Công ty cao hơn so với luật.",
+    "conversation_id": 8,
+    "user_id": 10,
+    "tenant_id": 6,
+    "timestamp": "2025-12-19T05:41:10.890042"
+  },
+  {
+    "question": "Thời gian nghỉ thai sản là mấy tháng?",
+    "contexts": [
+      "CHƯƠNG II: THỜI GIỜ LÀM VIỆC VÀ NGHỈ NGƠI\nĐiều 2. Thời gian làm việc\n1. Thời gian làm việc tiêu chuẩn: Từ 8h30 đến 17h30, từ Thứ 2 đến Thứ 6.\n2. Nghỉ trưa: 12h00 - 13h30 (90 phút).",
+      "Chương X\nĐiều 139. Nghỉ thai sản\n1. Lao động nữ được nghỉ thai sản trước và sau khi sinh con là 06 tháng; thời gian nghỉ trước khi sinh không quá 02 tháng.\nTrường hợp lao động nữ sinh đôi trở lên thì tính từ con thứ 02 trở đi, cứ mỗi con, người mẹ được nghỉ thêm 01 tháng.\n2. Trong thời gian nghỉ thai sản, lao động nữ được hưởng chế độ thai sản theo quy định của pháp luật về bảo hiểm xã hội.\n3. Hết thời gian nghỉ thai sản theo quy định tại khoản 1 Điều này, nếu có nhu cầu, lao động nữ có thể nghỉ thêm một thời gian không hưởng lương sau khi thỏa thuận với người sử dụng lao động.\n4. Trước khi hết thời gian nghỉ thai sản theo quy định tại khoản 1 Điều này, lao động nữ có thể trở lại làm việc khi đã nghỉ ít nhất được 04 tháng nhưng người lao động phải báo trước, được người sử dụng lao động đồng ý và có xác nhận của cơ sở khám bệnh, chữa bệnh có thẩm quyền về việc đi làm sớm không có hại cho sức khỏe của người lao động. Trong trường hợp này, ngoài tiền lương của những ngày làm việc do người sử dụng lao động trả, lao động nữ vẫn tiếp tục được hưởng trợ cấp thai sản theo quy định của pháp luật về bảo hiểm xã hội.\n5. Lao động nam khi vợ sinh con, người lao động nhận nuôi con nuôi dưới 06 tháng tuổi, lao động nữ mang thai hộ và người lao động là người mẹ nhờ mang thai hộ được nghỉ việc hưởng chế độ thai sản theo quy định của pháp luật về bảo hiểm xã hội."
+    ],
+    "answer": "Theo [Quy định #1] trong Nội quy Công ty, thời gian làm việc tiêu chuẩn là từ 8h30 đến 17h30, từ Thứ 2 đến Thứ 6. Tuy nhiên, không có đề cập cụ thể về nghỉ thai sản trong nội quy này. Do đó, chúng ta cần tham khảo [Văn bản #1] của Luật Nhà nước để xác định thời gian nghỉ thai sản.\nTheo Điều 139 của Văn bản #1, lao động nữ được nghỉ thai sản trước và sau khi sinh con là 06 tháng. Thời gian nghỉ trước khi sinh không quá 02 tháng. Do đó, tổng cộng, người mẹ có thể nghỉ thai sản trong vòng 08 tháng (bao gồm cả thời gian nghỉ trước khi sinh).\nSo sánh với mức tối thiểu quy định tại [Văn bản #1], Nội quy Công ty cung cấp một khoảng thời gian nghỉ thai sản dài hơn (06 tháng so với 04 tháng theo Luật Nhà nước). Do đó, nội dung này là \"cao hơn\" theo luật.",
+    "conversation_id": 8,
+    "user_id": 10,
+    "tenant_id": 6,
+    "timestamp": "2025-12-19T05:44:55.673843"
+  },
+  {
+    "question": "Thời gian nghỉ thai sản là mấy tháng?",
+    "contexts": [
+      "Chương X\nĐiều 139. Nghỉ thai sản\n1. Lao động nữ được nghỉ thai sản trước và sau khi sinh con là 06 tháng; thời gian nghỉ trước khi sinh không quá 02 tháng.\nTrường hợp lao động nữ sinh đôi trở lên thì tính từ con thứ 02 trở đi, cứ mỗi con, người mẹ được nghỉ thêm 01 tháng.\n2. Trong thời gian nghỉ thai sản, lao động nữ được hưởng chế độ thai sản theo quy định của pháp luật về bảo hiểm xã hội.\n3. Hết thời gian nghỉ thai sản theo quy định tại khoản 1 Điều này, nếu có nhu cầu, lao động nữ có thể nghỉ thêm một thời gian không hưởng lương sau khi thỏa thuận với người sử dụng lao động.\n4. Trước khi hết thời gian nghỉ thai sản theo quy định tại khoản 1 Điều này, lao động nữ có thể trở lại làm việc khi đã nghỉ ít nhất được 04 tháng nhưng người lao động phải báo trước, được người sử dụng lao động đồng ý và có xác nhận của cơ sở khám bệnh, chữa bệnh có thẩm quyền về việc đi làm sớm không có hại cho sức khỏe của người lao động. Trong trường hợp này, ngoài tiền lương của những ngày làm việc do người sử dụng lao động trả, lao động nữ vẫn tiếp tục được hưởng trợ cấp thai sản theo quy định của pháp luật về bảo hiểm xã hội.\n5. Lao động nam khi vợ sinh con, người lao động nhận nuôi con nuôi dưới 06 tháng tuổi, lao động nữ mang thai hộ và người lao động là người mẹ nhờ mang thai hộ được nghỉ việc hưởng chế độ thai sản theo quy định của pháp luật về bảo hiểm xã hội."
+    ],
+    "answer": "Bước 1: Xác định các thông tin liên quan trong văn bản. Trong trường hợp này, chúng ta cần tìm hiểu về thời gian nghỉ thai sản.\n\nBước 2: Trích xuất thông tin từ văn bản. Theo Điều 139 của Chương X, lao động nữ được nghỉ thai sản trước và sau khi sinh con là 06 tháng.\n\nBước 3: Xây dựng câu trả lời dựa trên các thông tin đã trích xuất. Thời gian nghỉ thai sản là sáu tháng.",
+    "conversation_id": 8,
+    "user_id": 10,
+    "tenant_id": 6,
+    "timestamp": "2025-12-19T07:35:33.695423"
+  },
+  {
+    "question": "Thời gian nghỉ thai sản là mấy tháng?",
+    "contexts": [
+      "Chương X\nĐiều 139. Nghỉ thai sản\n1. Lao động nữ được nghỉ thai sản trước và sau khi sinh con là 06 tháng; thời gian nghỉ trước khi sinh không quá 02 tháng.\nTrường hợp lao động nữ sinh đôi trở lên thì tính từ con thứ 02 trở đi, cứ mỗi con, người mẹ được nghỉ thêm 01 tháng.\n2. Trong thời gian nghỉ thai sản, lao động nữ được hưởng chế độ thai sản theo quy định của pháp luật về bảo hiểm xã hội.\n3. Hết thời gian nghỉ thai sản theo quy định tại khoản 1 Điều này, nếu có nhu cầu, lao động nữ có thể nghỉ thêm một thời gian không hưởng lương sau khi thỏa thuận với người sử dụng lao động.\n4. Trước khi hết thời gian nghỉ thai sản theo quy định tại khoản 1 Điều này, lao động nữ có thể trở lại làm việc khi đã nghỉ ít nhất được 04 tháng nhưng người lao động phải báo trước, được người sử dụng lao động đồng ý và có xác nhận của cơ sở khám bệnh, chữa bệnh có thẩm quyền về việc đi làm sớm không có hại cho sức khỏe của người lao động. Trong trường hợp này, ngoài tiền lương của những ngày làm việc do người sử dụng lao động trả, lao động nữ vẫn tiếp tục được hưởng trợ cấp thai sản theo quy định của pháp luật về bảo hiểm xã hội.\n5. Lao động nam khi vợ sinh con, người lao động nhận nuôi con nuôi dưới 06 tháng tuổi, lao động nữ mang thai hộ và người lao động là người mẹ nhờ mang thai hộ được nghỉ việc hưởng chế độ thai sản theo quy định của pháp luật về bảo hiểm xã hội."
+    ],
+    "answer": "Bước 1: Xác định các thông tin liên quan trong văn bản cho trước. Trong trường hợp này, chúng ta cần tìm hiểu về thời gian nghỉ thai sản.\n\nBước 2: Trích xuất thông tin từ văn bản. Theo Điều 139 của Văn bản #1, lao động nữ được nghỉ thai sản là 06 tháng.\n\nBước 3: Xây dựng câu trả lời dựa trên các thông tin đã trích xuất. Thời gian nghỉ thai sản theo quy định tại Chương X của Văn bản #1 là 06 tháng. (Nguồn: [Văn bản #1])",
+    "conversation_id": 8,
+    "user_id": 10,
+    "tenant_id": 6,
+    "timestamp": "2025-12-19T07:38:58.994207"
+  },
+  {
+    "question": "Thời gian nghỉ thai sản là mấy tháng?",
+    "contexts": [
+      "Chương X\nĐiều 139. Nghỉ thai sản\n1. Lao động nữ được nghỉ thai sản trước và sau khi sinh con là 06 tháng; thời gian nghỉ trước khi sinh không quá 02 tháng.\nTrường hợp lao động nữ sinh đôi trở lên thì tính từ con thứ 02 trở đi, cứ mỗi con, người mẹ được nghỉ thêm 01 tháng.\n2. Trong thời gian nghỉ thai sản, lao động nữ được hưởng chế độ thai sản theo quy định của pháp luật về bảo hiểm xã hội.\n3. Hết thời gian nghỉ thai sản theo quy định tại khoản 1 Điều này, nếu có nhu cầu, lao động nữ có thể nghỉ thêm một thời gian không hưởng lương sau khi thỏa thuận với người sử dụng lao động.\n4. Trước khi hết thời gian nghỉ thai sản theo quy định tại khoản 1 Điều này, lao động nữ có thể trở lại làm việc khi đã nghỉ ít nhất được 04 tháng nhưng người lao động phải báo trước, được người sử dụng lao động đồng ý và có xác nhận của cơ sở khám bệnh, chữa bệnh có thẩm quyền về việc đi làm sớm không có hại cho sức khỏe của người lao động. Trong trường hợp này, ngoài tiền lương của những ngày làm việc do người sử dụng lao động trả, lao động nữ vẫn tiếp tục được hưởng trợ cấp thai sản theo quy định của pháp luật về bảo hiểm xã hội.\n5. Lao động nam khi vợ sinh con, người lao động nhận nuôi con nuôi dưới 06 tháng tuổi, lao động nữ mang thai hộ và người lao động là người mẹ nhờ mang thai hộ được nghỉ việc hưởng chế độ thai sản theo quy định của pháp luật về bảo hiểm xã hội."
+    ],
+    "answer": "Bước 1: Xác định các thông tin liên quan trong văn bản cho trước. Trong trường hợp này, chúng ta cần tìm hiểu về thời gian nghỉ thai sản.\n\nBước 2: Trích xuất thông tin từ văn bản. Theo Điều 139 của Văn bản #1, lao động nữ được nghỉ thai sản là 06 tháng.\n\nBước 3: Xây dựng câu trả lời dựa trên các thông tin đã trích xuất. Thời gian nghỉ thai sản theo quy định tại Chương X của Văn bản #1 là 06 tháng. (Nguồn: [Văn bản #1])",
+    "conversation_id": 8,
+    "user_id": 10,
+    "tenant_id": 6,
+    "timestamp": "2025-12-19T07:42:22.736104"
+  }
+]
