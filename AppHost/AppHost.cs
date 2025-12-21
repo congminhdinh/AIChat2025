@@ -15,4 +15,7 @@ builder.AddProject<ApiGateway>("apigateway")
        .WithReference(chatService);
 
 //.WithExternalHttpEndpoints();
+builder.AddProject<Projects.WebApp>("webapp");
+
+//.WithExternalHttpEndpoints();
 builder.Build().Run();

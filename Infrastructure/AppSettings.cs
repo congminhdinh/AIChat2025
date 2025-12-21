@@ -5,6 +5,11 @@
     public class AppSettings
     {
         public string ApiGatewayUrl { get; set; }
+
+        //Tenant Service Configuration
+
+        public string TenantHash { get; set; }
+        // Document Embedding Configuration
         public string DocumentFilePath { get; set; }
         public string EmbeddingServiceUrl { get; set; }
         public string RegexHeading1 { get; set; }
