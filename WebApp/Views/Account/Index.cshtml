@@ -1,0 +1,273 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Account</title>
+    <style>
+        :root {
+            --primary-color: #0d6efd; /* Xanh dương đậm */
+            --bg-color: #f3f6f9;      /* Màu nền tổng thể */
+            --table-head-bg: #e8f0fe; /* Màu nền header bảng */
+            --text-color: #333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        /* --- HEADER (Giữ 4 tab của bạn) --- */
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0 20px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-right: 40px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            flex-grow: 1;
+        }
+
+        .nav-item {
+            padding: 8px 16px;
+            text-decoration: none;
+            color: white;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Tab đang active (ví dụ Tab 3 là Account) */
+        .nav-item.active {
+            background-color: white;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .user-profile {
+            font-size: 1.5rem; /* Icon user giả lập */
+        }
+
+        /* --- MAIN CONTENT --- */
+        .container {
+            padding: 20px 40px;
+            background-color: white;
+            margin: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            min-height: 80vh;
+        }
+
+        /* Top Bar: Title + Button */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .btn-create {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px; /* Bo tròn kiểu pill */
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* --- TABLE --- */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: var(--table-head-bg);
+            text-align: left;
+            padding: 15px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        /* Actions Icons */
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            margin-right: 5px;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+        }
+
+        .btn-edit { background-color: #e3f2fd; color: #0d6efd; } /* Xanh nhạt */
+        .btn-key { background-color: #e3f2fd; color: #0d6efd; }
+        .btn-delete { background-color: #fce8e6; color: #dc3545; } /* Đỏ nhạt */
+
+        /* --- PAGINATION --- */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 5px;
+        }
+
+        .page-link {
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            color: #555;
+            text-decoration: none;
+        }
+
+        .page-link.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="logo">LOGO APP</div>
+        <nav class="nav-tabs">
+            <a href="#" class="nav-item">Dashboard</a>
+            <a href="#" class="nav-item">Tài liệu</a>
+            <a href="#" class="nav-item active">Quản lý Account</a> <a href="#" class="nav-item">Cấu hình</a>
+        </nav>
+        <div class="user-profile">👤</div>
+    </header>
+
+    <div class="container">
+        <div class="page-header">
+            <div class="page-title">Danh sách user</div>
+            <button class="btn-create">
+                <span>+</span> Tạo user mới
+            </button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">STT</th>
+                        <th>Tên user</th>
+                        <th>Tên tài khoản</th>
+                        <th>Email</th>
+                        <th>Thời gian tạo</th>
+                        <th style="width: 150px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>Dương Thế Lương</td>
+                        <td>luongdt</td>
+                        <td>luong.duong@vtc.vn</td>
+                        <td>09/11/2023 12:00</td>
+                        <td>
+                            <a href="#" class="action-btn btn-edit">✏️</a>
+                            <a href="#" class="action-btn btn-key">🔑</a>
+                            <a href="#" class="action-btn btn-delete">🗑️</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>Hung Pham</td>
+                        <td>hungpham13</td>
+                        <td>hungpham@vtc.vn</td>
+                        <td>09/11/2023 12:00</td>
+                        <td>
+                            <a href="#" class="action-btn btn-edit">✏️</a>
+                            <a href="#" class="action-btn btn-key">🔑</a>
+                            <a href="#" class="action-btn btn-delete">🗑️</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>Administrator</td>
+                        <td>admin</td>
+                        <td>admin@gmail.com</td>
+                        <td>09/11/2023 12:00</td>
+                        <td>
+                            <a href="#" class="action-btn btn-edit">✏️</a>
+                            <a href="#" class="action-btn btn-key">🔑</a>
+                            <a href="#" class="action-btn btn-delete">🗑️</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <a href="#" class="page-link">&laquo;</a>
+            <a href="#" class="page-link active">1</a>
+            <a href="#" class="page-link">2</a>
+            <a href="#" class="page-link">3</a>
+            <a href="#" class="page-link">...</a>
+            <a href="#" class="page-link">10</a>
+            <a href="#" class="page-link">&raquo;</a>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -21,24 +21,24 @@ namespace AccountService.Features
             _tokenClaimsService = tokenClaimsService;
             _currentTenantProvider = currentTenantProvider;
         }
-        public async Task<BaseResponse<TokenDto>> Register(RegisterRequest input, int tenantId)
-        {
-            _currentTenantProvider.SetTenantId(tenantId);
+        //public async Task<BaseResponse<TokenDto>> Register(RegisterRequest input, int tenantId)
+        //{
+        //    _currentTenantProvider.SetTenantId(tenantId);
 
-            var isExisted = await _repository.AnyAsync(new AccountSpecification(input.Email, tenantId));
-            if (isExisted)
-            {
-                throw new Exception("Email already exists");
-            }
-            var account = new Account(input.Email, input.Password, input.Name, null, tenantId)
-            {
-                TenantId = tenantId
-            };
-            await _repository.AddAsync(account);
-            await _repository.SaveChangesAsync();
-            var token = _tokenClaimsService.GetTokenAsync(tenantId, account.Id, account.Email, AuthorizationConstants.SCOPE_WEB, false);
-            return new BaseResponse<TokenDto>(new TokenDto(token.AccessToken, token.RefreshToken, token.ExpiresAt), input.CorrelationId());
-        }
+        //    var isExisted = await _repository.AnyAsync(new AccountSpecification(input.Email, tenantId));
+        //    if (isExisted)
+        //    {
+        //        throw new Exception("Email already exists");
+        //    }
+        //    var account = new Account(input.Email, input.Password, input.Name, null, tenantId)
+        //    {
+        //        TenantId = tenantId
+        //    };
+        //    await _repository.AddAsync(account);
+        //    await _repository.SaveChangesAsync();
+        //    var token = _tokenClaimsService.GetTokenAsync(tenantId, account.Id, account.Email, AuthorizationConstants.SCOPE_WEB, false);
+        //    return new BaseResponse<TokenDto>(new TokenDto(token.AccessToken, token.RefreshToken, token.ExpiresAt), input.CorrelationId());
+        //}
 
         public async Task<BaseResponse<TokenDto>> Login(LoginRequest input, int tenantId)
         {
@@ -48,6 +48,10 @@ namespace AccountService.Features
             if (account == null || !PasswordHasher.VerifyPassword(input.Password, account.Password))
             {
                 throw new Exception("Invalid email or password");
+            }
+            if (!account.IsActive || !account.TenancyActive)
+            {
+                throw new Exception("Account is inactive");
             }
             var token = _tokenClaimsService.GetTokenAsync(tenantId, account.Id, account.Email, AuthorizationConstants.SCOPE_WEB, account.IsAdmin);
             return new BaseResponse<TokenDto>(new TokenDto(token.AccessToken, token.RefreshToken, token.ExpiresAt), input.CorrelationId());

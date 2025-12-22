@@ -9,13 +9,14 @@ namespace AccountService.Entities
         {
             
         }
-        public Account(string email, string password, string name, string? avatar, int tenantId)
+        public Account(string email, string password, string name, string? avatar, int tenantId, string? permissions)
         {
             Email = email;
             Password = PasswordHasher.HashPassword(password);
             Name = name;
             Avatar = avatar;
             TenantId = tenantId;
+            Permissions = permissions;
         }
 
         public string Email { get; set; }
@@ -25,6 +26,7 @@ namespace AccountService.Entities
         public bool IsAdmin { get; set; } = false;
         public bool IsActive { get; set; } = true;
         public bool TenancyActive { get; set; } = true;
+        public string? Permissions { get; set; }
 
     }
 }

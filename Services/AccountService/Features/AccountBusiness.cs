@@ -44,7 +44,7 @@ namespace AccountService.Features
             {
                 throw new Exception("Account not found");
             }
-            var accountDto = new AccountDto(account.Id, account.Email, account.Name, account.Avatar, account.IsAdmin, account.IsActive);
+            var accountDto = new AccountDto(account.Id, account.Email, account.Name, account.Avatar, account.IsAdmin, account.IsActive, account.Permissions);
             return new BaseResponse<AccountDto>(accountDto, input.CorrelationId());
         }
 
@@ -59,7 +59,7 @@ namespace AccountService.Features
             var accounts = await _repository.ListAsync(spec);
             var count = await _repository.CountAsync(new AccountListSpec(tenantId, input.Name, input.Email));
 
-            var accountDtos = accounts.Select(account => new AccountDto(account.Id, account.Email, account.Name, account.Avatar, account.IsAdmin, account.IsActive)).ToList();
+            var accountDtos = accounts.Select(account => new AccountDto(account.Id, account.Email, account.Name, account.Avatar, account.IsAdmin, account.IsActive, account.Permissions)).ToList();
             return new BaseResponse<PaginatedList<AccountDto>>(new PaginatedList<AccountDto>(accountDtos, count, input.PageIndex, input.PageSize), input.CorrelationId());
         }
 
@@ -75,7 +75,8 @@ namespace AccountService.Features
             {
                 throw new Exception("Account with this email already exists");
             }
-            var newAccount = new Account(input.Email, input.Password, input.Name, null, tenantId); ///123456 is default password
+            var permissions = input.PermissionsList.Any() ? string.Join(",", input.PermissionsList) : null;
+            var newAccount = new Account(input.Email, input.Password, input.Name, null, tenantId, permissions); ///123456 is default password
             await _repository.AddAsync(newAccount);
             return new BaseResponse<int>(newAccount.Id, input.CorrelationId());
         }
@@ -128,7 +129,7 @@ namespace AccountService.Features
             {
                 throw new Exception("Account with this email already exists");
             }
-            var newAccount = new Account(input.Email, input.Password, input.Name, null, input.TenantId)
+            var newAccount = new Account(input.Email, input.Password, input.Name, null, input.TenantId, null)
             {
                 IsAdmin = true
             };
