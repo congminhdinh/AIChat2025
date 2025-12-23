@@ -6,6 +6,7 @@ using ChatService.Features;
 using ChatService.Hubs;
 using Infrastructure;
 using Infrastructure.Database;
+using Infrastructure.Web;
 using MassTransit;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 
@@ -13,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.ConfigureAppSettings();
 
 builder.AddInfrastructure();
+builder.AddCustomOpenApi();
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.ConfigureEndpointDefaults(defaults =>
@@ -98,6 +100,7 @@ app.UseSwaggerUI();
 
 app.UseCors();
 app.UseInfrastructure();
+app.MapOpenApi();
 
 // Map SignalR Hub
 app.MapHub<ChatHub>("/hubs/chat");

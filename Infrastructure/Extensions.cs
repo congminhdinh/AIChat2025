@@ -41,7 +41,7 @@ namespace Infrastructure
                 new CurrentTenantProvider(sp.GetRequiredService<ICurrentUserProvider>()));
             builder.Services.AddHttpContextAccessor();
             builder.AddCustomAuthorization();
-            builder.AddCustomOpenApi();
+            //builder.AddCustomOpenApi();
             builder.Services.AddAntiforgery();
 
         }
@@ -50,7 +50,7 @@ namespace Infrastructure
         {
             app.UseCustomAuthentication();
             app.UseMiddleware<ExceptionMiddleware>();
-            app.MapOpenApi();
+            //app.MapOpenApi();
             app.UseAntiforgery();
             app.UseStatusCodePages(async statusCodeContext =>
             {

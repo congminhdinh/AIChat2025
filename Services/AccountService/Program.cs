@@ -1,15 +1,15 @@
 using AccountService.Data;
 using AccountService.Endpoints;
-using AccountService.Endpoints;
 using AccountService.Features;
 using Infrastructure;
 using Infrastructure.Database;
+using Infrastructure.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.ConfigureAppSettings();
 builder.AddInfrastructure();
-
+builder.AddCustomOpenApi();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped(typeof(IReadRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped<AccountBusiness>();
@@ -24,6 +24,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseInfrastructure();
+app.MapOpenApi();
 app.MapAuthEndpoints();
 app.MapAccountEndpoints();
 //app.MapControllers();
