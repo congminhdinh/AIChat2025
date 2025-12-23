@@ -73,6 +73,16 @@ public class CurrentUserProvider(IHttpContextAccessor httpContextAccessor) : ICu
 
     private string? GetToken()
     {
+        // First try to get token from cookie claims (for MVC views)
+        var tokenFromClaim = _httpContextAccessor?.HttpContext?.User?
+            .FindFirstValue("AccessToken");
+
+        if (!string.IsNullOrEmpty(tokenFromClaim))
+        {
+            return tokenFromClaim;
+        }
+
+        // Fallback to Authorization header (for API calls)
         var authHeader = _httpContextAccessor?.HttpContext?.Request?.Headers["Authorization"].ToString();
         if (string.IsNullOrEmpty(authHeader))
             return null;

@@ -1,0 +1,53 @@
+Context: I am building an ASP.NET Core MVC Web Application (WebApp) that references an Infrastructure project. I need to implement the Login flow connecting the UI to a backend microservice.
+
+Resources & Files:
+
+View: Views/Auth/Login.cshtml (Analyze this file to identify DOM elements for the JS).
+
+JS: wwwroot/Scripts/Auth/Login.js.
+
+Business Service: Services/AuthBusiness.cs (Inside WebApp).
+
+Controller: Controllers/AuthController.cs.
+
+Infrastructure Service: Infrastructure.Services.TokenClaimsService (Existing service used to parse tokens into Claims).
+
+Implementation Requirements:
+
+1. Login.js:
+
+Analyze the Login.cshtml view to find the correct IDs for username, password, and the submit button.
+
+Implement the form submission using vanilla JS (or Fetch API).
+
+Show a loading state (disable button/change text) while processing.
+
+Call the AuthController's POST action via AJAX.
+
+Handle redirection on success or display error messages on failure.
+
+2. AuthBusiness.cs:
+
+Implement LoginAsync to call the external AccountServices API (POST /api/auth/login).
+
+Return a result model containing the JWT (Access Token).
+
+3. AuthController.cs (Crucial Logic):
+
+Create a POST action Login.
+
+Inject AuthBusiness and the TokenClaimsService (from the Infrastructure project).
+
+Logic Flow:
+
+Call AuthBusiness.LoginAsync.
+
+If successful, do not manually create claims. Instead, use the injected TokenClaimsService to parse the returned JWT and retrieve the list of Claim.
+
+Create the ClaimsPrincipal using CookieAuthenticationDefaults.AuthenticationScheme.
+
+Token Storage: You must store the raw Access Token inside the AuthenticationProperties (using .StoreTokens with the name "access_token"). This is required for our infrastructure's DelegatingHandler to forward the token in future requests.
+
+Call HttpContext.SignInAsync and return a JSON success response.
+
+Note: Ensure the code strictly follows the dependency injection pattern and keeps the Controller clean by delegating logic to the services.
