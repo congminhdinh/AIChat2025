@@ -1,24 +1,25 @@
 ﻿using Infrastructure;
+using Infrastructure.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using WebApp.Business;
+using WebApp.Helpers;
 using WebApp.Requests;
-using WebApp.Services;
 
 namespace WebApp.Controllers
 {
     public class AuthController: Controller
     {
         private readonly AuthBusiness _authBusiness;
-        private readonly IJwtTokenParser _jwtTokenParser;
+        private readonly IdentityHelper _identityHelper;
 
-        public AuthController(AuthBusiness authBusiness, IJwtTokenParser jwtTokenParser)
+        public AuthController(AuthBusiness authBusiness, IdentityHelper identityHelper)
         {
             _authBusiness = authBusiness;
-            _jwtTokenParser = jwtTokenParser;
+            _identityHelper = identityHelper;
         }
 
         [AllowAnonymous]
@@ -34,52 +35,18 @@ namespace WebApp.Controllers
         {
             try
             {
-                // Call AuthBusiness to login
                 var response = await _authBusiness.LoginAsync(input, cancellationToken);
 
                 // Check if login was successful
                 if (response.Status == BaseResponseStatus.Success && response.Data != null)
                 {
-                    var tokenData = response.Data;
-
-                    // Parse JWT to extract claims using the injected TokenClaimsService
-                    var jwtClaims = _jwtTokenParser.ParseAccessToken(tokenData.AccessToken);
-
-                    // Create claims for the authenticated user (do not manually add token claims)
-                    var claims = new List<Claim>
-                    {
-                        new Claim(ClaimTypes.Email, input.Email)
-                    };
-
-                    // Add JWT claims (UserId, Username, TenantId, Scope, IsAdmin)
-                    claims.AddRange(jwtClaims);
-
-                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-                    // Store the raw Access Token in AuthenticationProperties
-                    // This is required for the infrastructure's DelegatingHandler to forward the token
-                    var authProperties = new AuthenticationProperties
-                    {
-                        IsPersistent = true, // Keep user logged in across browser sessions
-                        ExpiresUtc = tokenData.ExpiresAt
-                    };
-
-                    // Store tokens using StoreTokens
-                    authProperties.StoreTokens(new[]
-                    {
-                        new AuthenticationToken { Name = "access_token", Value = tokenData.AccessToken },
-                        new AuthenticationToken { Name = "refresh_token", Value = tokenData.RefreshToken },
-                        new AuthenticationToken { Name = "expires_at", Value = tokenData.ExpiresAt.ToString("o") }
-                    });
-
-                    // Sign in the user with cookie authentication
-                    await HttpContext.SignInAsync(
-                        CookieAuthenticationDefaults.AuthenticationScheme,
-                        new ClaimsPrincipal(claimsIdentity),
-                        authProperties
-                    );
-
-                    // Return success response
+                    _identityHelper.SetAuthen(
+                        tenantId: response.Data.TenantId,
+                        userId: response.Data.UserId,
+                        username: response.Data.Username,
+                        scope: response.Data.Scope,
+                        isAdmin: response.Data.IsAdmin
+                    ).Wait();
                     return Json(new
                     {
                         success = true,

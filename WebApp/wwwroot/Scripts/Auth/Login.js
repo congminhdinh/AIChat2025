@@ -12,7 +12,7 @@
         // Handle form submission
         loginForm.addEventListener('submit', async function (e) {
             e.preventDefault();
-
+            document.querySelector('.btn-submit').disabled = true;
             // Get form values
             const username = usernameInput.value.trim();
             const password = passwordInput.value.trim();

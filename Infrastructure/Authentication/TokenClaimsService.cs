@@ -1,4 +1,6 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -26,7 +28,7 @@ namespace Infrastructure.Authentication
             var expires = DateTime.Now.AddDays(7);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(claims),
+                Subject = new ClaimsIdentity(claims, "AIChat2025"),
                 Expires = expires,
                 SigningCredentials = creds
             };
@@ -35,10 +37,17 @@ namespace Infrastructure.Authentication
                 AccessToken: tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor)),
                 RefreshToken: Guid.NewGuid().ToString().Replace("-", ""),
                 ExpiresIn: (long)(expires - DateTime.Now).TotalSeconds,
-                ExpiresAt: expires
+                ExpiresAt: expires, 
+                TenantId: tenantId,
+                UserId: userId,
+                Username: username,
+                Scope: scope,
+                IsAdmin: isAdmin
+
             );
         }
-        
+
     }
-    public record TokenResponseDto(string AccessToken, string RefreshToken, long ExpiresIn, DateTime ExpiresAt);
+
+    public record TokenResponseDto(string AccessToken, string RefreshToken, long ExpiresIn, DateTime ExpiresAt, int TenantId, int UserId, string Username, string Scope, bool IsAdmin);
 }

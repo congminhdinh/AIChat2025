@@ -1,16 +1,13 @@
 using Infrastructure;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using WebApp.Business;
-using WebApp.Services;
-
+using WebApp.Helpers;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.ConfigureAppSettings();
 // Add services to the container.
+builder.Services.AddScoped<IdentityHelper>();
 builder.AddInfrastructure();
-
-// Register JWT Token Parser
-builder.Services.AddScoped<IJwtTokenParser, JwtTokenParser>();
 
 // Configure Cookie Authentication for WebApp (in addition to JWT from infrastructure)
 builder.Services.ConfigureApplicationCookie(options =>
