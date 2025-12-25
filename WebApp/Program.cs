@@ -70,9 +70,17 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 
+// Root route - explicitly handle root URL to go to login
+app.MapControllerRoute(
+    name: "root",
+    pattern: "",
+    defaults: new { controller = "Auth", action = "Login" })
+    .WithStaticAssets();
+
+// Default route - all other controllers default to Index action
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Auth}/{action=Login}/{id?}")
+    pattern: "{controller}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 

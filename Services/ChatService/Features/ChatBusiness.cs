@@ -101,7 +101,7 @@ public class ChatBusiness
             LastMessageAt = conversation.LastMessageAt,
             MessageCount = conversation.Messages.Count,
             Messages = conversation.Messages
-                .OrderBy(m => m.Timestamp)
+                .OrderByDescending(m => m.Timestamp)
                 .Select(m => new MessageDto
                 {
                     Id = m.Id,

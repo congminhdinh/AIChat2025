@@ -1,0 +1,447 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - AI Chat 2025</title>
+    <style>
+        /* --- STYLE GIỮ NGUYÊN TỪ THIẾT KẾ CŨ --- */
+        :root {
+            --primary-color: #0d6efd;
+            --bg-color: #f3f6f9;
+            --text-color: #333;
+            --sidebar-width: 280px;
+            --chat-bubble-user: #e9ecef;
+            --chat-bubble-bot: #ffffff;
+            --border-color: #e0e0e0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- HEADER --- */
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0 20px;
+            height: 60px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .logo {
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-right: 40px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            flex-grow: 1;
+        }
+
+        .nav-item {
+            padding: 8px 16px;
+            text-decoration: none;
+            color: white;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+            .nav-item:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+            }
+
+            .nav-item.active {
+                background-color: white;
+                color: var(--primary-color);
+                font-weight: 600;
+            }
+
+        .user-profile {
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* --- MAIN LAYOUT --- */
+        .main-container {
+            display: flex;
+            flex-grow: 1;
+            height: calc(100vh - 60px);
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: #fff;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+        }
+
+        .new-chat-btn {
+            background-color: #e7f1ff;
+            color: var(--primary-color);
+            border: 1px solid #cce5ff;
+            padding: 12px; /* Tăng padding một chút cho nút to hơn */
+            border-radius: 25px; /* Bo tròn kiểu Pill giống Gemini */
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Căn giữa nội dung nút */
+            gap: 8px;
+            margin-bottom: 20px;
+            transition: all 0.2s;
+        }
+
+            .new-chat-btn:hover {
+                background-color: #dbeaff;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+
+        .history-title {
+            font-size: 0.85rem;
+            color: #888;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .history-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            list-style: none;
+        }
+
+        .history-item {
+            padding: 10px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #444;
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+            transition: background 0.2s;
+        }
+
+            .history-item:hover {
+                background-color: #f8f9fa;
+            }
+
+            .history-item.active {
+                background-color: #e7f1ff;
+                color: var(--primary-color);
+                font-weight: 500;
+            }
+
+        .history-icon {
+            font-size: 1.1rem;
+        }
+
+        /* (Đã xóa Sidebar Footer) */
+
+        /* --- CHAT AREA --- */
+        .chat-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #fff;
+            margin: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            overflow: hidden;
+            position: relative; /* Để căn chỉnh các thành phần con */
+        }
+
+        /* (Đã xóa Chat Header) */
+
+        /* Chat Content */
+        .chat-content {
+            flex-grow: 1;
+            padding: 20px;
+            padding-top: 30px; /* Thêm padding top vì đã bỏ header */
+            overflow-y: auto;
+            background-color: #fff; /* Chuyển nền sang trắng hoàn toàn cho sạch */
+        }
+
+        /* Message Bubble */
+        .message {
+            display: flex;
+            margin-bottom: 25px; /* Tăng khoảng cách giữa các tin nhắn */
+            align-items: flex-start;
+        }
+
+            .message.user {
+                flex-direction: row-reverse;
+            }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.1rem;
+        }
+
+            .avatar.bot {
+                background-color: var(--primary-color);
+                color: white;
+                margin-right: 15px;
+            }
+
+            .avatar.user {
+                background-color: #ddd;
+                color: #555;
+                margin-left: 15px;
+            }
+
+        .msg-bubble {
+            max-width: 75%;
+            padding: 0; /* Bỏ padding bao quanh text bot để nhìn tự nhiên hơn giống Gemini */
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #1f1f1f;
+        }
+
+        /* Riêng tin nhắn User thì cần Bubble màu nền */
+        .message.user .msg-bubble {
+            background-color: #e9ecef;
+            padding: 12px 16px;
+            border-radius: 20px;
+            border-top-right-radius: 4px;
+        }
+
+        /* Tin nhắn Bot thì không cần nền, chỉ text */
+        .message.bot .msg-bubble {
+            background-color: transparent;
+            border: none;
+        }
+
+        .msg-time {
+            display: none; /* Ẩn thời gian cho gọn giống style chat hiện đại, hover mới hiện nếu cần */
+        }
+
+        /* Ref Box */
+        .ref-box {
+            margin-top: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.9rem;
+        }
+
+        .ref-title {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .ref-link {
+            display: block;
+            color: var(--primary-color);
+            text-decoration: none;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+            .ref-link:hover {
+                text-decoration: underline;
+            }
+
+        /* Chat Input Area */
+        .chat-input-area {
+            padding: 20px;
+            background-color: #fff;
+            /* border-top: 1px solid var(--border-color); -> Bỏ border top nhìn cho liền mạch */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .input-wrapper {
+            width: 100%;
+            max-width: 800px; /* Giới hạn chiều rộng input giống Gemini */
+            position: relative;
+            background-color: #f0f4f9; /* Màu nền input xám nhẹ */
+            border-radius: 25px;
+            padding: 5px;
+            transition: background 0.2s;
+        }
+
+            .input-wrapper:focus-within {
+                background-color: #e9ecef;
+                box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+            }
+
+        .chat-input {
+            width: 100%;
+            padding: 12px 50px 12px 20px;
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 1rem;
+            color: #333;
+        }
+
+        .btn-send {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: transparent;
+            border: none;
+            color: var(--primary-color);
+            font-size: 1.4rem;
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .btn-send:hover {
+                opacity: 0.8;
+            }
+
+        .helper-text {
+            font-size: 0.75rem;
+            color: #999;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="logo">AI CHAT 2025</div>
+        <nav class="nav-tabs">
+            <a href="#" class="nav-item active">Chat</a>
+            <a href="#" class="nav-item">Tài liệu</a>
+            <a href="#" class="nav-item">Quản lý Account</a>
+            <a href="#" class="nav-item">Cấu hình</a>
+        </nav>
+        <div class="user-profile">👤</div>
+    </header>
+
+    <div class="main-container">
+
+        <aside class="sidebar">
+            <button class="new-chat-btn">
+                <span>+</span> Cuộc trò chuyện mới
+            </button>
+
+            <div class="history-title">Gần đây</div>
+            <ul class="history-list">
+                <li class="history-item active">
+                    <span class="history-icon">💬</span>
+                    <span>Hỗ trợ lỗi đăng nhập</span>
+                </li>
+                <li class="history-item">
+                    <span class="history-icon">💬</span>
+                    <span>Quy trình thanh toán</span>
+                </li>
+                <li class="history-item">
+                    <span class="history-icon">💬</span>
+                    <span>Cấu hình API Key</span>
+                </li>
+                <li class="history-item">
+                    <span class="history-icon">💬</span>
+                    <span>Lịch sử chat 28/12</span>
+                </li>
+            </ul>
+
+        </aside>
+
+        <main class="chat-area">
+
+            <div class="chat-content">
+
+                <div class="message user">
+                    <div class="msg-bubble">
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit?
+                    </div>
+                    <div class="avatar user">👤</div>
+                </div>
+
+                <div class="message bot">
+                    <div class="avatar bot">✨</div> <div class="msg-bubble">
+                        Nibh nisl condimentum id venenatis a condimentum vitae sapien pellentesque. Phasellus vestibulum lor Lorem ipsum dolor sit amet.
+
+                        <div class="ref-box">
+                            <div class="ref-title">Nguồn tham khảo:</div>
+                            <a href="#" class="ref-link">1. Thang_10_2023_go_the_vang.docx - Trang 12</a>
+                            <a href="#" class="ref-link">2. 490_QD-BTTTT_561639.docx - Trang 5</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="message user">
+                    <div class="msg-bubble">
+                        Nibh nisl condimentum id venenatis a condimentum vitae?
+                    </div>
+                    <div class="avatar user">👤</div>
+                </div>
+
+                <div class="message bot">
+                    <div class="avatar bot">✨</div>
+                    <div class="msg-bubble">
+                        Id venenatis a condimentum vitae sapien pellentesque. Phasellus vestibulum lor Lorem ipsum dolor sit amet, consectetur adipiscing.
+
+                        <div class="ref-box">
+                            <div class="ref-title">Nguồn tham khảo:</div>
+                            <a href="#" class="ref-link">1. 52_2016_QD-TTg_333209.docx - Trang 1</a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="chat-input-area">
+                <div class="input-wrapper">
+                    <input type="text" class="chat-input" placeholder="Nhập câu hỏi cho AI...">
+                    <button class="btn-send">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
+                </div>
+                <p class="helper-text">AI có thể đưa ra thông tin không chính xác, hãy kiểm chứng lại.</p>
+            </div>
+        </main>
+
+    </div>
+
+</body>
+</html>

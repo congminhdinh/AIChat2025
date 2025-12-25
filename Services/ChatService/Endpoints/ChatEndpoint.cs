@@ -21,7 +21,7 @@ namespace ChatService.Endpoints
                 return await chatBusiness.CreateConversationAsync(input);
             });
 
-            group.MapGet("/conversations/user", async (ChatBusiness chatBusiness) =>
+            group.MapGet("/conversations/list", async (ChatBusiness chatBusiness) =>
             {
                 return await chatBusiness.GetConversationsAsync();
             });
