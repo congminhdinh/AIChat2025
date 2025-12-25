@@ -19,10 +19,10 @@ namespace Infrastructure.Authentication
             {
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
                 new Claim(ClaimTypes.Name, username),
-                new Claim(AuthorizationConstants.TOKEN_CLAIMS_TENANT, tenantId.ToString()),
+                new Claim(AuthorizationConstants.TOKEN_CLAIMS_TENANT, $"{tenantId}"),
                 new Claim(AuthorizationConstants.POLICY_ADMIN, isAdmin == false? "False": "True"),
                 new(AuthorizationConstants.TOKEN_CLAIMS_TYPE_SCOPE, $"{scope}"),
-                new(AuthorizationConstants.TOKEN_CLAIMS_TENANT, $"{tenantId}"),
+                new Claim(AuthorizationConstants.TOKEN_CLAIMS_USER, $"{userId}"),
             };
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var expires = DateTime.Now.AddDays(7);

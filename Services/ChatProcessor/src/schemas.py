@@ -10,8 +10,7 @@ class UserPromptReceivedMessage(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     conversation_id: int = Field(alias='conversationId')
     message: str
-    user_id: int = Field(alias='userId')
-    tenant_id: Optional[int] = Field(default=0, alias='tenantId')
+    token: str
     timestamp: Optional[datetime] = Field(default_factory=datetime.utcnow)
     system_instruction: Optional[List[PromptConfigDto]] = Field(default_factory=list, alias='systemInstruction')
 
@@ -19,8 +18,7 @@ class BotResponseCreatedMessage(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     conversation_id: int = Field(alias='conversationId')
     message: str
-    user_id: int = Field(alias='userId')
-    tenant_id: int = Field(alias='tenantId')
+    token: str
     timestamp: Optional[datetime] = Field(default_factory=datetime.utcnow)
     model_used: Optional[str] = Field(default=None, alias='modelUsed')
 

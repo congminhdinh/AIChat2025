@@ -5,6 +5,7 @@ using ChatService.Enums;
 using ChatService.Events;
 using ChatService.Requests;
 using ChatService.Specifications;
+using Infrastructure.Authentication;
 using Infrastructure.Tenancy;
 using Infrastructure.Web;
 using MassTransit;
@@ -151,9 +152,8 @@ public class ChatBusiness
         {
             ConversationId = request.ConversationId,
             Message = request.Message,
-            UserId = userId,
+            Token = _currentUserProvider.Token?? string.Empty,
             Timestamp = message.Timestamp,
-            TenantId = _currentUserProvider.TenantId,
             SystemInstruction = systemInstructions
         };
         _logger.LogInformation($"Publishing UserPromptReceivedEvent: {JsonSerializer.Serialize(userPromptEvent)}");
@@ -172,9 +172,12 @@ public class ChatBusiness
     public async Task<MessageDto> SaveBotMessageAsync(BotResponseCreatedEvent botResponse, CancellationToken ct = default)
     {
         _logger.LogInformation($"Saving bot response: {JsonSerializer.Serialize(botResponse)}");
-        var message = new ChatMessage(botResponse.ConversationId, botResponse.Message, botResponse.UserId)
+        var tokenInfo = TokenDecoder.DecodeJwtToken(botResponse.Token);
+        var userId = TokenDecoder.GetUserId(tokenInfo); 
+        var tenantId = TokenDecoder.GetTenantId(tokenInfo);
+        var message = new ChatMessage(botResponse.ConversationId, botResponse.Message, userId)
         {
-            TenantId = botResponse.TenantId, // Use TenantId from the event (passed through RabbitMQ)
+            TenantId = tenantId,
             Timestamp = botResponse.Timestamp,
             Type = ChatType.Response
         };

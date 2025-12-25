@@ -91,5 +91,28 @@
     "user_id": 10,
     "tenant_id": 6,
     "timestamp": "2025-12-19T07:42:22.736104"
+  },
+  {
+    "question": "Đi làm ngoài giờ được trả lương thêm bao nhiêu phần trăm?",
+    "contexts": [
+      "CHƯƠNG II: THỜI GIỜ LÀM VIỆC VÀ NGHỈ NGƠI\nĐiều 3. Làm thêm giờ (OT)\n1. Công ty hạn chế tối đa việc làm thêm giờ.\n2. Mức chi trả lương làm thêm giờ (Cao hơn luật định):\na) Làm thêm vào ngày thường: 160% lương thực trả (Luật quy định tối thiểu 150%).\nb) Làm thêm vào ngày nghỉ hàng tuần (Thứ 7, CN): 210% lương thực trả (Luật quy định tối thiểu 200%).\nc) Làm thêm vào ngày Lễ, Tết: 400% lương thực trả (Luật quy định tối thiểu 300%).",
+      "Chương VI\nĐiều 98. Tiền lương làm thêm giờ, làm việc vào ban đêm\n1. Người lao động làm thêm giờ được trả lương tính theo đơn giá tiền lương hoặc tiền lương thực trả theo công việc đang làm như sau:\na) Vào ngày thường, ít nhất bằng 150%;\nb) Vào ngày nghỉ hằng tuần, ít nhất bằng 200%;\nc) Vào ngày nghỉ lễ, tết, ngày nghỉ có hưởng lương, ít nhất bằng 300% chưa kể tiền lương ngày lễ, tết, ngày nghỉ có hưởng lương đối với người lao động hưởng lương ngày.\n2. Người lao động làm việc vào ban đêm thì được trả thêm ít nhất bằng 30% tiền lương tính theo đơn giá tiền lương hoặc tiền lương thực trả theo công việc của ngày làm việc bình thường.\n3. Người lao động làm thêm giờ vào ban đêm thì ngoài việc trả lương theo quy định tại khoản 1 và khoản 2 Điều này, người lao động còn được trả thêm 20% tiền lương tính theo đơn giá tiền lương hoặc tiền lương theo công việc làm vào ban ngày của ngày làm việc bình thường hoặc của ngày nghỉ hằng tuần hoặc của ngày nghỉ lễ, tết.\n4. Chính phủ quy định chi tiết Điều này."
+    ],
+    "answer": "Theo [Trích dẫn Điều/Khoản Nội quy], công ty đang quy định làm thêm giờ (OT) với mức chi trả lương làm thêm giờ cao hơn theo luật pháp:\n\n1. Làm thêm vào ngày thường: 160% lương thực trả (Luật quy định tối thiểu 150%).\n2. Làm thêm vào ngày nghỉ hàng tuần (Thứ 7, CN): 210% lương thực trả (Luật quy định tối thiểu 200%).\n3. Làm thêm vào ngày Lễ, Tết: 400% lương thực trả (Luật quy định tối thiểu 300%).\n\nVì vậy, [Đánh giá]: Cao hơn.\n\n[Trích dẫn Điều/Khoản Luật] cho thấy:\n\n1. Người lao động làm việc vào ban đêm được trả thêm ít nhất bằng 30% tiền lương tính theo đơn giá tiền lương hoặc tiền lương thực trả theo công việc của ngày làm việc bình thường.\n2. Chính phủ quy định chi tiết Điều này.\n\nVì vậy, [Số liệu/Quyền lợi của Luật] cho thấy:\n\n1. Người lao động làm việc vào ban đêm được trả thêm ít nhất bằng 30% tiền lương tính theo đơn giá tiền lương hoặc tiền lương thực trả theo công việc của ngày làm việc bình thường.\n\nVì vậy, [Số liệu/Quyền lợi của Luật] cho thấy:\n\n1. Người lao động làm việc vào ban đêm được trả thêm ít nhất bằng 30% tiền lương tính theo đơn giá tiền lương hoặc tiền lương thực trả theo công việc của ngày làm việc bình thường.\n\nVì vậy, [Đánh giá]: Cao hơn.",
+    "conversation_id": 1007,
+    "user_id": 10,
+    "tenant_id": 6,
+    "timestamp": "2025-12-25T07:42:23.713056"
+  },
+  {
+    "question": "Làm thêm giờ ngày thường được thưởng thêm bao nhiêu phần trăm?",
+    "contexts": [
+      "Chương VI\nĐiều 98. Tiền lương làm thêm giờ, làm việc vào ban đêm\n1. Người lao động làm thêm giờ được trả lương tính theo đơn giá tiền lương hoặc tiền lương thực trả theo công việc đang làm như sau:\na) Vào ngày thường, ít nhất bằng 150%;\nb) Vào ngày nghỉ hằng tuần, ít nhất bằng 200%;\nc) Vào ngày nghỉ lễ, tết, ngày nghỉ có hưởng lương, ít nhất bằng 300% chưa kể tiền lương ngày lễ, tết, ngày nghỉ có hưởng lương đối với người lao động hưởng lương ngày.\n2. Người lao động làm việc vào ban đêm thì được trả thêm ít nhất bằng 30% tiền lương tính theo đơn giá tiền lương hoặc tiền lương thực trả theo công việc của ngày làm việc bình thường.\n3. Người lao động làm thêm giờ vào ban đêm thì ngoài việc trả lương theo quy định tại khoản 1 và khoản 2 Điều này, người lao động còn được trả thêm 20% tiền lương tính theo đơn giá tiền lương hoặc tiền lương theo công việc làm vào ban ngày của ngày làm việc bình thường hoặc của ngày nghỉ hằng tuần hoặc của ngày nghỉ lễ, tết.\n4. Chính phủ quy định chi tiết Điều này."
+    ],
+    "answer": "Theo Điều 98 của văn bản pháp luật, người lao động làm thêm giờ vào ngày thường sẽ được trả lương ít nhất bằng 150% tiền lương thực trả theo công việc đang làm.\n\nNếu bạn cần chi tiết hoặc có câu hỏi khác liên quan đến điều khoản này, hãy cho tôi biết.",
+    "conversation_id": 1007,
+    "user_id": 10,
+    "tenant_id": 6,
+    "timestamp": "2025-12-25T09:53:22.441676"
   }
 ]

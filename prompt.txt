@@ -1,53 +1,75 @@
-Context: I am building an ASP.NET Core MVC Web Application (WebApp) that references an Infrastructure project. I need to implement the Login flow connecting the UI to a backend microservice.
+Plaintext
 
-Resources & Files:
+I need to update my Python `ChatProcessor` microservice to match the new message contracts and security logic from the .NET backend.
 
-View: Views/Auth/Login.cshtml (Analyze this file to identify DOM elements for the JS).
+Here are the specific requirements:
 
-JS: wwwroot/Scripts/Auth/Login.js.
+### 1. Update Data Contracts (DTOs)
+The input and output JSON structures have changed. Please update the Python data classes (or Pydantic models) to match these C# records exactly:
 
-Business Service: Services/AuthBusiness.cs (Inside WebApp).
+**Input (UserPromptReceivedEvent):**
+```json
+{
+  "ConversationId": 123,
+  "Message": "User query",
+  "Token": "eyJhbG...",
+  "Timestamp": "2024-01-01T12:00:00Z",
+  "SystemInstruction": [] 
+}
+Note: SystemInstruction is a list of config objects.
 
-Controller: Controllers/AuthController.cs.
+Output (BotResponseCreatedEvent):
 
-Infrastructure Service: Infrastructure.Services.TokenClaimsService (Existing service used to parse tokens into Claims).
+JSON
 
-Implementation Requirements:
+{
+  "ConversationId": 123,
+  "Message": "Bot response",
+  "Token": "eyJhbG...", 
+  "Timestamp": "2024-01-01T12:00:05Z",
+  "ModelUsed": "qwen2.5:1.5b"
+}
+Crucial: The output MUST include the exact Token received from the input.
 
-1. Login.js:
+2. Implement JWT Validation
+Before processing any message, the service must validate the Token.
 
-Analyze the Login.cshtml view to find the correct IDs for username, password, and the submit button.
+Library: Use PyJWT (pip install pyjwt).
 
-Implement the form submission using vanilla JS (or Fetch API).
+Config: Load JWT_SECRET_KEY from config.py (or environment variables).
 
-Show a loading state (disable button/change text) while processing.
+Logic: Replicate this specific C# validation logic:
 
-Call the AuthController's POST action via AJAX.
+Algorithm: HS256 (HMAC SHA 256).
 
-Handle redirection on success or display error messages on failure.
+Verify Signature: YES.
 
-2. AuthBusiness.cs:
+Verify Issuer (iss): NO (Set verify_iss=False).
 
-Implement LoginAsync to call the external AccountServices API (POST /api/auth/login).
+Verify Audience (aud): NO (Set verify_aud=False).
 
-Return a result model containing the JWT (Access Token).
+Verify Expiration (exp): YES (Default behavior).
 
-3. AuthController.cs (Crucial Logic):
+Action: If the token is invalid or expired, log an error and do not process the message.
 
-Create a POST action Login.
+3. Execution Flow
+Refactor the process_message method to follow this flow:
 
-Inject AuthBusiness and the TokenClaimsService (from the Infrastructure project).
+Parse the incoming JSON into UserPromptReceivedEvent.
 
-Logic Flow:
+Call a helper method validate_token(token).
 
-Call AuthBusiness.LoginAsync.
+If invalid -> Log error & Return/Stop.
 
-If successful, do not manually create claims. Instead, use the injected TokenClaimsService to parse the returned JWT and retrieve the list of Claim.
+If valid -> Proceed.
 
-Create the ClaimsPrincipal using CookieAuthenticationDefaults.AuthenticationScheme.
+Execute the RAG logic (Embed -> Qdrant Search -> Ollama Generate).
 
-Token Storage: You must store the raw Access Token inside the AuthenticationProperties (using .StoreTokens with the name "access_token"). This is required for our infrastructure's DelegatingHandler to forward the token in future requests.
+Construct BotResponseCreatedEvent using the result and the original token.
 
-Call HttpContext.SignInAsync and return a JSON success response.
+Task
+Keep all other logic the same, Please provide the updated Python code for ChatProcessor, and especially:
 
-Note: Ensure the code strictly follows the dependency injection pattern and keeps the Controller clean by delegating logic to the services.
+config.py (adding the secret key).
+
+requirements.txt (adding PyJWT).

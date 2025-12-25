@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     rabbitmq_queue_input: str = 'UserPromptReceived'
     rabbitmq_queue_output: str = 'BotResponseCreated'
     ollama_base_url: str = 'http://localhost:11434'
-    ollama_model: str = 'ontocord/vistral:latest'
+    ollama_model: str = 'qwen2.5:1.5b'
     ollama_timeout: int = 300
     qdrant_host: str = 'localhost'
     qdrant_port: int = 6333
@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     log_level: str = 'INFO'
     prefetch_count: int = 1
     openai_api_key: str = ''  # Required for Ragas evaluation
+    jwt_secret_key: str = '45dfghdfgh2345kfhdfgh2fg34534523sdfgse45'  # JWT secret key for token validation
 
     class Config:
         env_file = '.env'

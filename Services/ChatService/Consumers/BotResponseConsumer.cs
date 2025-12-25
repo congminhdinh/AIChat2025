@@ -1,6 +1,7 @@
 using ChatService.Events;
 using ChatService.Features;
 using ChatService.Hubs;
+using Infrastructure.Authentication;
 using Infrastructure.Tenancy;
 using MassTransit;
 using Microsoft.AspNetCore.SignalR;
@@ -24,17 +25,14 @@ public class BotResponseConsumer(
         try
         {
             logger.LogInformation(
-                "RAW: Received bot response - ConversationId={ConversationId}, UserId={UserId}, TenantId={TenantId}, ModelUsed={ModelUsed}, MessageLength={MessageLength}",
+                "RAW: Received bot response - ConversationId={ConversationId}, ModelUsed={ModelUsed}, MessageLength={MessageLength}",
                 botResponse.ConversationId,
-                botResponse.UserId,
-                botResponse.TenantId,
                 botResponse.ModelUsed ?? "null",
                 botResponse.Message?.Length ?? 0);
 
-            // IMPORTANT: Set the TenantId in the scoped ICurrentTenantProvider
-            // This allows the UpdateTenancyInterceptor and other tenant-aware services
-            // to function correctly in this background context (where HttpContext is not available)
-            currentTenantProvider.SetTenantId(botResponse.TenantId);
+            var tokenInfo = TokenDecoder.DecodeJwtToken(botResponse.Token);
+            var tenantId = TokenDecoder.GetTenantId(tokenInfo);
+            currentTenantProvider.SetTenantId(tenantId);
 
             logger.LogInformation(
                 "Received bot response for conversation {ConversationId}: {MessagePreview}",

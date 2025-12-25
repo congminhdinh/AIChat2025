@@ -72,7 +72,7 @@ class RabbitMQService:
                             logger.info('No envelope detected, using raw data as payload')
                             payload = data
                         prompt_message = UserPromptReceivedMessage(**payload)
-                        logger.info(f'Received: Queue={self.input_queue_name} | ConversationId={prompt_message.conversation_id} | UserId={prompt_message.user_id} | TenantId={prompt_message.tenant_id} | Message={prompt_message.message[:100]}')
+                        logger.info(f'Received: Queue={self.input_queue_name} | ConversationId={prompt_message.conversation_id} | Message={prompt_message.message[:100]}')
                         await message_handler(prompt_message)
                         logger.info(f'Success: ConversationId={prompt_message.conversation_id} | Status=Processed')
                     except json.JSONDecodeError as e:
