@@ -360,80 +360,27 @@
     <div class="main-container">
 
         <aside class="sidebar">
-            <button class="new-chat-btn">
+            <button id="btn-new-chat" class="new-chat-btn">
                 <span>+</span> Cuộc trò chuyện mới
             </button>
 
             <div class="history-title">Gần đây</div>
-            <ul class="history-list">
-                <li class="history-item active">
-                    <span class="history-icon">💬</span>
-                    <span>Hỗ trợ lỗi đăng nhập</span>
-                </li>
-                <li class="history-item">
-                    <span class="history-icon">💬</span>
-                    <span>Quy trình thanh toán</span>
-                </li>
-                <li class="history-item">
-                    <span class="history-icon">💬</span>
-                    <span>Cấu hình API Key</span>
-                </li>
-                <li class="history-item">
-                    <span class="history-icon">💬</span>
-                    <span>Lịch sử chat 28/12</span>
-                </li>
+            <ul id="conversation-list" class="history-list">
+                <!-- Conversation list will be populated by JavaScript -->
             </ul>
 
         </aside>
 
         <main class="chat-area">
 
-            <div class="chat-content">
-
-                <div class="message user">
-                    <div class="msg-bubble">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit?
-                    </div>
-                    <div class="avatar user">👤</div>
-                </div>
-
-                <div class="message bot">
-                    <div class="avatar bot">✨</div> <div class="msg-bubble">
-                        Nibh nisl condimentum id venenatis a condimentum vitae sapien pellentesque. Phasellus vestibulum lor Lorem ipsum dolor sit amet.
-
-                        <div class="ref-box">
-                            <div class="ref-title">Nguồn tham khảo:</div>
-                            <a href="#" class="ref-link">1. Thang_10_2023_go_the_vang.docx - Trang 12</a>
-                            <a href="#" class="ref-link">2. 490_QD-BTTTT_561639.docx - Trang 5</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="message user">
-                    <div class="msg-bubble">
-                        Nibh nisl condimentum id venenatis a condimentum vitae?
-                    </div>
-                    <div class="avatar user">👤</div>
-                </div>
-
-                <div class="message bot">
-                    <div class="avatar bot">✨</div>
-                    <div class="msg-bubble">
-                        Id venenatis a condimentum vitae sapien pellentesque. Phasellus vestibulum lor Lorem ipsum dolor sit amet, consectetur adipiscing.
-
-                        <div class="ref-box">
-                            <div class="ref-title">Nguồn tham khảo:</div>
-                            <a href="#" class="ref-link">1. 52_2016_QD-TTg_333209.docx - Trang 1</a>
-                        </div>
-                    </div>
-                </div>
-
+            <div id="chat-content" class="chat-content">
+                <!-- Messages will be populated by JavaScript -->
             </div>
 
             <div class="chat-input-area">
                 <div class="input-wrapper">
-                    <input type="text" class="chat-input" placeholder="Nhập câu hỏi cho AI...">
-                    <button class="btn-send">
+                    <input id="msg-input" type="text" class="chat-input" placeholder="Nhập câu hỏi cho AI...">
+                    <button id="btn-send" class="btn-send">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                     </button>
                 </div>
@@ -443,5 +390,6 @@
 
     </div>
 
+    <script src="~/Scripts/Chat/chat.js" asp-append-version="true"></script>
 </body>
 </html>

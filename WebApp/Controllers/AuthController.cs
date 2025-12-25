@@ -40,13 +40,14 @@ namespace WebApp.Controllers
                 // Check if login was successful
                 if (response.Status == BaseResponseStatus.Success && response.Data != null)
                 {
-                    _identityHelper.SetAuthen(
+                    await _identityHelper.SetAuthen(
                         tenantId: response.Data.TenantId,
                         userId: response.Data.UserId,
                         username: response.Data.Username,
                         scope: response.Data.Scope,
-                        isAdmin: response.Data.IsAdmin
-                    ).Wait();
+                        isAdmin: response.Data.IsAdmin,
+                        accessToken: response.Data.AccessToken
+                    );
                     return Json(new
                     {
                         success = true,
@@ -73,6 +74,13 @@ namespace WebApp.Controllers
                     message = "Đã xảy ra lỗi trong quá trình đăng nhập. Vui lòng thử lại."
                 });
             }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Logout()
+        {
+            await _identityHelper.RemoveAuthen();
+            return RedirectToAction("Login", "Auth");
         }
     }
 }

@@ -1,75 +1,39 @@
-Plaintext
+Context: I have completed the chat.js logic which handles:
 
-I need to update my Python `ChatProcessor` microservice to match the new message contracts and security logic from the .NET backend.
+Fetching the conversation list via AJAX.
 
-Here are the specific requirements:
+Fetching message history via AJAX.
 
-### 1. Update Data Contracts (DTOs)
-The input and output JSON structures have changed. Please update the Python data classes (or Pydantic models) to match these C# records exactly:
+Sending new messages and rendering the response.
 
-**Input (UserPromptReceivedEvent):**
-```json
-{
-  "ConversationId": 123,
-  "Message": "User query",
-  "Token": "eyJhbG...",
-  "Timestamp": "2024-01-01T12:00:00Z",
-  "SystemInstruction": [] 
-}
-Note: SystemInstruction is a list of config objects.
+Task: Now, please finalize the Views/Chat/Index.cshtml file. You need to apply the new "Gemini-style" HTML structure we discussed, but strictly prepared for dynamic data integration.
 
-Output (BotResponseCreatedEvent):
+Requirements:
 
-JSON
+Clean Up:
 
-{
-  "ConversationId": 123,
-  "Message": "Bot response",
-  "Token": "eyJhbG...", 
-  "Timestamp": "2024-01-01T12:00:05Z",
-  "ModelUsed": "qwen2.5:1.5b"
-}
-Crucial: The output MUST include the exact Token received from the input.
+Remove ALL static/dummy data. (Delete the hardcoded "Lorem ipsum" messages, delete the hardcoded <li> items in the sidebar).
 
-2. Implement JWT Validation
-Before processing any message, the service must validate the Token.
+The sidebar list and the chat content area should be empty on initial load (waiting for JS to populate them).
 
-Library: Use PyJWT (pip install pyjwt).
+Add Identifiers (IDs):
 
-Config: Load JWT_SECRET_KEY from config.py (or environment variables).
+Add id="conversation-list" to the sidebar <ul> so chat.js can append items there.
 
-Logic: Replicate this specific C# validation logic:
+Add id="chat-content" to the main chat container so chat.js can append messages there.
 
-Algorithm: HS256 (HMAC SHA 256).
+Add id="msg-input" to the input field.
 
-Verify Signature: YES.
+Add id="btn-send" to the send button.
 
-Verify Issuer (iss): NO (Set verify_iss=False).
+Add id="btn-new-chat" to the "New Chat" button.
 
-Verify Audience (aud): NO (Set verify_aud=False).
+Script Reference:
 
-Verify Expiration (exp): YES (Default behavior).
+Add the reference to the JavaScript file at the bottom of the view: <script src="~/Scripts/Chat/chat.js" asp-append-version="true"></script>
 
-Action: If the token is invalid or expired, log an error and do not process the message.
+Preserve Styling:
 
-3. Execution Flow
-Refactor the process_message method to follow this flow:
+Keep the internal <style> block (CSS) exactly as it was in the previous design (The Gemini-style layout). Do not strip the CSS.
 
-Parse the incoming JSON into UserPromptReceivedEvent.
-
-Call a helper method validate_token(token).
-
-If invalid -> Log error & Return/Stop.
-
-If valid -> Proceed.
-
-Execute the RAG logic (Embed -> Qdrant Search -> Ollama Generate).
-
-Construct BotResponseCreatedEvent using the result and the original token.
-
-Task
-Keep all other logic the same, Please provide the updated Python code for ChatProcessor, and especially:
-
-config.py (adding the secret key).
-
-requirements.txt (adding PyJWT).
+Output: Please provide the full, clean code for Views/Chat/Index.cshtml.

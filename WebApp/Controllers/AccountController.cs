@@ -1,36 +1,33 @@
 ﻿using Infrastructure.Web;
 using Microsoft.AspNetCore.Mvc;
 using WebApp.Business;
+using WebApp.Helpers;
 
 namespace WebApp.Controllers
 {
-    public class AccountController: Controller
+    public class AccountController : Controller
     {
         private readonly ILogger<AccountController> _logger;
         private readonly PermissionBusiness _permissionBusiness;
+        private readonly IdentityHelper _identityHelper;
 
-        public AccountController(ILogger<AccountController> logger, PermissionBusiness permissionBusiness)
+        public AccountController(ILogger<AccountController> logger, PermissionBusiness permissionBusiness, IdentityHelper identityHelper)
         {
             _logger = logger;
             _permissionBusiness = permissionBusiness;
+            _identityHelper = identityHelper;
         }
 
         public IActionResult Index()
         {
             try
             {
-                // Debug: Log user claims
-                //_logger.LogInformation($"User authenticated: {User.Identity?.IsAuthenticated}");
-                //_logger.LogInformation($"User ID: {_currentUserProvider.UserId}");
-                //_logger.LogInformation($"User IsAdmin: {_currentUserProvider.IsAdmin}");
-                //_logger.LogInformation($"User TenantId: {_currentUserProvider.TenantId}");
-
-                //// Use shared authorization pattern from services
-                //if (!CheckIsAdmin())
-                //{
-                //    _logger.LogWarning("User is not admin, redirecting to login");
-                //    return UnauthorizedAccess("Chỉ quản trị viên mới có quyền truy cập");
-                //}
+                // Check if user is authenticated
+                if (!_identityHelper.IsAuthenticated())
+                {
+                    _logger.LogWarning("User is not authenticated, redirecting to login");
+                    return RedirectToAction("Login", "Auth");
+                }
 
                 return View();
             }

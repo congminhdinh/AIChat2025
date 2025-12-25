@@ -9,26 +9,14 @@ builder.Host.ConfigureAppSettings();
 builder.Services.AddScoped<IdentityHelper>();
 builder.AddInfrastructure();
 
-// Configure Cookie Authentication for WebApp (in addition to JWT from infrastructure)
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.LoginPath = "/Auth/Login";
-    options.LogoutPath = "/Auth/Logout";
-    options.ExpireTimeSpan = TimeSpan.FromDays(7);
-    options.SlidingExpiration = true;
-    options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-    options.Cookie.Name = "AIChat2025.Auth";
-});
-
-// Add Cookie Authentication scheme
-builder.Services.AddAuthentication()
+// Configure Cookie Authentication for WebApp
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
         options.LoginPath = "/Auth/Login";
         options.LogoutPath = "/Auth/Logout";
         options.ExpireTimeSpan = TimeSpan.FromDays(7);
-        options.SlidingExpiration = true;
+        options.SlidingExpiration = false;
         options.Cookie.HttpOnly = true;
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.Cookie.Name = "AIChat2025.Auth";
@@ -47,8 +35,8 @@ builder.Services.AddHttpClient<PermissionBusiness>(httpClient =>
 {
     httpClient.BaseAddress = new Uri(appSettings.ApiGatewayUrl);
 });
-builder.Services.AddScoped<PermissionBusiness>();
-builder.Services.AddHttpClient<PermissionBusiness>(httpClient =>
+builder.Services.AddScoped<ChatBusiness>();
+builder.Services.AddHttpClient<ChatBusiness>(httpClient =>
 {
     httpClient.BaseAddress = new Uri(appSettings.ApiGatewayUrl);
 });
