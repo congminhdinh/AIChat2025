@@ -38,6 +38,14 @@
                 }
             });
         }
+
+        const newChatButton = document.querySelector('#btn-new-chat');
+        if (newChatButton) {
+            newChatButton.addEventListener('click', async function (e) {
+                e.preventDefault();
+                await openCreateModal();
+            });
+        }
     }
 
     /**
@@ -325,4 +333,99 @@
             }, 5000);
         }
     }
+
+    async function openCreateModal() {
+        try {
+            const response = await fetch('/Chat/CreateConversationPartial', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'text/html'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load modal content');
+            }
+
+            const html = await response.text();
+
+            const modalContainer = document.querySelector('#modal-content-container');
+            const modalOverlay = document.querySelector('#modal-overlay');
+
+            if (modalContainer && modalOverlay) {
+                modalContainer.innerHTML = html;
+                modalOverlay.classList.add('active');
+
+                const inputField = document.querySelector('#newConversationName');
+                if (inputField) {
+                    setTimeout(function () {
+                        inputField.focus();
+                    }, 100);
+                }
+            }
+        } catch (error) {
+            console.error('Error opening create modal:', error);
+            showError('Không thể mở form tạo cuộc trò chuyện.');
+        }
+    }
+
+    function closeCreateModal() {
+        const modalOverlay = document.querySelector('#modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.classList.remove('active');
+
+            setTimeout(function () {
+                const modalContainer = document.querySelector('#modal-content-container');
+                if (modalContainer) {
+                    modalContainer.innerHTML = '';
+                }
+            }, 200);
+        }
+    }
+
+    async function submitCreateConversation() {
+        const inputField = document.querySelector('#newConversationName');
+        if (!inputField) return;
+
+        const title = inputField.value.trim();
+
+        if (!title) {
+            alert('Vui lòng nhập tên cuộc trò chuyện');
+            inputField.focus();
+            return;
+        }
+
+        try {
+            const response = await fetch('/Chat/CreateConversation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title: title
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                closeCreateModal();
+
+                await loadConversations();
+
+                if (result.data && result.data.id) {
+                    currentConversationId = result.data.id;
+                    await handleConversationClick(result.data.id);
+                }
+            } else {
+                alert(result.message || 'Không thể tạo cuộc trò chuyện. Vui lòng thử lại.');
+            }
+        } catch (error) {
+            console.error('Error creating conversation:', error);
+            alert('Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
+        }
+    }
+
+    window.closeCreateModal = closeCreateModal;
+    window.submitCreateConversation = submitCreateConversation;
 })();

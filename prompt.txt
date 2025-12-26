@@ -1,65 +1,53 @@
-Task: Implement Frontend Logic (Flow 1 & Flow 2) for the Chat Module.
+Task: Implement "Create New Conversation" Flow.
 
-Context: I need to finalize the JavaScript logic in wwwroot/Scripts/Chat/Chat.js and the corresponding actions in ChatController.cs. We are focusing only on the read flows right now:
-
-Flow 1 (Initialization): Loading the conversation list on page load & automatically opening the most recent one.
-
-Flow 2 (Navigation): Clicking a conversation in the sidebar to load its message history.
-
-Files to Modify:
-
-wwwroot/Scripts/Chat/Chat.js
+Files to Analyze:
 
 WebApp/Controllers/ChatController.cs
 
-WebApp/Views/Chat/Index.cshtml (Reference only, for DOM selectors).
+WebApp/Services/Business/ChatBusiness.cs
 
-Detailed Requirements:
+wwwroot/Scripts/Chat/chat.js
 
-A. ChatController (ChatController.cs)
+WebApp/Views/Chat/Index.cshtml
 
-Ensure there are two HttpGet actions returning JsonResult:
+WebApp/Views/Chat/CreateConversationPartial.cshtml
 
-GetConversations(): Returns a list of conversations (Id, Title, Date).
+Requirements:
 
-GetHistory(int id): Returns the message list for a specific conversation.
+1. Backend (ChatBusiness & ChatController):
 
-Constraint: These actions must call the ChatBusiness (which calls the Microservice) and map the data to a JSON-friendly format.
+Business: Add a method in ChatBusiness to call the Microservice endpoint for creating a new conversation.
 
-B. Chat.js (wwwroot/Scripts/Chat/Chat.js)
+Controller: Add an endpoint: public async Task<IActionResult> CreateConversation([FromBody] CreateConversationRequest request).
 
-1. Initialization Logic ($(document).ready):
+This should call the Business layer.
 
-Call GetConversations.
+Return JSON success/failure.
 
-Render the list into the sidebar (.history-list).
+2. Frontend (chat.js & Index.cshtml):
 
-Crucial: If the list is not empty, automatically trigger the loading of the first conversation in the list (Simulate a click or call the load function directly).
+Modal Container: Ensure Index.cshtml has the necessary container (#modal-overlay, #modal-content-container) to host the Partial View.
 
-2. Sidebar Interaction:
+Open Logic: When the "New Chat" button is clicked:
 
-Handle click events on .history-item.
+Fetch the CreateConversationPartial view via AJAX.
 
-Add/Remove the .active class to highlight the selected conversation.
+Render it inside the modal container and show the overlay.
 
-Call loadChatHistory(id).
+Submit Logic: When "Tạo mới" is clicked inside the modal:
 
-3. Rendering Logic (loadChatHistory):
+Get the text from the input.
 
-Call GetHistory.
+Call ChatController.CreateConversation.
 
-Clear the main chat area (.chat-content).
+On Success: Close the modal and immediately call loadConversations() to refresh the sidebar.
 
-Loop through messages and render them based on Type:
+On Failure: Show an alert/popup with the error message.
 
-Type 1 (Bot): Use HTML structure with class .message.bot and avatar ✨.
-
-Type 0 (User): Use HTML structure with class .message.user and avatar 👤.
-
-Reference: Use the "Gemini-style" HTML structure discussed previously (Avatar, Message Bubble).
+Cancel Logic: When "Hủy" is clicked, simply hide/remove the modal.
 
 Constraint:
 
-Scan the Index.cshtml structure (mentally or from previous context) to ensure your jQuery selectors (e.g., .history-list, .chat-content, .history-item) match the HTML exactly.
+Use the existing CSS/HTML structure of the Partial View I provided earlier.
 
-Do not implement the "Send Message" logic yet. Focus strictly on data loading and rendering.
+No comments in code.

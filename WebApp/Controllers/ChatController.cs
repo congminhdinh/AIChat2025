@@ -86,6 +86,12 @@ namespace WebApp.Controllers
             return Json(new { success = true, data = response.Data });
         }
 
+        [HttpGet]
+        public IActionResult CreateConversationPartial()
+        {
+            return PartialView();
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateConversation([FromBody] CreateConversationRequest request)
         {

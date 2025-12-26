@@ -1,0 +1,128 @@
+﻿@* Partial View: CreateConversationPartial.cshtml 
+    Mô tả: Nội dung của Modal tạo cuộc trò chuyện mới
+*@
+
+<div class="create-modal-container">
+    <h3 class="modal-header-title">Cuộc trò chuyện mới</h3>
+
+    <div class="modal-body-content">
+        <label for="newConversationName" class="input-label">Tên chủ đề</label>
+        <div class="custom-input-wrapper">
+            <input type="text" id="newConversationName" class="custom-input" placeholder="Ví dụ: Hỗ trợ kỹ thuật, Lên kế hoạch..." autocomplete="off" autofocus />
+        </div>
+        <p class="hint-text">Đặt tên ngắn gọn để dễ nhớ.</p>
+    </div>
+
+    <div class="modal-footer-actions">
+        <button type="button" class="btn-modal btn-cancel" onclick="closeCreateModal()">Hủy</button>
+
+        <button type="button" class="btn-modal btn-create" onclick="submitCreateConversation()">
+            Tạo mới
+        </button>
+    </div>
+</div>
+
+<style>
+    /* Scope styles riêng cho Partial này để không ảnh hưởng bên ngoài */
+    .create-modal-container {
+        padding: 10px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+    }
+
+    .modal-header-title {
+        margin-bottom: 20px;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-color, #0d6efd); /* Dùng biến từ trang cha */
+        text-align: center;
+    }
+
+    .modal-body-content {
+        margin-bottom: 25px;
+    }
+
+    .input-label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+        color: #555;
+    }
+
+    /* Style Input giống hệt thanh Chat Input chính */
+    .custom-input-wrapper {
+        width: 100%;
+        background-color: #f0f4f9; /* Màu nền input xám nhẹ */
+        border-radius: 25px; /* Bo tròn kiểu Pill */
+        padding: 5px;
+        transition: background 0.2s, box-shadow 0.2s;
+        border: 1px solid transparent;
+    }
+
+        .custom-input-wrapper:focus-within {
+            background-color: #fff;
+            border-color: #cce5ff;
+            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+        }
+
+    .custom-input {
+        width: 100%;
+        padding: 10px 20px;
+        border: none;
+        background: transparent;
+        outline: none;
+        font-size: 1rem;
+        color: #333;
+    }
+
+    .hint-text {
+        font-size: 0.8rem;
+        color: #999;
+        margin-top: 8px;
+        margin-left: 15px;
+    }
+
+    /* Footer Buttons */
+    .modal-footer-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .btn-modal {
+        padding: 10px 24px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+    }
+
+    .btn-cancel {
+        background-color: transparent;
+        color: #666;
+    }
+
+        .btn-cancel:hover {
+            background-color: #f1f3f4;
+            color: #333;
+        }
+
+    .btn-create {
+        background-color: var(--primary-color, #0d6efd);
+        color: white;
+        box-shadow: 0 2px 5px rgba(13, 110, 253, 0.3);
+    }
+
+        .btn-create:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(13, 110, 253, 0.4);
+        }
+
+        .btn-create:active {
+            transform: translateY(0);
+        }
+</style>
