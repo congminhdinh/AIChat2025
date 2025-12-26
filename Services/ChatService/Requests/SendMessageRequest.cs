@@ -1,8 +1,9 @@
+using Infrastructure;
 using System.ComponentModel.DataAnnotations;
 
 namespace ChatService.Requests;
 
-public class SendMessageRequest
+public class SendMessageRequest: BaseRequest
 {
     [Required]
     public int ConversationId { get; init; }

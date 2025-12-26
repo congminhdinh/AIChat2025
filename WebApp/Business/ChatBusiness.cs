@@ -1,28 +1,87 @@
 using Infrastructure;
 using Infrastructure.Logging;
 using Infrastructure.Web;
+using WebApp.Helpers;
 using WebApp.Models.Chat;
 
 namespace WebApp.Business
 {
     public class ChatBusiness : BaseHttpClient
     {
-        private readonly ICurrentUserProvider _currentUserProvider;
+        private readonly IdentityHelper _identityHelper;
 
-        public ChatBusiness(HttpClient httpClient, IAppLogger<BaseHttpClient> appLogger, ICurrentUserProvider currentUserProvider)
+        public ChatBusiness(HttpClient httpClient, IAppLogger<BaseHttpClient> appLogger, IdentityHelper identityHelper)
             : base(httpClient, appLogger)
         {
-            _currentUserProvider = currentUserProvider;
+            _identityHelper = identityHelper;
         }
 
-        /// <summary>
-        /// Get all conversations for the current user
-        /// </summary>
+        public async Task<BaseResponse<ConversationDto>> CreateConversationAsync(CreateConversationRequest request, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var token = await _identityHelper.GetAccessTokenAsync();
+                if (string.IsNullOrEmpty(token))
+                {
+                    return new BaseResponse<ConversationDto>
+                    {
+                        Status = BaseResponseStatus.Error,
+                        Message = "Không tìm thấy token xác thực"
+                    };
+                }
+
+                var response = await PostWithTokenAsync<CreateConversationRequest, BaseResponse<ConversationDto>>(
+                    "/web-api/chat/conversations",
+                    request,
+                    token,
+                    cancellationToken
+                );
+
+                if (response == null)
+                {
+                    return new BaseResponse<ConversationDto>
+                    {
+                        Status = BaseResponseStatus.Error,
+                        Message = "Không nhận được phản hồi từ server"
+                    };
+                }
+
+                return response;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError($"HTTP error during create conversation: {ex.Message}");
+                return new BaseResponse<ConversationDto>
+                {
+                    Status = BaseResponseStatus.Error,
+                    Message = "Lỗi kết nối đến dịch vụ chat"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error during create conversation: {ex.Message}");
+                return new BaseResponse<ConversationDto>
+                {
+                    Status = BaseResponseStatus.Error,
+                    Message = "Đã xảy ra lỗi khi tạo hội thoại"
+                };
+            }
+        }
+
         public async Task<BaseResponse<List<ConversationDto>>> GetConversationsAsync(CancellationToken cancellationToken = default)
         {
             try
             {
-                var token = _currentUserProvider.Token;
+                var token = await _identityHelper.GetAccessTokenAsync();
+                if (string.IsNullOrEmpty(token))
+                {
+                    return new BaseResponse<List<ConversationDto>>
+                    {
+                        Status = BaseResponseStatus.Error,
+                        Message = "Không tìm thấy token xác thực"
+                    };
+                }
+
                 var response = await GetWithTokenAsync<BaseResponse<List<ConversationDto>>>(
                     "/web-api/chat/conversations/list",
                     token,
@@ -60,23 +119,29 @@ namespace WebApp.Business
             }
         }
 
-        /// <summary>
-        /// Get message history for a specific conversation
-        /// </summary>
-        public async Task<BaseResponse<List<MessageDto>>> GetMessageHistoryAsync(int conversationId, CancellationToken cancellationToken = default)
+        public async Task<BaseResponse<ConversationDto>> GetConversationByIdAsync(int conversationId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var token = _currentUserProvider.Token;
-                var response = await GetWithTokenAsync<BaseResponse<List<MessageDto>>>(
-                    $"/web-api/chat/conversations/{conversationId}/messages",
+                var token = await _identityHelper.GetAccessTokenAsync();
+                if (string.IsNullOrEmpty(token))
+                {
+                    return new BaseResponse<ConversationDto>
+                    {
+                        Status = BaseResponseStatus.Error,
+                        Message = "Không tìm thấy token xác thực"
+                    };
+                }
+
+                var response = await GetWithTokenAsync<BaseResponse<ConversationDto>>(
+                    $"/web-api/chat/conversations/{conversationId}",
                     token,
                     cancellationToken
                 );
 
                 if (response == null)
                 {
-                    return new BaseResponse<List<MessageDto>>
+                    return new BaseResponse<ConversationDto>
                     {
                         Status = BaseResponseStatus.Error,
                         Message = "Không nhận được phản hồi từ server"
@@ -87,8 +152,8 @@ namespace WebApp.Business
             }
             catch (HttpRequestException ex)
             {
-                _logger.LogError($"HTTP error during get message history: {ex.Message}");
-                return new BaseResponse<List<MessageDto>>
+                _logger.LogError($"HTTP error during get conversation: {ex.Message}");
+                return new BaseResponse<ConversationDto>
                 {
                     Status = BaseResponseStatus.Error,
                     Message = "Lỗi kết nối đến dịch vụ chat"
@@ -96,24 +161,30 @@ namespace WebApp.Business
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error during get message history: {ex.Message}");
-                return new BaseResponse<List<MessageDto>>
+                _logger.LogError($"Error during get conversation: {ex.Message}");
+                return new BaseResponse<ConversationDto>
                 {
                     Status = BaseResponseStatus.Error,
-                    Message = "Đã xảy ra lỗi khi tải lịch sử tin nhắn"
+                    Message = "Đã xảy ra lỗi khi tải hội thoại"
                 };
             }
         }
 
-        /// <summary>
-        /// Send a new message and get bot response
-        /// </summary>
         public async Task<BaseResponse<MessageDto>> SendMessageAsync(SendMessageRequest request, CancellationToken cancellationToken = default)
         {
             try
             {
-                var token = _currentUserProvider.Token;
-                var response = await PostWithTokenAsync<SendMessageRequest, BaseResponse<MessageDto>>(
+                var token = await _identityHelper.GetAccessTokenAsync();
+                if (string.IsNullOrEmpty(token))
+                {
+                    return new BaseResponse<MessageDto>
+                    {
+                        Status = BaseResponseStatus.Error,
+                        Message = "Không tìm thấy token xác thực"
+                    };
+                }
+
+                var response = await PostWithTokenAsync<SendMessageRequest, MessageDto>(
                     "/web-api/chat/messages",
                     request,
                     token,
@@ -129,7 +200,11 @@ namespace WebApp.Business
                     };
                 }
 
-                return response;
+                return new BaseResponse<MessageDto>
+                {
+                    Status = BaseResponseStatus.Success,
+                    Data = response
+                };
             }
             catch (HttpRequestException ex)
             {

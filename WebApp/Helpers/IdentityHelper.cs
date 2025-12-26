@@ -73,10 +73,20 @@ namespace WebApp.Helpers
 
         public int GetUserId()
         {
-            var idClaim = Current?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            // FIXED: Check "User" claim first (from AuthorizationConstants.TOKEN_CLAIMS_USER)
+            // This is the primary claim set by TokenClaimsService
+            var idClaim = Current?.User?.FindFirstValue(AuthorizationConstants.TOKEN_CLAIMS_USER);
+
+            // Fallback to "sub" (JWT standard claim, mapped from ClaimTypes.NameIdentifier)
             if (string.IsNullOrEmpty(idClaim))
             {
-                idClaim = Current?.User?.FindFirstValue(AuthorizationConstants.TOKEN_CLAIMS_USER);
+                idClaim = Current?.User?.FindFirstValue("sub");
+            }
+
+            // Last resort: check ClaimTypes.NameIdentifier (for compatibility)
+            if (string.IsNullOrEmpty(idClaim))
+            {
+                idClaim = Current?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             }
 
             return int.TryParse(idClaim, out int userId) ? userId : 0;
@@ -90,7 +100,22 @@ namespace WebApp.Helpers
 
         public string GetUsername()
         {
-            return Current?.User?.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
+            // FIXED: Check "unique_name" first (JWT standard claim, mapped from ClaimTypes.Name)
+            var username = Current?.User?.FindFirstValue("unique_name");
+
+            // Fallback to "name" (alternative JWT claim)
+            if (string.IsNullOrEmpty(username))
+            {
+                username = Current?.User?.FindFirstValue("name");
+            }
+
+            // Fallback to ClaimTypes.Name (for compatibility)
+            if (string.IsNullOrEmpty(username))
+            {
+                username = Current?.User?.FindFirstValue(ClaimTypes.Name);
+            }
+
+            return username ?? string.Empty;
         }
 
         public bool IsAdmin()
@@ -103,7 +128,8 @@ namespace WebApp.Helpers
         {
             if (Current == null) return null;
 
-            var token = await Current.GetTokenAsync("access_token");
+            // FIXED: GetTokenAsync requires authentication scheme as first parameter
+            var token = await Current.GetTokenAsync(CookieAuthenticationDefaults.AuthenticationScheme, "access_token");
             if (!string.IsNullOrEmpty(token))
             {
                 return token;

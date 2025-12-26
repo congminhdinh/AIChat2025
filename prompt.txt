@@ -1,39 +1,65 @@
-Context: I have completed the chat.js logic which handles:
+Task: Implement Frontend Logic (Flow 1 & Flow 2) for the Chat Module.
 
-Fetching the conversation list via AJAX.
+Context: I need to finalize the JavaScript logic in wwwroot/Scripts/Chat/Chat.js and the corresponding actions in ChatController.cs. We are focusing only on the read flows right now:
 
-Fetching message history via AJAX.
+Flow 1 (Initialization): Loading the conversation list on page load & automatically opening the most recent one.
 
-Sending new messages and rendering the response.
+Flow 2 (Navigation): Clicking a conversation in the sidebar to load its message history.
 
-Task: Now, please finalize the Views/Chat/Index.cshtml file. You need to apply the new "Gemini-style" HTML structure we discussed, but strictly prepared for dynamic data integration.
+Files to Modify:
 
-Requirements:
+wwwroot/Scripts/Chat/Chat.js
 
-Clean Up:
+WebApp/Controllers/ChatController.cs
 
-Remove ALL static/dummy data. (Delete the hardcoded "Lorem ipsum" messages, delete the hardcoded <li> items in the sidebar).
+WebApp/Views/Chat/Index.cshtml (Reference only, for DOM selectors).
 
-The sidebar list and the chat content area should be empty on initial load (waiting for JS to populate them).
+Detailed Requirements:
 
-Add Identifiers (IDs):
+A. ChatController (ChatController.cs)
 
-Add id="conversation-list" to the sidebar <ul> so chat.js can append items there.
+Ensure there are two HttpGet actions returning JsonResult:
 
-Add id="chat-content" to the main chat container so chat.js can append messages there.
+GetConversations(): Returns a list of conversations (Id, Title, Date).
 
-Add id="msg-input" to the input field.
+GetHistory(int id): Returns the message list for a specific conversation.
 
-Add id="btn-send" to the send button.
+Constraint: These actions must call the ChatBusiness (which calls the Microservice) and map the data to a JSON-friendly format.
 
-Add id="btn-new-chat" to the "New Chat" button.
+B. Chat.js (wwwroot/Scripts/Chat/Chat.js)
 
-Script Reference:
+1. Initialization Logic ($(document).ready):
 
-Add the reference to the JavaScript file at the bottom of the view: <script src="~/Scripts/Chat/chat.js" asp-append-version="true"></script>
+Call GetConversations.
 
-Preserve Styling:
+Render the list into the sidebar (.history-list).
 
-Keep the internal <style> block (CSS) exactly as it was in the previous design (The Gemini-style layout). Do not strip the CSS.
+Crucial: If the list is not empty, automatically trigger the loading of the first conversation in the list (Simulate a click or call the load function directly).
 
-Output: Please provide the full, clean code for Views/Chat/Index.cshtml.
+2. Sidebar Interaction:
+
+Handle click events on .history-item.
+
+Add/Remove the .active class to highlight the selected conversation.
+
+Call loadChatHistory(id).
+
+3. Rendering Logic (loadChatHistory):
+
+Call GetHistory.
+
+Clear the main chat area (.chat-content).
+
+Loop through messages and render them based on Type:
+
+Type 1 (Bot): Use HTML structure with class .message.bot and avatar ✨.
+
+Type 0 (User): Use HTML structure with class .message.user and avatar 👤.
+
+Reference: Use the "Gemini-style" HTML structure discussed previously (Avatar, Message Bubble).
+
+Constraint:
+
+Scan the Index.cshtml structure (mentally or from previous context) to ensure your jQuery selectors (e.g., .history-list, .chat-content, .history-item) match the HTML exactly.
+
+Do not implement the "Send Message" logic yet. Focus strictly on data loading and rendering.

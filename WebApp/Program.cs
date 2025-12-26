@@ -48,8 +48,6 @@ app.UseHsts();
 
 app.UseHttpsRedirection();
 app.UseRouting();
-
-// Authentication and Authorization must come after UseRouting
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -5,6 +5,7 @@ using ChatService.Enums;
 using ChatService.Events;
 using ChatService.Requests;
 using ChatService.Specifications;
+using Infrastructure;
 using Infrastructure.Authentication;
 using Infrastructure.Tenancy;
 using Infrastructure.Web;
@@ -41,7 +42,7 @@ public class ChatBusiness
     /// <summary>
     /// Creates a new conversation.
     /// </summary>
-    public async Task<ConversationDto> CreateConversationAsync(CreateConversationRequest request, CancellationToken ct = default)
+    public async Task<BaseResponse<ConversationDto>> CreateConversationAsync(CreateConversationRequest request)
     {
         var userId = _currentUserProvider.UserId;
         var conversation = new ChatConversation(userId, request.Title)
@@ -49,9 +50,9 @@ public class ChatBusiness
             TenantId = _currentUserProvider.TenantId
         };
 
-        await _conversationRepo.AddAsync(conversation, ct);
+        await _conversationRepo.AddAsync(conversation);
 
-        return new ConversationDto
+        return new BaseResponse<ConversationDto>(new ConversationDto
         {
             Id = conversation.Id,
             Title = conversation.Title,
@@ -59,19 +60,20 @@ public class ChatBusiness
             LastMessageAt = conversation.LastMessageAt,
             MessageCount = 0,
             Messages = new()
-        };
+        }, request.CorrelationId());
     }
 
     /// <summary>
     /// Gets all conversations for the current tenant.
     /// </summary>
-    public async Task<List<ConversationDto>> GetConversationsAsync(CancellationToken ct = default)
+    public async Task<BaseResponse<List<ConversationDto>>> GetConversationsAsync()
     {
+        var request = new BaseRequest();
         var userId = _currentUserProvider.UserId;
         var spec = new GetConversationsByUserSpec(userId, _currentUserProvider.TenantId);
-        var conversations = await _conversationRepo.ListAsync(spec, ct);
+        var conversations = await _conversationRepo.ListAsync(spec);
 
-        return conversations.Select(c => new ConversationDto
+        var conversationDtos = conversations.Select(c => new ConversationDto
         {
             Id = c.Id,
             Title = c.Title,
@@ -80,20 +82,27 @@ public class ChatBusiness
             MessageCount = c.Messages.Count,
             Messages = new()
         }).ToList();
+        return new BaseResponse<List<ConversationDto>>(conversationDtos, request.CorrelationId());
     }
 
     /// <summary>
     /// Gets a conversation with all its messages.
     /// </summary>
-    public async Task<ConversationDto?> GetConversationByIdAsync(int conversationId, CancellationToken ct = default)
+    public async Task<BaseResponse<ConversationDto>> GetConversationByIdAsync(int conversationId)
     {
+        var request= new GetConversationByIdRequest
+        {
+            ConversationId = conversationId
+        };
         var spec = new GetConversationWithMessagesSpec(conversationId, _currentUserProvider.TenantId);
-        var conversation = await _conversationRepo.FirstOrDefaultAsync(spec, ct);
+        var conversation = await _conversationRepo.FirstOrDefaultAsync(spec);
 
         if (conversation == null)
-            return null;
+        {
+            return new BaseResponse<ConversationDto>("Conversation not found", BaseResponseStatus.Error, request.CorrelationId());
+        }
 
-        return new ConversationDto
+        return new BaseResponse<ConversationDto>(new ConversationDto
         {
             Id = conversation.Id,
             Title = conversation.Title,
@@ -101,7 +110,7 @@ public class ChatBusiness
             LastMessageAt = conversation.LastMessageAt,
             MessageCount = conversation.Messages.Count,
             Messages = conversation.Messages
-                .OrderByDescending(m => m.Timestamp)
+                .OrderBy(m => m.Timestamp)
                 .Select(m => new MessageDto
                 {
                     Id = m.Id,
@@ -110,9 +119,8 @@ public class ChatBusiness
                     Timestamp = m.Timestamp,
                     UserId = m.UserId,
                     Type = m.Type
-                })
-                .ToList()
-        };
+                }).ToList()
+        }, request.CorrelationId());
     }
 
     /// <summary>

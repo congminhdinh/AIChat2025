@@ -1,8 +1,9 @@
+using Infrastructure;
 using System.ComponentModel.DataAnnotations;
 
 namespace ChatService.Requests;
 
-public class CreateConversationRequest
+public class CreateConversationRequest: BaseRequest
 {
     [Required]
     [MaxLength(500)]

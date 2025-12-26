@@ -40,14 +40,7 @@ namespace WebApp.Controllers
                 // Check if login was successful
                 if (response.Status == BaseResponseStatus.Success && response.Data != null)
                 {
-                    await _identityHelper.SetAuthen(
-                        tenantId: response.Data.TenantId,
-                        userId: response.Data.UserId,
-                        username: response.Data.Username,
-                        scope: response.Data.Scope,
-                        isAdmin: response.Data.IsAdmin,
-                        accessToken: response.Data.AccessToken
-                    );
+                    await _identityHelper.SetAuthen(response.Data.AccessToken);
                     return Json(new
                     {
                         success = true,

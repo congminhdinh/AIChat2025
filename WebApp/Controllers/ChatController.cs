@@ -7,24 +7,19 @@ using WebApp.Models.Chat;
 
 namespace WebApp.Controllers
 {
-    public class ChatController : BaseWebController
+    public class ChatController : Controller
     {
         private readonly ChatBusiness _chatBusiness;
         private readonly IdentityHelper _identityHelper;
 
-        public ChatController(ICurrentUserProvider currentUserProvider, ChatBusiness chatBusiness, IdentityHelper identityHelper)
-            : base(currentUserProvider)
+        public ChatController(ChatBusiness chatBusiness, IdentityHelper identityHelper)
         {
             _chatBusiness = chatBusiness;
             _identityHelper = identityHelper;
         }
 
-        /// <summary>
-        /// Returns the main Chat View
-        /// </summary>
         public IActionResult Index()
         {
-            // Check if user is authenticated
             if (!_identityHelper.IsAuthenticated())
             {
                 return RedirectToAction("Login", "Auth");
@@ -33,9 +28,38 @@ namespace WebApp.Controllers
             return View();
         }
 
-        /// <summary>
-        /// Returns JSON data for the conversation list (sidebar)
-        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetInitialData()
+        {
+            var conversationsResponse = await _chatBusiness.GetConversationsAsync();
+
+            if (conversationsResponse.Status == BaseResponseStatus.Error)
+            {
+                return Json(new { success = false, message = conversationsResponse.Message });
+            }
+
+            var conversations = conversationsResponse.Data ?? new List<ConversationDto>();
+            ConversationDto? firstConversation = null;
+
+            if (conversations.Any())
+            {
+                var firstConversationId = conversations.First().Id;
+                var conversationResponse = await _chatBusiness.GetConversationByIdAsync(firstConversationId);
+
+                if (conversationResponse.Status == BaseResponseStatus.Success && conversationResponse.Data != null)
+                {
+                    firstConversation = conversationResponse.Data;
+                }
+            }
+
+            return Json(new
+            {
+                success = true,
+                conversations = conversations,
+                currentConversation = firstConversation
+            });
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetConversations()
         {
@@ -49,13 +73,10 @@ namespace WebApp.Controllers
             return Json(new { success = true, data = response.Data });
         }
 
-        /// <summary>
-        /// Returns JSON data for the message history of a specific conversation
-        /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetHistory(int id)
+        public async Task<IActionResult> GetConversation(int id)
         {
-            var response = await _chatBusiness.GetMessageHistoryAsync(id);
+            var response = await _chatBusiness.GetConversationByIdAsync(id);
 
             if (response.Status == BaseResponseStatus.Error)
             {
@@ -65,13 +86,28 @@ namespace WebApp.Controllers
             return Json(new { success = true, data = response.Data });
         }
 
-        /// <summary>
-        /// Sends a new message and returns the bot's response
-        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> CreateConversation([FromBody] CreateConversationRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Title))
+            {
+                return Json(new { success = false, message = "Tiêu đề không được để trống" });
+            }
+
+            var response = await _chatBusiness.CreateConversationAsync(request);
+
+            if (response.Status == BaseResponseStatus.Error)
+            {
+                return Json(new { success = false, message = response.Message });
+            }
+
+            return Json(new { success = true, data = response.Data });
+        }
+
         [HttpPost]
         public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.Content))
+            if (string.IsNullOrWhiteSpace(request.Message))
             {
                 return Json(new { success = false, message = "Nội dung tin nhắn không được để trống" });
             }
