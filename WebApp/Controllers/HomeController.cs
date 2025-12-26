@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApp.Models;
 
@@ -13,9 +14,17 @@ public class HomeController : Controller
         _logger = logger;
     }
 
+    [AllowAnonymous]
     public IActionResult Index()
     {
-        return View();
+        // If authenticated, go to Chat
+        if (User.Identity?.IsAuthenticated ?? false)
+        {
+            return RedirectToAction("Index", "Chat");
+        }
+
+        // If not authenticated, go to Login
+        return RedirectToAction("Login", "Auth");
     }
 
     public IActionResult Privacy()

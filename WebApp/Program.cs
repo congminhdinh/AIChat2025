@@ -1,5 +1,7 @@
 using Infrastructure;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using WebApp.Business;
 using WebApp.Helpers;
 var builder = WebApplication.CreateBuilder(args);
@@ -22,7 +24,14 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.Name = "AIChat2025.Auth";
     });
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    // Require authentication globally - controllers must opt-out with [AllowAnonymous]
+    var policy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+    options.Filters.Add(new AuthorizeFilter(policy));
+});
 builder.Services.Configure<AppSettings>(builder.Configuration);
 var appSettings = builder.Configuration.Get<AppSettings>()?? new AppSettings();
 builder.Services.AddScoped<AuthBusiness>();
@@ -56,11 +65,11 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 
-// Root route - explicitly handle root URL to go to login
+// Root route - handle root URL with smart redirect based on auth status
 app.MapControllerRoute(
     name: "root",
     pattern: "",
-    defaults: new { controller = "Auth", action = "Login" })
+    defaults: new { controller = "Home", action = "Index" })
     .WithStaticAssets();
 
 // Default route - all other controllers default to Index action

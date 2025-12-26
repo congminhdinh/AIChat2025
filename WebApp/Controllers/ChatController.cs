@@ -1,5 +1,6 @@
 ﻿using Infrastructure;
 using Infrastructure.Web;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApp.Business;
 using WebApp.Helpers;
@@ -7,6 +8,7 @@ using WebApp.Models.Chat;
 
 namespace WebApp.Controllers
 {
+    [Authorize]
     public class ChatController : Controller
     {
         private readonly ChatBusiness _chatBusiness;
@@ -20,11 +22,7 @@ namespace WebApp.Controllers
 
         public IActionResult Index()
         {
-            if (!_identityHelper.IsAuthenticated())
-            {
-                return RedirectToAction("Login", "Auth");
-            }
-
+            // Global [Authorize] filter handles authentication
             return View();
         }
 

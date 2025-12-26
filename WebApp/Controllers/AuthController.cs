@@ -11,6 +11,7 @@ using WebApp.Requests;
 
 namespace WebApp.Controllers
 {
+    [AllowAnonymous]
     public class AuthController: Controller
     {
         private readonly AuthBusiness _authBusiness;
@@ -45,7 +46,7 @@ namespace WebApp.Controllers
                     {
                         success = true,
                         message = "Đăng nhập thành công",
-                        redirectUrl = "/Account"
+                        redirectUrl = "/Chat"
                     });
                 }
                 else

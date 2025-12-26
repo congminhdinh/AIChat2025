@@ -1,10 +1,12 @@
 ﻿using Infrastructure.Web;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApp.Business;
 using WebApp.Helpers;
 
 namespace WebApp.Controllers
 {
+    [Authorize]
     public class AccountController : Controller
     {
         private readonly ILogger<AccountController> _logger;
@@ -20,22 +22,8 @@ namespace WebApp.Controllers
 
         public IActionResult Index()
         {
-            try
-            {
-                // Check if user is authenticated
-                if (!_identityHelper.IsAuthenticated())
-                {
-                    _logger.LogWarning("User is not authenticated, redirecting to login");
-                    return RedirectToAction("Login", "Auth");
-                }
-
-                return View();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error in Account/Index: {ex.Message}");
-                throw;
-            }
+            // Global [Authorize] filter handles authentication
+            return View();
         }
     }
 }
