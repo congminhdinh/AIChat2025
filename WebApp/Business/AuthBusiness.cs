@@ -17,7 +17,7 @@ namespace WebApp.Business
             try
             {
                 var response = await PostAsync<LoginRequest, BaseResponse<TokenDto>>(
-                    "/web-api/account/auth/login?tenantId=6",
+                    $"/web-api/account/auth/login?tenantId={request.TenantId}",
                     request,
                     cancellationToken
                 );
