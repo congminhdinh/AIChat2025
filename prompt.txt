@@ -1,53 +1,51 @@
-Task: Implement "Create New Conversation" Flow.
+Task: Implement "Send Message" Flow (Hybrid Architecture) & Add Dependencies.
 
-Files to Analyze:
+Context: We are implementing the messaging flow in the WebApp layer.
 
-WebApp/Controllers/ChatController.cs
+Sending (User): WebApp calls REST API (ChatBusiness -> Microservice).
+
+Receiving (Bot): WebApp listens to SignalR events (ChatHub).
+
+Files to Analyze & Modify:
 
 WebApp/Services/Business/ChatBusiness.cs
+
+WebApp/Controllers/ChatController.cs
 
 wwwroot/Scripts/Chat/chat.js
 
 WebApp/Views/Chat/Index.cshtml
 
-WebApp/Views/Chat/CreateConversationPartial.cshtml
-
 Requirements:
 
-1. Backend (ChatBusiness & ChatController):
+1. Dependencies (CRITICAL):
 
-Business: Add a method in ChatBusiness to call the Microservice endpoint for creating a new conversation.
+Check Index.cshtml: If the Microsoft SignalR JavaScript client library is missing, you MUST add the script reference (use a reliable CDN like cdnjs) directly into the file (e.g., inside the Scripts section or before your chat.js import).
 
-Controller: Add an endpoint: public async Task<IActionResult> CreateConversation([FromBody] CreateConversationRequest request).
+2. Backend (ChatBusiness & ChatController):
 
-This should call the Business layer.
+ChatBusiness: Implement the method to call POST /messages on the ChatService. Ensure DTOs match the Microservice's expectation.
 
-Return JSON success/failure.
+ChatController: Create SendMessage action. It should receive the text, call Business layer, and return JSON "OK" immediately (async void) without waiting for the AI response.
 
-2. Frontend (chat.js & Index.cshtml):
+3. Frontend (chat.js):
 
-Modal Container: Ensure Index.cshtml has the necessary container (#modal-overlay, #modal-content-container) to host the Partial View.
+SignalR Setup:
 
-Open Logic: When the "New Chat" button is clicked:
+Initialize signalR.HubConnectionBuilder.
 
-Fetch the CreateConversationPartial view via AJAX.
+Connect to the API Gateway URL (assume path /hubs/chat).
 
-Render it inside the modal container and show the overlay.
+Event Listener: Listen for the Bot's response event (infer the event name from your previous analysis, e.g., BotResponse).
 
-Submit Logic: When "Tạo mới" is clicked inside the modal:
+UI Update: When a signal is received, verify it belongs to the active conversation, then append the Bot's message bubble.
 
-Get the text from the input.
+Sending Logic:
 
-Call ChatController.CreateConversation.
-
-On Success: Close the modal and immediately call loadConversations() to refresh the sidebar.
-
-On Failure: Show an alert/popup with the error message.
-
-Cancel Logic: When "Hủy" is clicked, simply hide/remove the modal.
+On Send: Render User's bubble immediately (Optimistic UI) -> Show Loading -> Call API via AJAX.
 
 Constraint:
 
-Use the existing CSS/HTML structure of the Partial View I provided earlier.
+Do not modify the Microservice/ChatService code.
 
-No comments in code.
+No comments in the code.

@@ -1,25 +1,82 @@
-// Chat.js - Handle chat interface logic
 (function () {
     'use strict';
 
     let currentConversationId = null;
+    let hubConnection = null;
 
-    // Wait for DOM to be ready
     document.addEventListener('DOMContentLoaded', function () {
-        // Initialize chat interface
         initializeChat();
     });
 
     async function initializeChat() {
-        // Load conversation list on page load
         await loadConversations();
-
-        // Setup event listeners
         setupEventListeners();
+        await setupSignalR();
+    }
+
+    async function setupSignalR() {
+        const apiGatewayUrl = window.location.origin.replace(/:\d+/, ':7235');
+
+        hubConnection = new signalR.HubConnectionBuilder()
+            .withUrl(`${apiGatewayUrl}/hubs/chat`, {
+                skipNegotiation: false,
+                transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.ServerSentEvents | signalR.HttpTransportType.LongPolling
+            })
+            .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
+
+        hubConnection.on('BotResponse', function (messageDto) {
+            console.log('Received BotResponse:', messageDto);
+
+            if (messageDto.conversationId !== currentConversationId) {
+                console.warn(`Received message for conversation ${messageDto.conversationId}, but current is ${currentConversationId}. Ignoring.`);
+                return;
+            }
+
+            removeLoadingIndicator();
+            appendMessage(messageDto.content, messageDto.type, true);
+        });
+
+        hubConnection.onreconnecting(function (error) {
+            console.warn('SignalR reconnecting...', error);
+            showError('Đang kết nối lại...');
+        });
+
+        hubConnection.onreconnected(function (connectionId) {
+            console.log('SignalR reconnected:', connectionId);
+            if (currentConversationId) {
+                hubConnection.invoke('JoinConversation', currentConversationId)
+                    .catch(err => console.error('Error rejoining conversation:', err));
+            }
+        });
+
+        hubConnection.onclose(function (error) {
+            console.error('SignalR connection closed:', error);
+            showError('Mất kết nối. Đang thử kết nối lại...');
+            setTimeout(() => startSignalRConnection(), 5000);
+        });
+
+        await startSignalRConnection();
+    }
+
+    async function startSignalRConnection() {
+        try {
+            await hubConnection.start();
+            console.log('SignalR connected successfully');
+
+            if (currentConversationId) {
+                await hubConnection.invoke('JoinConversation', currentConversationId);
+                console.log(`Joined conversation ${currentConversationId}`);
+            }
+        } catch (error) {
+            console.error('Error starting SignalR:', error);
+            showError('Không thể kết nối đến server. Thử lại sau 5 giây...');
+            setTimeout(() => startSignalRConnection(), 5000);
+        }
     }
 
     function setupEventListeners() {
-        // Send message on button click
         const sendButton = document.querySelector('.btn-send');
         if (sendButton) {
             sendButton.addEventListener('click', async function (e) {
@@ -28,7 +85,6 @@
             });
         }
 
-        // Send message on Enter key (without Shift)
         const messageInput = document.querySelector('.chat-input');
         if (messageInput) {
             messageInput.addEventListener('keydown', function (e) {
@@ -48,9 +104,6 @@
         }
     }
 
-    /**
-     * Load and render conversation list
-     */
     async function loadConversations() {
         try {
             const response = await fetch('/Chat/GetConversations', {
@@ -72,24 +125,18 @@
         }
     }
 
-    /**
-     * Render conversations in the sidebar
-     */
     function renderConversations(conversations) {
         const historyList = document.querySelector('.history-list');
         if (!historyList) return;
 
-        // Clear existing items
         historyList.innerHTML = '';
 
-        // Render each conversation
         conversations.forEach(function (conversation) {
             const item = document.createElement('div');
             item.className = 'history-item';
             item.dataset.conversationId = conversation.id;
             item.textContent = conversation.title || 'New Conversation';
 
-            // Add click handler
             item.addEventListener('click', function () {
                 handleConversationClick(conversation.id);
             });
@@ -97,17 +144,12 @@
             historyList.appendChild(item);
         });
 
-        // Auto-select first conversation if available
         if (conversations.length > 0 && !currentConversationId) {
             handleConversationClick(conversations[0].id);
         }
     }
 
-    /**
-     * Handle conversation item click
-     */
     async function handleConversationClick(conversationId) {
-        // Update active state
         document.querySelectorAll('.history-item').forEach(function (item) {
             item.classList.remove('active');
         });
@@ -117,16 +159,19 @@
             clickedItem.classList.add('active');
         }
 
-        // Set current conversation
+        if (currentConversationId && hubConnection && hubConnection.state === signalR.HubConnectionState.Connected) {
+            await hubConnection.invoke('LeaveConversation', currentConversationId);
+        }
+
         currentConversationId = conversationId;
 
-        // Load message history
+        if (hubConnection && hubConnection.state === signalR.HubConnectionState.Connected) {
+            await hubConnection.invoke('JoinConversation', conversationId);
+        }
+
         await loadMessageHistory(conversationId);
     }
 
-    /**
-     * Load message history for a conversation
-     */
     async function loadMessageHistory(conversationId) {
         try {
             const response = await fetch(`/Chat/GetConversation?id=${conversationId}`, {
@@ -148,31 +193,19 @@
         }
     }
 
-    /**
-     * Render messages in the chat content area
-     */
     function renderMessages(messages) {
         const chatContent = document.querySelector('.chat-content');
         if (!chatContent) return;
 
-        // Clear existing messages
         chatContent.innerHTML = '';
 
-        // Render each message
         messages.forEach(function (message) {
             appendMessage(message.content, message.type, false);
         });
 
-        // Scroll to bottom
         scrollToBottom();
     }
 
-    /**
-     * Append a message to the chat
-     * @param {string} content - Message content
-     * @param {number} type - 0 for User, 1 for Bot
-     * @param {boolean} animate - Whether to animate the message appearance
-     */
     function appendMessage(content, type, animate = true) {
         const chatContent = document.querySelector('.chat-content');
         if (!chatContent) return;
@@ -209,16 +242,12 @@
         scrollToBottom();
     }
 
-    /**
-     * Handle sending a message
-     */
     async function handleSendMessage() {
         const messageInput = document.querySelector('.chat-input');
         if (!messageInput) return;
 
         const content = messageInput.value.trim();
 
-        // Validate input
         if (!content) {
             return;
         }
@@ -228,17 +257,13 @@
             return;
         }
 
-        // Clear input immediately
         messageInput.value = '';
 
-        // Append user message to chat (Type 0 = User)
         appendMessage(content, 0, true);
 
-        // Show loading indicator (optional)
         showLoadingIndicator();
 
         try {
-            // Send message to API
             const response = await fetch('/Chat/SendMessage', {
                 method: 'POST',
                 headers: {
@@ -252,14 +277,9 @@
 
             const result = await response.json();
 
-            // Remove loading indicator
-            removeLoadingIndicator();
-
-            if (result.success && result.data) {
-                // Append bot response (Type 1 = Bot)
-                appendMessage(result.data.content, 1, true);
-            } else {
+            if (!result.success) {
                 console.error('Failed to send message:', result.message);
+                removeLoadingIndicator();
                 showError(result.message || 'Không thể gửi tin nhắn. Vui lòng thử lại.');
             }
         } catch (error) {
@@ -269,9 +289,6 @@
         }
     }
 
-    /**
-     * Show loading indicator in chat
-     */
     function showLoadingIndicator() {
         const chatContent = document.querySelector('.chat-content');
         if (!chatContent) return;
@@ -291,9 +308,6 @@
         scrollToBottom();
     }
 
-    /**
-     * Remove loading indicator
-     */
     function removeLoadingIndicator() {
         const loadingMessage = document.querySelector('.loading-message');
         if (loadingMessage) {
@@ -301,9 +315,6 @@
         }
     }
 
-    /**
-     * Scroll chat to bottom
-     */
     function scrollToBottom() {
         const chatContent = document.querySelector('.chat-content');
         if (chatContent) {
@@ -311,14 +322,9 @@
         }
     }
 
-    /**
-     * Show error message
-     */
     function showError(message) {
-        // You can customize this to show errors in a toast or alert
         console.error(message);
 
-        // Optional: Show error in chat as a system message
         const chatContent = document.querySelector('.chat-content');
         if (chatContent) {
             const errorDiv = document.createElement('div');
@@ -327,7 +333,6 @@
             errorDiv.textContent = message;
             chatContent.appendChild(errorDiv);
 
-            // Remove error after 5 seconds
             setTimeout(function () {
                 errorDiv.remove();
             }, 5000);

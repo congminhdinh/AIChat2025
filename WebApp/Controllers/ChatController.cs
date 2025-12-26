@@ -125,7 +125,7 @@ namespace WebApp.Controllers
                 return Json(new { success = false, message = response.Message });
             }
 
-            return Json(new { success = true, data = response.Data });
+            return Json(new { success = true, message = "OK" });
         }
     }
 }
