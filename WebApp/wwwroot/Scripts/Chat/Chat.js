@@ -19,15 +19,6 @@
     }
 
     function setupEventListeners() {
-        // Send message on form submit
-        const sendForm = document.querySelector('.chat-input-form');
-        if (sendForm) {
-            sendForm.addEventListener('submit', async function (e) {
-                e.preventDefault();
-                await handleSendMessage();
-            });
-        }
-
         // Send message on button click
         const sendButton = document.querySelector('.btn-send');
         if (sendButton) {
@@ -38,7 +29,7 @@
         }
 
         // Send message on Enter key (without Shift)
-        const messageInput = document.querySelector('.message-input');
+        const messageInput = document.querySelector('.chat-input');
         if (messageInput) {
             messageInput.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -130,7 +121,7 @@
      */
     async function loadMessageHistory(conversationId) {
         try {
-            const response = await fetch(`/Chat/GetHistory?id=${conversationId}`, {
+            const response = await fetch(`/Chat/GetConversation?id=${conversationId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
@@ -139,8 +130,8 @@
 
             const result = await response.json();
 
-            if (result.success && result.data) {
-                renderMessages(result.data);
+            if (result.success && result.data && result.data.messages) {
+                renderMessages(result.data.messages);
             } else {
                 console.error('Failed to load message history:', result.message);
             }
@@ -214,7 +205,7 @@
      * Handle sending a message
      */
     async function handleSendMessage() {
-        const messageInput = document.querySelector('.message-input');
+        const messageInput = document.querySelector('.chat-input');
         if (!messageInput) return;
 
         const content = messageInput.value.trim();
@@ -247,7 +238,7 @@
                 },
                 body: JSON.stringify({
                     conversationId: currentConversationId,
-                    content: content
+                    message: content
                 })
             });
 
