@@ -32,6 +32,21 @@ class ChatProcessor:
         except Exception as e:
             logger.error(f'[ConversationId: {prompt_message.conversation_id}] Failed to process prompt: {e}', exc_info=True)
 
+            # Send fallback error message to RabbitMQ
+            try:
+                fallback_message = BotResponseCreatedMessage(
+                    conversation_id=prompt_message.conversation_id,
+                    message='Xin lỗi, đã xảy ra lỗi khi xử lý câu hỏi của bạn. Vui lòng thử lại sau.',
+                    user_id=0,
+                    tenant_id=prompt_message.tenant_id,
+                    timestamp=datetime.utcnow(),
+                    model_used='error'
+                )
+                await self.rabbitmq_service.publish_response(fallback_message)
+                logger.info(f'[ConversationId: {prompt_message.conversation_id}] Published fallback error message')
+            except Exception as publish_error:
+                logger.error(f'[ConversationId: {prompt_message.conversation_id}] Failed to publish fallback message: {publish_error}', exc_info=True)
+
     async def run_rabbitmq(self) -> None:
         try:
             logger.info('Starting ChatProcessor Service')

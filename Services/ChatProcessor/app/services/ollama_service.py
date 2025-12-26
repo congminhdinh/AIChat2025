@@ -13,10 +13,16 @@ class OllamaService:
         self.chat_endpoint = f'{self.base_url}/api/chat'
         logger.info(f'Initialized OllamaService: base_url={self.base_url}, model={self.model}, timeout={self.timeout}s')
 
-    async def generate_response(self, prompt: str, conversation_history: Optional[List[Dict[str, str]]]=None, stream: bool=False) -> str:
+    async def generate_response(self, prompt: str, conversation_history: Optional[List[Dict[str, str]]]=None, stream: bool=False, temperature: Optional[float]=None) -> str:
         messages = conversation_history or []
         messages.append({'role': 'user', 'content': prompt})
         payload = {'model': self.model, 'messages': messages, 'stream': stream}
+
+        # Add temperature to reduce hallucination if provided
+        if temperature is not None:
+            payload['options'] = {'temperature': temperature}
+            logger.debug(f'Setting temperature to {temperature} for reduced hallucination')
+
         logger.debug(f'Sending request to Ollama: {payload}')
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:

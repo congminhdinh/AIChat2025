@@ -1,8 +1,7 @@
 import torch
 import uuid
 from typing import List, Any
-from optimum.onnxruntime import ORTModelForFeatureExtraction
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModel
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue, FilterSelector
 from src.config import settings
@@ -13,8 +12,9 @@ class EmbeddingService:
         print(f'Loading model: {settings.model_name}...')
         try:
             self.tokenizer = AutoTokenizer.from_pretrained(settings.model_name)
-            self.model = ORTModelForFeatureExtraction.from_pretrained(settings.model_name, export=True)
-            print('Model loaded successfully with ONNX Runtime!')
+            self.model = AutoModel.from_pretrained(settings.model_name)
+            self.model.eval()  # Set to evaluation mode
+            print('Model loaded successfully!')
         except Exception as e:
             print(f'Error loading model: {e}')
             raise
@@ -33,7 +33,8 @@ class EmbeddingService:
 
     def encode_text(self, text: str) -> List[float]:
         encoded_input = self.tokenizer(text, padding=True, truncation=True, return_tensors='pt', max_length=512)
-        model_output = self.model(**encoded_input)
+        with torch.no_grad():  # Disable gradient computation for inference
+            model_output = self.model(**encoded_input)
         sentence_embeddings = self.mean_pooling(model_output, encoded_input['attention_mask'])
         sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
         return sentence_embeddings[0].tolist()
