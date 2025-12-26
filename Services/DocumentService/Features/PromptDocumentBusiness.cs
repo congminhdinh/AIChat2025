@@ -99,7 +99,10 @@ namespace DocumentService.Features
                 UploadedBy = uploadedBy,
                 TenantId = tenantId,
                 Action = DocumentAction.Upload,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                DocumentType = input.DocumentType,
+                FatherDocumentId = input.FatherDocumentId,
+                DocumentName = input.DocumentName
             };
 
             await _documentRepository.AddAsync(docEntity);
@@ -235,6 +238,17 @@ namespace DocumentService.Features
             if (document == null)
                 throw new Exception($"Document with ID {input.DocumentId} not found");
 
+            // Fetch parent document name if this is a decree with a parent
+            string? fatherDocumentName = null;
+            if (document.DocumentType == DocType.NghiDinh && document.FatherDocumentId > 0)
+            {
+                var parentDocument = await _documentRepository.GetByIdAsync(document.FatherDocumentId);
+                if (parentDocument != null)
+                {
+                    fatherDocumentName = parentDocument.DocumentName;
+                }
+            }
+
             document.Action = DocumentAction.Vectorize_Start;
             await _documentRepository.UpdateAsync(document);
 
@@ -255,7 +269,7 @@ namespace DocumentService.Features
                 await fileStream.CopyToAsync(memoryStream);
                 memoryStream.Position = 0;
 
-                var chunks = ExtractHierarchicalChunks(memoryStream, input.DocumentId, document.FileName);
+                var chunks = ExtractHierarchicalChunks(memoryStream, input.DocumentId, document.FileName, document.DocumentName, document.DocumentType, fatherDocumentName);
 
                 if (chunks.Count == 0)
                 {
@@ -338,7 +352,7 @@ namespace DocumentService.Features
             }
         }
 
-        public List<DocumentChunkDto> ExtractHierarchicalChunks(Stream stream, int documentId, string fileName)
+        public List<DocumentChunkDto> ExtractHierarchicalChunks(Stream stream, int documentId, string fileName, string? documentName, DocType documentType, string? fatherDocumentName)
         {
             var chunks = new List<DocumentChunkDto>();
 
@@ -361,7 +375,7 @@ namespace DocumentService.Features
                     if (_regexHeading1.IsMatch(text))
                     {
                         // Flush any pending chunk before updating Heading1
-                        FlushChunk(chunks, currentHeading1, currentHeading2, currentHeading3, contentParagraphs, documentId, fileName);
+                        FlushChunk(chunks, currentHeading1, currentHeading2, currentHeading3, contentParagraphs, documentId, fileName, documentName, documentType, fatherDocumentName);
 
                         currentHeading1 = text;
                         currentHeading2 = null;
@@ -372,7 +386,7 @@ namespace DocumentService.Features
                     else if (_regexHeading2.IsMatch(text))
                     {
                         // Flush any pending chunk before updating Heading2
-                        FlushChunk(chunks, currentHeading1, currentHeading2, currentHeading3, contentParagraphs, documentId, fileName);
+                        FlushChunk(chunks, currentHeading1, currentHeading2, currentHeading3, contentParagraphs, documentId, fileName, documentName, documentType, fatherDocumentName);
 
                         currentHeading2 = text;
                         currentHeading3 = string.Empty;
@@ -382,7 +396,7 @@ namespace DocumentService.Features
                     else if (_regexHeading3.IsMatch(text))
                     {
                         // Flush previous Article chunk before starting new one
-                        FlushChunk(chunks, currentHeading1, currentHeading2, currentHeading3, contentParagraphs, documentId, fileName);
+                        FlushChunk(chunks, currentHeading1, currentHeading2, currentHeading3, contentParagraphs, documentId, fileName, documentName, documentType, fatherDocumentName);
 
                         currentHeading3 = text;
                         contentParagraphs.Clear();
@@ -399,7 +413,7 @@ namespace DocumentService.Features
                 }
 
                 // Flush the last chunk
-                FlushChunk(chunks, currentHeading1, currentHeading2, currentHeading3, contentParagraphs, documentId, fileName);
+                FlushChunk(chunks, currentHeading1, currentHeading2, currentHeading3, contentParagraphs, documentId, fileName, documentName, documentType, fatherDocumentName);
             }
 
             return chunks;
@@ -412,7 +426,10 @@ namespace DocumentService.Features
             string heading3,
             List<string> contentParagraphs,
             int documentId,
-            string fileName)
+            string fileName,
+            string? documentName,
+            DocType documentType,
+            string? fatherDocumentName)
         {
             // Only create chunk if we have content paragraphs (skip empty chunks)
             if (contentParagraphs.Count == 0) return;
@@ -434,6 +451,9 @@ namespace DocumentService.Features
 
             var chunk = new DocumentChunkDto
             {
+                DocumentName = documentName,
+                DocumentType = documentType,
+                FatherDocumentName = fatherDocumentName,
                 Heading1 = heading1,
                 Heading2 = heading2,
                 Content = content,

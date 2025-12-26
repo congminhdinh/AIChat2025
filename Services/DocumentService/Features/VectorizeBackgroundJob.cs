@@ -35,11 +35,13 @@ namespace DocumentService.Features
                         {
                             { "source_id", chunk.DocumentId },
                             { "file_name", chunk.FileName },
+                            { "document_name", chunk.DocumentName ?? string.Empty },
+                            { "father_doc_name", chunk.FatherDocumentName ?? string.Empty },
                             { "heading1", chunk.Heading1 },
-                            { "heading2", chunk.Heading2 },
+                            { "heading2", chunk.Heading2 ?? string.Empty },
                             { "content", chunk.Content },
                             { "tenant_id", tenantId },
-                            { "type", 1 }
+                            { "type", (int)chunk.DocumentType }
                         }
                     }).ToList()
                 };

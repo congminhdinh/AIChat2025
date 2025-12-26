@@ -1,4 +1,5 @@
-﻿using DocumentService.Features;
+﻿using DocumentService.Enums;
+using DocumentService.Features;
 using DocumentService.Requests;
 using Infrastructure.Web;
 using Microsoft.AspNetCore.Mvc;
@@ -40,9 +41,9 @@ namespace DocumentService.Endpoints
             // POST /document/
             group.MapPost("/", async (
                 PromptDocumentBusiness documentBusiness,
-                IFormFile file) =>
+                IFormFile file, DocType doctype, int fatherDocumentId, string? documentName) =>
             {
-                var request = new CreateDocumentRequest { File = file };
+                var request = new CreateDocumentRequest { File = file, DocumentType = doctype, FatherDocumentId = fatherDocumentId, DocumentName = documentName};
                 return await documentBusiness.CreateDocument(request);
             }).DisableAntiforgery();
 
