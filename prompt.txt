@@ -1,29 +1,43 @@
-Refactor ChatProcessor: Model Update & Async Batch Testing
+I am building a RAG-based chatbot using a vector database (Qdrant).
 
-Update Model Configuration:
+Each retrieved vector contains rich metadata, including a human-readable document identifier such as document_name (e.g. “Bộ luật Lao động 2019 (Law No. 45/2019/QH14)”).
 
-In ChatProcessor (or Ollama config), change the model to ontocord/vistral:latest.
+However, the current chatbot response looks like this:
 
-Create/Update Endpoint: POST /api/test/batch
+“Based on the previous steps. According to Article 212 of Document #1, a branch will have its Business Location Registration Certificate revoked if it ceases operation for one year without notifying the business registration authority and tax authority. (Source: [Document #1])”
 
-Input Body: A list of { tenant_id, TC_id, questions }.
+Problem:
+The answer only references a placeholder like “Document #1”, instead of the actual document_name available in the vector payload.
 
-Response Behavior: Return an immediate HTTP 200 OK (or 202 Accepted) to the client. Do not wait for the processing to finish. Do not return the results in the HTTP response.
+This indicates that although semantic retrieval works, the citation logic is incorrect or incomplete.
 
-Background Processing Logic:
+Please analyze and verify the logic in the following components:
 
-Upon receiving the request, spawn a background task (e.g., using Task.Run or a background worker).
+EmbeddingService
 
-Inside this background task:
+Check whether metadata fields such as document_name, file_name, or other identifiers are correctly embedded, stored, and retrievable from Qdrant.
 
-Iterate through the input list.
+Confirm that metadata is preserved and returned together with the text content during vector search.
 
-For each entity:
+ChatProcessor (or RAG orchestration layer)
 
-Call the existing core chat logic (reuse the Service method used by RabbitMQ).
+Check whether retrieved metadata is actually passed into the prompt construction step.
 
-Delay: Wait 3 seconds (await Task.Delay(3000)) after each entity.
+Verify whether the model prompt only receives abstract labels like “Document #1” instead of the real metadata.
 
-Collect the result ({ TC_id, answer }) into a generic list.
+Identify where the mapping between retrieved chunks and their human-readable sources is lost or replaced by placeholders.
 
-File Output: Once the loop is complete, serialize the final list of results to JSON and save it to a file named tdd.json in the root (or output) directory.
+Expected behavior:
+The chatbot should generate answers with explicit, human-readable citations, for example:
+
+“According to Article 212 of Bộ luật Lao động 2019 (Law No. 45/2019/QH14) …”
+
+Task:
+
+Identify the exact logical flaw (EmbeddingService vs ChatProcessor vs prompt construction).
+
+Explain why the LLM cannot access or use document_name.
+
+Propose a concrete fix at the logic or prompt level to ensure real document names are always used instead of generic placeholders.
+
+Focus strictly on RAG architecture, metadata flow, and prompt engineering. Do not explain legal content.

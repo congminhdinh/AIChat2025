@@ -184,5 +184,27 @@
     "user_id": 0,
     "tenant_id": 6,
     "timestamp": "2025-12-27T11:02:55.248641"
+  },
+  {
+    "question": "Chi nhánh bị thu hồi Giấy chứng nhận đăng ký địa điểm kinh doanh trong trường hợp nào?",
+    "contexts": [
+      "Chương IX\nĐiều 212. Thu hồi Giấy chứng nhận đăng ký doanh nghiệp\n1. Doanh nghiệp bị thu hồi Giấy chứng nhận đăng ký doanh nghiệp trong trường hợp sau đây:\na) Nội dung kê khai trong hồ sơ đăng ký doanh nghiệp là giả mạo;\nb) Doanh nghiệp do những người bị cấm thành lập doanh nghiệp theo quy định tại khoản 2 Điều 17 của Luật này thành lập;\nc) Doanh nghiệp ngừng hoạt động kinh doanh 01 năm mà không thông báo với Cơ quan đăng ký kinh doanh và cơ quan thuế;\nd) Doanh nghiệp không gửi báo cáo theo quy định tại điểm c khoản 1 Điều 216 của Luật này đến Cơ quan đăng ký kinh doanh trong thời hạn 06 tháng kể từ ngày hết hạn gửi báo cáo hoặc có yêu cầu bằng văn bản;\nđ) Trường hợp khác theo quyết định của Tòa án, đề nghị của cơ quan có thẩm quyền theo quy định của luật.\n2. Chính phủ quy định trình tự, thủ tục thu hồi Giấy chứng nhận đăng ký doanh nghiệp."
+    ],
+    "answer": "Xây dựng câu trả lời dựa trên thông tin được cung cấp.\nTheo Điều 212 của Luật Doanh nghiệp năm 2020, các trường hợp sau đây dẫn đến việc thu hồi Giấy chứng nhận đăng ký hoạt động chi nhánh:\n- Nội dung kê khai trong hồ sơ đăng ký địa điểm kinh doanh là giả mạo;\n- Chi nhánh do những người bị cấm thành lập theo quy định tại khoản 2 Điều 17 của Luật này thành lập.\n- Chi nhánh ngừng hoạt động kinh doanh 01 năm mà không thông báo với Cơ quan đăng ký kinh doanh và cơ quan thuế;\n- Chi nhánh không gửi báo cáo theo quy định tại điểm c khoản 1 Điều 216 của Luật này đến Cơ quan đăng ký kinh doanh trong thời hạn 06 tháng kể từ ngày hết hạn gửi báo cáo hoặc có yêu cầu bằng văn bản.\n- Trường hợp khác theo quyết định của Tòa án, đề nghị của cơ quan có thẩm quyền theo quy định của luật.",
+    "conversation_id": 0,
+    "user_id": 0,
+    "tenant_id": 6,
+    "timestamp": "2025-12-27T17:34:56.652361"
+  },
+  {
+    "question": "Chi nhánh bị thu hồi Giấy chứng nhận đăng ký địa điểm kinh doanh trong trường hợp nào?",
+    "contexts": [
+      "Chương IX\nĐiều 212. Thu hồi Giấy chứng nhận đăng ký doanh nghiệp\n1. Doanh nghiệp bị thu hồi Giấy chứng nhận đăng ký doanh nghiệp trong trường hợp sau đây:\na) Nội dung kê khai trong hồ sơ đăng ký doanh nghiệp là giả mạo;\nb) Doanh nghiệp do những người bị cấm thành lập doanh nghiệp theo quy định tại khoản 2 Điều 17 của Luật này thành lập;\nc) Doanh nghiệp ngừng hoạt động kinh doanh 01 năm mà không thông báo với Cơ quan đăng ký kinh doanh và cơ quan thuế;\nd) Doanh nghiệp không gửi báo cáo theo quy định tại điểm c khoản 1 Điều 216 của Luật này đến Cơ quan đăng ký kinh doanh trong thời hạn 06 tháng kể từ ngày hết hạn gửi báo cáo hoặc có yêu cầu bằng văn bản;\nđ) Trường hợp khác theo quyết định của Tòa án, đề nghị của cơ quan có thẩm quyền theo quy định của luật.\n2. Chính phủ quy định trình tự, thủ tục thu hồi Giấy chứng nhận đăng ký doanh nghiệp."
+    ],
+    "answer": "Trích dẫn chính xác từ ngữ cảnh và trả lời câu hỏi của người dùng.\nSau khi đọc kỹ Chương IX, chúng tôi thấy rằng Điều 212 quy định các trường hợp thu hồi Giấy chứng nhận đăng ký doanh nghiệp. Tuy nhiên, không có đề cập cụ thể nào về việc thu hồi đối với chi nhánh trong điều này. Do đó, dựa trên thông tin được cung cấp ở trên, câu trả lời cho câu hỏi của người dùng là: Không có quy định rõ ràng về trường hợp bị thu hồi Giấy chứng nhận đăng ký địa điểm kinh doanh đối với chi nhánh theo văn bản pháp luật đã nêu.",
+    "conversation_id": 0,
+    "user_id": 0,
+    "tenant_id": 6,
+    "timestamp": "2025-12-27T17:37:39.970342"
   }
 ]

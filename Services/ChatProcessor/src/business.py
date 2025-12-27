@@ -274,7 +274,12 @@ HƯỚNG DẪN ĐIỀN THÔNG TIN VÀO KHUÔN MẪU:
 2. [Số liệu/Quyền lợi của Công ty]: Trích xuất con số hoặc quy định cụ thể của công ty (Ví dụ: số tiền, số %, số ngày...). ⚠️ CHÍNH XÁC với tình huống người dùng hỏi.
 3. [Đánh giá]: So sánh và kết luận (dùng từ "hợp lệ", "cao hơn", hoặc "thấp hơn").
 4. [Số liệu/Quyền lợi của Luật]: Trích xuất con số tương ứng trong Luật để làm mốc so sánh. ⚠️ CHÍNH XÁC với tình huống người dùng hỏi.
-5. [Trích dẫn Điều/Khoản Luật]: Ghi rõ Điều khoản trong Luật Nhà nước.
+5. [Trích dẫn Điều/Khoản]: Sao chép CHÍNH XÁC nhãn trích dẫn trong dấu ngoặc vuông [...] từ context.
+
+YÊU CẦU TRÍCH DẪN:
+- BẮT BUỘC sử dụng CHÍNH XÁC nhãn trích dẫn có trong context
+- KHÔNG được tự tạo hoặc rút gọn tên tài liệu
+- Nếu context cung cấp nhãn đầy đủ, phải sử dụng nhãn đó
 
 YÊU CẦU:
 - Không được tự ý thay đổi cấu trúc câu.
@@ -291,7 +296,9 @@ YÊU CẦU:
         return """TUYỆT ĐỐI KHÔNG in "Bước 1", "Bước 2", "Bước 3" hoặc bất kỳ quá trình suy luận nào.
 CHỈ IN CÂU TRẢ LỜI CUỐI CÙNG.
 
-Trả lời ngắn gọn theo mẫu: Theo [Điều X], [nội dung]. (Nguồn: [Nội quy Công ty/Luật Nhà nước])"""
+Trả lời ngắn gọn theo mẫu: Theo [Trích dẫn chính xác từ context], [nội dung].
+
+YÊU CẦU: Sao chép CHÍNH XÁC nhãn trích dẫn trong [...] từ context đã cung cấp."""
 
     @staticmethod
     def _cleanup_response(response: str) -> str:
@@ -410,6 +417,53 @@ Trả lời ngắn gọn theo mẫu: Theo [Điều X], [nội dung]. (Nguồn: [
         return terminology_section
 
     @staticmethod
+    def _build_citation_label(result, is_company_rule: bool, index: int) -> str:
+        """
+        Builds a citation label from Qdrant result metadata.
+
+        Args:
+            result: Qdrant ScoredPoint with payload containing metadata
+            is_company_rule: True for company rules, False for legal documents
+            index: Fallback index number if metadata is missing
+
+        Returns:
+            Formatted citation label string
+        """
+        if not hasattr(result, 'payload'):
+            return f"[Quy định #{index}]" if is_company_rule else f"[Văn bản #{index}]"
+
+        payload = result.payload
+        citation_parts = []
+
+        # Extract metadata
+        document_name = payload.get('document_name', '')
+        heading1 = payload.get('heading1', '')
+        heading2 = payload.get('heading2', '')
+
+        # Build document identifier
+        if document_name:
+            citation_parts.append(document_name)
+        else:
+            # Fallback to generic label if no document name
+            citation_parts.append(f"Quy định #{index}" if is_company_rule else f"Văn bản #{index}")
+
+        # Add hierarchical section information
+        if heading1 and heading2:
+            citation_parts.append(f"{heading1} - {heading2}")
+        elif heading1:
+            citation_parts.append(heading1)
+        elif heading2:
+            citation_parts.append(heading2)
+
+        # Join and wrap in brackets
+        label = " - ".join(citation_parts)
+
+        if is_company_rule and document_name:
+            return f"[Nội quy: {label}]"
+        else:
+            return f"[{label}]"
+
+    @staticmethod
     def _structure_context_for_compliance(company_rule_results: list, legal_base_results: list, tenant_id: int, scenario: str) -> tuple[str, list, int]:
         """
         Structures the retrieved document chunks into a clear, delimited context string.
@@ -428,13 +482,18 @@ Trả lời ngắn gọn theo mẫu: Theo [Điều X], [nội dung]. (Nguồn: [
         documents_used = 0
 
         # Group A: Internal Policy (Company Rules) - Priority source
-        company_texts = [
-            result.payload['text']
-            for result in company_rule_results
+        # Extract company rule documents with metadata
+        company_documents = [
+            {
+                'result': result,
+                'text': result.payload['text'],
+                'label': ChatBusiness._build_citation_label(result, is_company_rule=True, index=idx)
+            }
+            for idx, result in enumerate(company_rule_results, 1)
             if hasattr(result, 'payload') and 'text' in result.payload
         ]
 
-        if company_texts:
+        if company_documents:
             context_parts.append("═══════════════════════════════════════")
             context_parts.append("**═══ NỘI QUY CÔNG TY ═══**")
             if scenario == "COMPANY_ONLY":
@@ -442,27 +501,32 @@ Trả lời ngắn gọn theo mẫu: Theo [Điều X], [nội dung]. (Nguồn: [
             else:
                 context_parts.append("(Quy định nội bộ - ưu tiên áp dụng)")
             context_parts.append("═══════════════════════════════════════")
-            for idx, text in enumerate(company_texts, 1):
-                context_parts.append(f"\n[Quy định #{idx}]\n{text}")
+            for doc in company_documents:
+                context_parts.append(f"\n{doc['label']}\n{doc['text']}")
 
             # Collect source IDs
             for result in company_rule_results:
                 if hasattr(result, 'payload') and 'source_id' in result.payload:
                     source_ids.append(result.payload['source_id'])
 
-            documents_used += len(company_texts)
-            logger.info(f'Retrieved {len(company_texts)} COMPANY REGULATION document(s) for tenant {tenant_id}')
+            documents_used += len(company_documents)
+            logger.info(f'Retrieved {len(company_documents)} COMPANY REGULATION document(s) for tenant {tenant_id}')
         else:
             logger.warning(f'No COMPANY REGULATION documents found for tenant {tenant_id}')
 
         # Group B: Legal Framework (National Laws) - Reference/Validation source
-        legal_texts = [
-            result.payload['text']
-            for result in legal_base_results
+        # Extract legal documents with metadata
+        legal_documents = [
+            {
+                'result': result,
+                'text': result.payload['text'],
+                'label': ChatBusiness._build_citation_label(result, is_company_rule=False, index=idx)
+            }
+            for idx, result in enumerate(legal_base_results, 1)
             if hasattr(result, 'payload') and 'text' in result.payload
         ]
 
-        if legal_texts:
+        if legal_documents:
             context_parts.append("\n\n═══════════════════════════════════════")
             context_parts.append("**═══ VĂN BẢN PHÁP LUẬT ═══**")
             if scenario == "LEGAL_ONLY":
@@ -470,16 +534,16 @@ Trả lời ngắn gọn theo mẫu: Theo [Điều X], [nội dung]. (Nguồn: [
             else:
                 context_parts.append("(Quy định của Nhà nước - làm cơ sở đối chiếu)")
             context_parts.append("═══════════════════════════════════════")
-            for idx, text in enumerate(legal_texts, 1):
-                context_parts.append(f"\n[Văn bản #{idx}]\n{text}")
+            for doc in legal_documents:
+                context_parts.append(f"\n{doc['label']}\n{doc['text']}")
 
             # Collect source IDs
             for result in legal_base_results:
                 if hasattr(result, 'payload') and 'source_id' in result.payload:
                     source_ids.append(result.payload['source_id'])
 
-            documents_used += len(legal_texts)
-            logger.info(f'Retrieved {len(legal_texts)} LEGAL FRAMEWORK document(s)')
+            documents_used += len(legal_documents)
+            logger.info(f'Retrieved {len(legal_documents)} LEGAL FRAMEWORK document(s)')
         else:
             logger.warning('No LEGAL FRAMEWORK documents found')
 
