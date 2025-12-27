@@ -15,7 +15,7 @@ class UserPromptReceivedMessage(BaseModel):
     system_instruction: Optional[List[PromptConfigDto]] = Field(default_factory=list, alias='systemInstruction')
 
 class BotResponseCreatedMessage(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, protected_namespaces=())
     conversation_id: int = Field(alias='conversationId')
     message: str
     token: str
@@ -30,6 +30,7 @@ class ChatRequest(BaseModel):
     system_instruction: Optional[List[PromptConfigDto]] = Field(default_factory=list)
 
 class ChatResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     conversation_id: int
     message: str
     user_id: int
@@ -38,3 +39,11 @@ class ChatResponse(BaseModel):
     rag_documents_used: int
     source_ids: Optional[List] = []
     scenario: Optional[str] = None  # NEW: Scenario for debugging (BOTH, COMPANY_ONLY, LEGAL_ONLY, NONE)
+
+class TestEntity(BaseModel):
+    tenant_id: int
+    TC_id: str
+    questions: str
+
+class BatchTestRequest(BaseModel):
+    entities: List[TestEntity]

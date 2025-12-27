@@ -10,6 +10,7 @@ class UserPromptReceivedMessage(BaseModel):
     timestamp: Optional[datetime] = Field(default_factory=datetime.utcnow)
 
 class BotResponseCreatedMessage(BaseModel):
+    model_config = {'protected_namespaces': ()}
     conversation_id: int
     message: str
     user_id: int
