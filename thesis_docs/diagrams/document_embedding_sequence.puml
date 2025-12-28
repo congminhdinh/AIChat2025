@@ -1,0 +1,220 @@
+@startuml document_embedding_sequence
+'*****************************************************
+' AIChat2025 - Document Embedding Sequence Diagram
+' Purpose: Show document upload and vectorization flow
+' Chapter: Chapter 4 - Design & Implementation
+'*****************************************************
+
+title Document Upload and Vectorization Flow
+
+actor "HR/Admin" as Admin
+participant "WebApp" as Web
+participant "API Gateway" as Gateway
+participant "DocumentService" as Doc
+participant "StorageService" as Storage
+participant "MinIO" as Minio
+participant "Hangfire" as HF
+participant "VectorizeBackgroundJob" as Job
+participant "EmbeddingService\n(Python)" as Embed
+participant "Qdrant" as Vector
+database "SQL Server" as DB
+
+== Document Upload ==
+Admin -> Web: Upload .docx file\n+ Document name\n+ Type (Company/Legal)
+activate Web
+Web -> Web: Validate:\n- File extension = .docx\n- File size <= 10MB
+Web -> Gateway: POST /api/document/\n(multipart/form-data)
+activate Gateway
+Gateway -> Doc: Forward request
+activate Doc
+
+group Save File to MinIO
+  Doc -> Storage: POST /api/storage/upload\n(file stream)
+  activate Storage
+  Storage -> Minio: PutObjectAsync(\n  bucket: "ai-chat-2025",\n  key: "tenant_1/doc_123.docx",\n  stream: fileStream\n)
+  activate Minio
+  Minio -> Minio: Store file
+  Minio --> Storage: Success
+  deactivate Minio
+  Storage --> Doc: fileName: "tenant_1/doc_123.docx"
+  deactivate Storage
+end
+
+group Create Document Record
+  Doc -> DB: INSERT INTO PromptDocuments\n(\n  TenantId, DocumentName, FileName,\n  Status, IsCompanyRule, CreatedAt\n)\nVALUES\n(\n  1, 'Nội quy lao động 2024', 'tenant_1/doc_123.docx',\n  'Pending', true, '2024-12-28'\n)
+  DB --> Doc: documentId = 123
+end
+
+group Enqueue Background Job
+  Doc -> HF: BackgroundJob.Enqueue<VectorizeBackgroundJob>(\n  job => job.VectorizeDocumentAsync(123)\n)
+  note right
+    Hangfire stores job in database
+    and executes asynchronously
+  end note
+  HF --> Doc: Job enqueued (jobId)
+end
+
+Doc --> Gateway: 201 Created\n{\n  "documentId": 123,\n  "status": "Pending",\n  "message": "Tài liệu đã được upload. Đang xử lý..."\n}
+deactivate Doc
+Gateway --> Web: Forward response
+deactivate Gateway
+Web --> Admin: Show success message\nRedirect to document list
+deactivate Web
+
+== Background Vectorization (Async) ==
+HF -> Job: Execute VectorizeDocumentAsync(123)
+activate Job
+
+group Update Status
+  Job -> DB: UPDATE PromptDocuments\nSET Status = 'Processing'\nWHERE Id = 123
+  DB --> Job: Updated
+end
+
+group Download File from MinIO
+  Job -> Storage: GET /api/storage/download?fileName=tenant_1/doc_123.docx
+  activate Storage
+  Storage -> Minio: GetObjectAsync(bucket, key)
+  activate Minio
+  Minio --> Storage: File stream
+  deactivate Minio
+  Storage --> Job: .docx file stream
+  deactivate Storage
+end
+
+group Parse .docx File
+  Job -> Job: DocumentFormat.OpenXml.WordprocessingDocument.Open()
+  Job -> Job: Extract all paragraphs
+  note right
+    foreach (var paragraph in document.MainDocumentPart.Document.Body.Descendants<Paragraph>())
+    {
+      string text = paragraph.InnerText;
+      string style = paragraph.ParagraphProperties?.ParagraphStyleId?.Val;
+      // Detect if it's a heading (Chương, Điều, etc.)
+    }
+  end note
+end
+
+group Hierarchical Chunking
+  Job -> Job: Analyze document structure
+  note right
+    **Detect hierarchy:**
+    - Level 1: Chương XV (Heading1)
+    - Level 2: Điều 24 (Heading2)
+    - Level 3: Khoản 1, 2, 3... (Paragraphs)
+
+    **Build chunks with metadata:**
+    chunks = [
+      {
+        text: "Thời gian thử việc được quy định như sau: a) Đối với...",
+        document_name: "Bộ luật Lao động 2019",
+        heading1: "Chương XV",
+        heading2: "Điều 24",
+        father_doc_name: "Bộ luật Lao động 2019",
+        tenant_id: 1
+      },
+      {...},
+      ...
+    ]
+  end note
+  Job -> Job: Split into chunks\n(~200-500 words per chunk)\nPreserve hierarchy
+end
+
+group Batch Embedding
+  Job -> Embed: POST /vectorize-batch\n{\n  "chunks": [\n    {text: "...", metadata: {...}},\n    {...},\n    ... (32 chunks per batch)\n  ]\n}
+  activate Embed
+
+  loop For each batch of 32 chunks
+    Embed -> Embed: Load model:\ntruro7/vn-law-embedding
+    Embed -> Embed: Encode batch\nvectors = model.encode(texts, batch_size=32)
+    note right
+      **Batch processing:**
+      - Input: 32 text strings
+      - Output: 32 x 768-dim vectors
+      - Time: ~1-2 seconds per batch
+    end note
+
+    group Store in Qdrant
+      Embed -> Vector: Upsert points\ncollection: "vn_law_documents"
+      activate Vector
+      note right
+        points = [
+          PointStruct(
+            id=uuid.uuid4(),
+            vector=[0.23, -0.45, ..., 0.12],  # 768 dims
+            payload={
+              "text": "Thời gian thử việc...",
+              "document_name": "Bộ luật Lao động 2019",
+              "heading1": "Chương XV",
+              "heading2": "Điều 24",
+              "father_doc_name": "Bộ luật Lao động 2019",
+              "tenant_id": 1
+            }
+          ),
+          ...
+        ]
+
+        qdrant_client.upsert(
+          collection_name="vn_law_documents",
+          points=points
+        )
+      end note
+      Vector -> Vector: Store vectors with HNSW index
+      Vector --> Embed: Success (32 points stored)
+      deactivate Vector
+    end
+  end
+
+  Embed --> Job: Success\n{\n  "total_chunks": 156,\n  "vectors_stored": 156\n}
+  deactivate Embed
+end
+
+group Update Status to Completed
+  Job -> DB: UPDATE PromptDocuments\nSET Status = 'Completed',\n    UpdatedAt = '2024-12-28 10:35:00'\nWHERE Id = 123
+  DB --> Job: Updated
+end
+
+Job -> Job: Log success
+note right
+  logger.LogInformation(
+    "Document {documentId} vectorized successfully. " +
+    "Total chunks: {chunkCount}",
+    123, 156
+  );
+end note
+deactivate Job
+
+== Admin Checks Status ==
+Admin -> Web: Refresh document list page
+activate Web
+Web -> Gateway: GET /api/document/list
+activate Gateway
+Gateway -> Doc: Forward request
+activate Doc
+Doc -> DB: SELECT * FROM PromptDocuments\nWHERE TenantId = 1\nORDER BY CreatedAt DESC
+DB --> Doc: List of documents
+Doc --> Gateway: 200 OK\n[\n  {\n    "id": 123,\n    "documentName": "Nội quy lao động 2024",\n    "status": "Completed",\n    "createdAt": "2024-12-28T10:30:00Z",\n    "updatedAt": "2024-12-28T10:35:00Z"\n  }\n]
+deactivate Doc
+Gateway --> Web: Forward response
+deactivate Gateway
+Web --> Admin: Show document status: ✅ Completed
+deactivate Web
+
+note over Admin, Vector
+  **Processing Time:**
+  - Small document (50 pages): ~1-2 minutes
+  - Medium document (200 pages): ~3-5 minutes
+  - Large document (500 pages): ~10-15 minutes
+
+  **Error Handling:**
+  - If job fails, Hangfire auto-retries (max 3 attempts)
+  - Status updated to 'Failed' after 3 failures
+  - Admin can view error in Hangfire dashboard
+  - Admin can manually retry by deleting and re-uploading
+
+  **Optimizations:**
+  - Batch processing (32 chunks at a time)
+  - ONNX Runtime for faster embedding
+  - Async processing (doesn't block HTTP request)
+end note
+
+@enduml

@@ -1,0 +1,204 @@
+@startuml deployment_diagram
+'*****************************************************
+' AIChat2025 - Deployment Diagram
+' Purpose: Show Docker Compose infrastructure
+' Chapter: Chapter 4 - Design & Implementation
+'*****************************************************
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+
+title Deployment Diagram - Docker Compose Infrastructure
+
+Deployment_Node(host, "Host Machine", "Windows/Linux/macOS") {
+  Deployment_Node(docker, "Docker Engine", "Docker 20.10+") {
+    Deployment_Node(network, "aichat-network", "Bridge Network") {
+
+      ' Frontend
+      Deployment_Node(webapp_container, "webapp", "Docker Container") {
+        Container(webapp, "WebApp", "ASP.NET MVC 9", "Port: 5000")
+      }
+
+      ' API Gateway
+      Deployment_Node(gateway_container, "apigateway", "Docker Container") {
+        Container(gateway, "API Gateway", "YARP 2.3.0", "Port: 5001")
+      }
+
+      ' Backend .NET Services
+      Deployment_Node(account_container, "accountservice", "Docker Container") {
+        Container(account, "AccountService", ".NET 9", "Port: 5050")
+      }
+
+      Deployment_Node(tenant_container, "tenantservice", "Docker Container") {
+        Container(tenant, "TenantService", ".NET 9", "Port: 5062")
+      }
+
+      Deployment_Node(document_container, "documentservice", "Docker Container") {
+        Container(document, "DocumentService", ".NET 9 + Hangfire", "Port: 5165")
+      }
+
+      Deployment_Node(storage_container, "storageservice", "Docker Container") {
+        Container(storage, "StorageService", ".NET 9", "Port: 5113")
+      }
+
+      Deployment_Node(chat_container, "chatservice", "Docker Container") {
+        Container(chat, "ChatService", ".NET 9 + SignalR", "Port: 5218")
+      }
+
+      ' Python AI Workers
+      Deployment_Node(embed_container, "embeddingservice", "Docker Container") {
+        Container(embed, "EmbeddingService", "Python FastAPI", "Port: 8000")
+      }
+
+      Deployment_Node(processor_container, "chatprocessor", "Docker Container") {
+        Container(processor, "ChatProcessor", "Python FastAPI", "Port: 8001")
+      }
+
+      ' Infrastructure
+      Deployment_Node(sql_container, "sqlserver", "Docker Container") {
+        ContainerDb(sql, "SQL Server", "SQL Server 2022", "Port: 1433")
+      }
+
+      Deployment_Node(rabbit_container, "rabbitmq", "Docker Container") {
+        Container(rabbit, "RabbitMQ", "RabbitMQ 3-management", "Ports: 5672, 15672")
+      }
+
+      Deployment_Node(qdrant_container, "qdrant", "Docker Container") {
+        ContainerDb(qdrant, "Qdrant", "Vector Database", "Port: 6333")
+      }
+
+      Deployment_Node(ollama_container, "ollama", "Docker Container") {
+        Container(ollama, "Ollama", "LLM Server", "Port: 11434")
+      }
+
+      Deployment_Node(minio_container, "minio", "Docker Container") {
+        ContainerDb(minio, "MinIO", "Object Storage", "Ports: 9000, 9001")
+      }
+
+      ' Relationships
+      Rel(webapp, gateway, "HTTP", "HTTPS")
+      Rel(gateway, account, "HTTP", "")
+      Rel(gateway, tenant, "HTTP", "")
+      Rel(gateway, document, "HTTP", "")
+      Rel(gateway, storage, "HTTP", "")
+      Rel(gateway, chat, "HTTP/WS", "")
+
+      Rel(account, sql, "SQL", "TCP 1433")
+      Rel(tenant, sql, "SQL", "")
+      Rel(document, sql, "SQL", "")
+      Rel(chat, sql, "SQL", "")
+
+      Rel(storage, minio, "S3 API", "HTTP 9000")
+      Rel(document, embed, "HTTP", "")
+      Rel(embed, qdrant, "gRPC/HTTP", "")
+
+      Rel(chat, rabbit, "AMQP", "")
+      Rel(processor, rabbit, "AMQP", "")
+      Rel(processor, qdrant, "HTTP", "")
+      Rel(processor, ollama, "HTTP", "")
+    }
+  }
+
+  ' Volumes (persistent storage)
+  Deployment_Node(volumes, "Host Volumes", "Persistent Storage") {
+    ContainerDb(vol_sql, "SQL Data", "Volume", "G:/Mount/sqlserver")
+    ContainerDb(vol_qdrant, "Qdrant Data", "Bind Mount", "G:/Mount/qdrant")
+    ContainerDb(vol_ollama, "Ollama Models", "Bind Mount", "G:/Mount/ollama")
+    ContainerDb(vol_minio, "MinIO Data", "Bind Mount", "G:/Mount/minio")
+  }
+
+  Rel(sql, vol_sql, "Persists", "")
+  Rel(qdrant, vol_qdrant, "Persists", "")
+  Rel(ollama, vol_ollama, "Persists", "")
+  Rel(minio, vol_minio, "Persists", "")
+}
+
+' External access
+Deployment_Node(browser, "User Browser", "Chrome/Edge/Firefox") {
+  Person(user, "User", "")
+}
+
+Rel(user, webapp, "HTTPS", "Port 5000")
+
+note as N1
+  **Docker Compose Configuration:**
+  version: '3.8'
+
+  services:
+    - 7 .NET services (accountservice, tenantservice, documentservice,
+      storageservice, chatservice, apigateway, webapp)
+    - 2 Python services (embeddingservice, chatprocessor)
+    - 5 Infrastructure services (sqlserver, rabbitmq, qdrant, ollama, minio)
+
+  **Total:** 13 containers
+
+  **Network:**
+  - Type: Bridge network (aichat-network)
+  - DNS resolution: Service name (e.g., http://accountservice:8080)
+  - No external network access (self-contained)
+
+  **Volumes:**
+  - SQL Server: Named volume (docker-managed)
+  - Qdrant, Ollama, MinIO: Bind mounts to host (G:/Mount/*)
+  - Reason: Easier backup and inspection
+
+  **Resource Requirements:**
+  - CPU: 8 cores recommended
+  - RAM: 16GB minimum (32GB recommended)
+  - Disk: 50GB for models + data
+  - GPU: Optional (for faster embedding)
+end note
+
+note as N2
+  **Deployment Commands:**
+
+  # Build all images
+  docker-compose build
+
+  # Start all services
+  docker-compose up -d
+
+  # View logs
+  docker-compose logs -f
+
+  # Stop all services
+  docker-compose down
+
+  # Stop and remove volumes
+  docker-compose down -v
+
+  **Health Checks:**
+  - SQL Server: Ready when accepting connections on 1433
+  - RabbitMQ: Management UI at http://localhost:15672
+  - Qdrant: API at http://localhost:6333
+  - Ollama: Model loaded (check with `ollama list`)
+  - MinIO: Console at http://localhost:9001
+
+  **Dependencies:**
+  - Infrastructure services start first
+  - Backend services wait for SQL Server + RabbitMQ
+  - AI workers wait for Qdrant + Ollama
+  - Frontend/Gateway start last
+end note
+
+note as N3
+  **Production Deployment (Future):**
+
+  **Option 1: Cloud VMs (Azure/AWS)**
+  - Deploy Docker Compose on single VM (vertical scaling)
+  - Use managed services: Azure SQL, Azure Service Bus, etc.
+
+  **Option 2: Kubernetes (Horizontal Scaling)**
+  - Convert docker-compose.yml to Kubernetes manifests
+  - Use Helm charts
+  - Auto-scaling for AI workers
+  - Load balancer for API Gateway
+
+  **Option 3: Serverless (Partial)**
+  - Azure Functions for background jobs (instead of Hangfire)
+  - Azure Container Apps for microservices
+  - Keep Qdrant, Ollama on VMs
+
+  **Current:** Docker Compose (Development/Demo)
+end note
+
+@enduml

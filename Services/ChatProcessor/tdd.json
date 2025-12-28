@@ -1,6 +1,50 @@
 [
   {
-    "TC_id": "TC_01",
-    "answer": "Trích dẫn chính xác từ ngữ cảnh và trả lời câu hỏi của người dùng.\nSau khi đọc kỹ Chương IX, chúng tôi thấy rằng Điều 212 quy định các trường hợp thu hồi Giấy chứng nhận đăng ký doanh nghiệp. Tuy nhiên, không có đề cập cụ thể nào về việc thu hồi đối với chi nhánh trong điều này. Do đó, dựa trên thông tin được cung cấp ở trên, câu trả lời cho câu hỏi của người dùng là: Không có quy định rõ ràng về trường hợp bị thu hồi Giấy chứng nhận đăng ký địa điểm kinh doanh đối với chi nhánh theo văn bản pháp luật đã nêu."
+    "TC_id": "TC_36",
+    "answer": "Theo Luật Việc làm 2013 (Số 38/2013/QH13) và Nghị định 28/2015/NĐ-CP, điều kiện để được hưởng trợ cấp thất nghiệp là người lao động phải đáp ứng các tiêu chí sau:\n\n1. Đang đóng bảo hiểm thất nghiệp theo quy định tại Khoản 1 Điều 43 của Luật Việc làm;\n2. Đã chấm dứt hợp đồng lao động hoặc hợp đồng làm việc thuộc một trong các trường hợp sau đây:\na) Người lao động đơn phương chấm dứt hợp đồng lao động, hợp đồng làm việc trái pháp luật;\nb) Hưởng lương hưu, trợ cấp mất sức lao động hằng tháng;\n3. Đã nộp hồ sơ hưởng trợ cấp thất nghiệp tại trung tâm dịch vụ việc làm theo quy định tại Khoản 1 Điều 46 của Luật Việc làm;\n4. Chưa tìm được việc làm sau 15 ngày kể từ ngày nộp hồ sơ đề nghị hưởng bảo hiểm thất nghiệp, trừ các trường hợp sau đây:\na) Thực hiện nghĩa vụ quân sự, nghĩa vụ công an;\nb) Đi học tập có thời hạn từ đủ 12 tháng trở lên;\nc) Chấp hành quyết định áp dụng biện pháp đưa vào trường giáo dưỡng, cơ sở giáo dục bắt buộc, cơ sở cai nghiện bắt buộc;\nd) Bị tạm giam; chấp hành hình phạt tù;\nđ) Ra nước ngoài định cư; đi lao động ở nước ngoài theo hợp đồng;\ne) Chết."
+  },
+  {
+    "TC_id": "TC_37",
+    "answer": "Theo Điều 46 Bộ luật Lao động 2019, thời gian làm việc để tính trợ cấp thôi việc là tổng thời gian người lao động đã làm việc thực tế cho người sử dụng lao động trừ đi thời gian người lao động đã tham gia bảo hiểm thất nghiệp theo quy định của pháp luật về bảo hiểm thất nghiệp và thời gian làm việc đã được người sử dụng lao động chi trả trợ cấp thôi việc, trợ cấp mất việc làm.\n\nThời gian thử việc không tính vào trợ cấp thôi việc vì nó là giai đoạn mà người lao động đang trong quá trình kiểm tra năng lực và sự phù hợp của họ với công việc. Nếu thời gian thử việc kết thúc mà người sử dụng lao động quyết định tuyển dụng chính thức, thì khoảng thời gian này sẽ được cộng dồn vào tổng thời gian làm việc để tính trợ cấp thôi việc khi chấm dứt hợp đồng lao động sau đó."
+  },
+  {
+    "TC_id": "TC_38",
+    "answer": "Xin lỗi, hệ thống không tìm thấy thông tin chính xác"
+  },
+  {
+    "TC_id": "TC_39",
+    "answer": "Xin lỗi, hệ thống không tìm thấy thông tin chính xác"
+  },
+  {
+    "TC_id": "TC_40",
+    "answer": "Theo Điều 31 Luật Bảo hiểm xã hội năm 2014, khi người lao động tự ý chấm dứt hợp đồng lao động hoặc thôi việc trái pháp luật thì không được hưởng bảo hiểm thất nghiệp. Do đó, nếu bạn tự ý nghỉ việc mà không có lý do chính đáng và không tuân thủ quy định trong hợp đồng lao động hoặc nội quy công ty, bạn sẽ không đủ điều kiện để nhận trợ cấp thất nghiệp."
+  },
+  {
+    "TC_id": "TC_41",
+    "answer": "Xin lỗi, hệ thống không tìm thấy thông tin chính xác"
+  },
+  {
+    "TC_id": "TC_42",
+    "answer": "Xin lỗi, hệ thống không tìm thấy thông tin chính xác"
+  },
+  {
+    "TC_id": "TC_43",
+    "answer": "Xin lỗi, hệ thống không tìm thấy thông tin chính xác"
+  },
+  {
+    "TC_id": "TC_44",
+    "answer": "Xin lỗi, hệ thống không tìm thấy thông tin chính xác"
+  },
+  {
+    "TC_id": "TC_45",
+    "answer": "Theo thông tin tham khảo cung cấp, tiêu chuẩn và điều kiện để trở thành Giám đốc hoặc Tổng giám đốc là họ phải \"không thuộc đối tượng quy định tại khoản 2 Điều 17 của Luật này.\" Khoản 2 Điều 17 nêu rõ rằng người quản lý công ty không được kiêm nhiệm các chức danh sau đây:\n # # # # Chủ tịch Hội đồng thành viên, Giám đốc hoặc Tổng giám đốc; Phó Giám đốc hoặc Phó Tổng giám đốc và Kế toán trưởng.\nDo đó, dựa trên thông tin này, một Giám đốc hoặc Tổng giám đốc không thể kiêm nhiệm vị trí của Chủ tịch Công đoàn vì nó sẽ vi phạm tiêu chuẩn và điều kiện để trở thành người quản lý công ty theo quy định tại Luật Doanh nghiệp 2020."
+  },
+  {
+    "TC_id": "TC_46",
+    "answer": "Xin lỗi, hệ thống không tìm thấy thông tin chính xác"
+  },
+  {
+    "TC_id": "TC_47",
+    "answer": "Theo thông tin cung cấp, công ty đã ban hành nội quy về an toàn và vệ sinh lao động tại nơi làm việc (Điều 16). Theo đó, người lao động chỉ ký hợp đồng lao động khi đã được người sử dụng lao động hướng dẫn Nội quy lao động, quy định về kỹ thuật ATLĐ và VSLĐ trong công việc phải đảm nhận. Người lao động có trách nhiệm tham gia học tập, diễn tập về nội dung an toàn lao động khi Công ty tổ chức.\n\nNgoài ra, Điều 12 của Nội quy Thoát Nước TPHCM cũng nêu rõ người lao động có quyền từ chối làm việc tại nơi không đảm bảo an toàn lao động. Do đó, dựa trên các thông tin này và theo Bộ luật Lao động (Điều 5), Luật An toàn, vệ sinh lao động (Điều 6) thì người lao động có quyền từ chối làm việc khi thấy rõ có nguy cơ xảy ra tai nạn lao động đe dọa nghiêm trọng tính mạng hoặc sức khỏe của mình.\n\nTuy nhiên, cần lưu ý rằng quyền này phải được thực hiện theo đúng quy định và không gây cản trở hoạt động bình thường tại nơi làm việc."
   }
 ]

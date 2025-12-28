@@ -1,0 +1,196 @@
+@startuml authentication_sequence
+'*****************************************************
+' AIChat2025 - Authentication Sequence Diagram
+' Purpose: Show JWT authentication flow
+' Chapter: Chapter 4 - Design & Implementation
+'*****************************************************
+
+title Authentication Flow - JWT + Cookie
+
+actor "User" as User
+participant "WebApp\n(ASP.NET MVC)" as Web
+participant "API Gateway\n(YARP)" as Gateway
+participant "AccountService" as Account
+participant "TokenClaimsService" as Token
+participant "Repository" as Repo
+database "SQL Server" as DB
+
+== Login Flow ==
+User -> Web: Navigate to /auth/login
+Web --> User: Display login form\n(Email, Password)
+
+User -> Web: Submit form\nemail: user@company.com\npassword: ********
+activate Web
+Web -> Web: Client-side validation
+Web -> Gateway: POST /api/account/auth/login\n{\n  "email": "user@company.com",\n  "password": "********"\n}
+activate Gateway
+Gateway -> Account: Forward request
+activate Account
+
+group Validate Credentials
+  Account -> Repo: GetAccountByEmail(email)
+  activate Repo
+  Repo -> DB: SELECT * FROM Accounts\nWHERE Email = 'user@company.com'
+  DB --> Repo: Account record\n{\n  Id: 123,\n  TenantId: 1,\n  Email: "user@company.com",\n  PasswordHash: "$2a$12$...",\n  Role: "admin"\n}
+  Repo --> Account: Account object
+  deactivate Repo
+
+  Account -> Account: BCrypt.Verify(password, passwordHash)
+  note right
+    bool isValid = BCrypt.Net.BCrypt.Verify(
+      "********",           // plain password from user
+      "$2a$12$..."          // hash from database
+    );
+  end note
+
+  alt Password Valid
+    Account -> Account: Validation success
+  else Password Invalid
+    Account --> Gateway: 401 Unauthorized\n{"error": "Invalid credentials"}
+    Gateway --> Web: 401 Unauthorized
+    Web --> User: Error: "Email hoặc mật khẩu không đúng"
+    deactivate Account
+    deactivate Gateway
+    deactivate Web
+  end
+end
+
+group Generate JWT Token
+  Account -> Token: GenerateToken(account)
+  activate Token
+  Token -> Token: Build JWT claims
+  note right
+    var claims = new[]
+    {
+      new Claim(ClaimTypes.NameIdentifier, "123"),        // UserId
+      new Claim("tenant_id", "1"),                        // TenantId
+      new Claim(ClaimTypes.Email, "user@company.com"),
+      new Claim(ClaimTypes.Role, "admin"),
+      new Claim("scope", "scope_web"),                    // For web clients
+      new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+      new Claim(JwtRegisteredClaimNames.Iat,
+                DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString())
+    };
+  end note
+
+  Token -> Token: Sign JWT with secret key
+  note right
+    var key = new SymmetricSecurityKey(
+      Encoding.UTF8.GetBytes(JwtSecretKey)
+    );
+    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+    var token = new JwtSecurityToken(
+      issuer: "AIChat2025",
+      audience: "AIChat2025",
+      claims: claims,
+      expires: DateTime.UtcNow.AddHours(24),
+      signingCredentials: creds
+    );
+
+    return new JwtSecurityTokenHandler().WriteToken(token);
+  end note
+  Token --> Account: JWT token string\n"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjMiLCJ0Z..."
+  deactivate Token
+end
+
+Account --> Gateway: 200 OK\n{\n  "token": "eyJhbGci...",\n  "userId": 123,\n  "email": "user@company.com",\n  "role": "admin"\n}
+deactivate Account
+Gateway --> Web: Forward response
+deactivate Gateway
+
+group Set Cookie (Web) or Return Token (Mobile)
+  alt Web Client
+    Web -> Web: Set HttpOnly cookie
+    note right
+      Response.Cookies.Append("AuthToken", token, new CookieOptions
+      {
+        HttpOnly = true,        // Prevent XSS attacks
+        Secure = true,          // HTTPS only (in production)
+        SameSite = SameSiteMode.Strict,
+        Expires = DateTimeOffset.UtcNow.AddHours(24)
+      });
+    end note
+    Web --> User: 302 Redirect to /chat
+  else Mobile Client (Future)
+    Web --> User: 200 OK\n{\n  "token": "eyJhbGci...",\n  "expiresIn": 86400\n}
+    note right
+      Mobile app stores token in
+      secure storage (Keychain/Keystore)
+      and includes in Authorization header:
+      Authorization: Bearer eyJhbGci...
+    end note
+  end
+end
+deactivate Web
+
+== Authenticated Request ==
+User -> Web: Navigate to /chat
+activate Web
+Web -> Gateway: GET /api/chat/conversations/list\nCookie: AuthToken=eyJhbGci...
+activate Gateway
+
+group Validate JWT
+  Gateway -> Gateway: Extract JWT from cookie
+  Gateway -> Gateway: Validate JWT signature
+  note right
+    var tokenHandler = new JwtSecurityTokenHandler();
+    var key = Encoding.UTF8.GetBytes(JwtSecretKey);
+
+    tokenHandler.ValidateToken(token, new TokenValidationParameters
+    {
+      ValidateIssuer = true,
+      ValidIssuer = "AIChat2025",
+      ValidateAudience = true,
+      ValidAudience = "AIChat2025",
+      ValidateLifetime = true,
+      IssuerSigningKey = new SymmetricSecurityKey(key)
+    }, out SecurityToken validatedToken);
+  end note
+
+  alt Token Valid
+    Gateway -> Gateway: Extract claims from token
+    note right
+      UserId = 123
+      TenantId = 1
+      Role = admin
+    end note
+    Gateway -> Account: Forward request with claims\nX-User-Id: 123\nX-Tenant-Id: 1
+    activate Account
+    Account -> Account: Use claims for business logic
+    Account -> Repo: ListConversations(tenantId=1, userId=123)
+    Repo -> DB: SELECT * FROM ChatConversations\nWHERE TenantId = 1 AND UserId = 123
+    DB --> Repo: Conversations
+    Repo --> Account: Conversations
+    Account --> Gateway: 200 OK\n[{...}, {...}]
+    deactivate Account
+    Gateway --> Web: Conversations
+    deactivate Gateway
+    Web --> User: Display conversations
+    deactivate Web
+  else Token Invalid or Expired
+    Gateway --> Web: 401 Unauthorized\n{"error": "Invalid or expired token"}
+    deactivate Gateway
+    Web --> User: Redirect to /auth/login
+    deactivate Web
+  end
+end
+
+note over User, DB
+  **Security Features:**
+  - Password hashing with BCrypt (work factor 12)
+  - JWT signed with HMAC-SHA256
+  - HttpOnly cookies (prevent XSS)
+  - Secure flag (HTTPS only in production)
+  - SameSite=Strict (prevent CSRF)
+  - Token expiry (24 hours)
+  - TenantId in JWT claims (multi-tenant security)
+
+  **Future Enhancements:**
+  - Refresh tokens
+  - Token blacklist (logout)
+  - Account lockout (brute force protection)
+  - 2FA (Two-Factor Authentication)
+end note
+
+@enduml

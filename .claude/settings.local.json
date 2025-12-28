@@ -3,7 +3,8 @@
     "allow": [
       "Bash(pip install:*)",
       "Bash(where:*)",
-      "Bash(py -3.11:*)"
+      "Bash(py -3.11:*)",
+      "Bash(cat:*)"
     ]
   }
 }

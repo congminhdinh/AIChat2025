@@ -1,0 +1,108 @@
+@startuml multi_tenant_data_flow
+'*****************************************************
+' AIChat2025 - Multi-tenant Data Flow Sequence
+' Purpose: Show how TenantId is enforced at every layer
+' Chapter: Chapter 4 - Design & Implementation
+'*****************************************************
+
+title Multi-tenant Data Flow - Row-Level Security
+
+actor "User\n(Tenant A)" as UserA
+participant "WebApp" as Web
+participant "API Gateway" as Gateway
+participant "ChatService" as Chat
+participant "CurrentTenantProvider" as TenantProvider
+participant "ChatBusiness" as Business
+participant "Repository\n(EF Core)" as Repo
+participant "UpdateTenancyInterceptor" as Interceptor
+database "SQL Server" as DB
+
+== Authentication ==
+UserA -> Web: Login with email/password
+Web -> Gateway: POST /api/account/auth/login
+Gateway -> Chat: Forward request
+Chat -> Business: Authenticate(email, password)
+Business -> Repo: GetAccount(email)
+Repo -> DB: SELECT * FROM Accounts\nWHERE Email = 'user@tenantA.com'
+DB --> Repo: Account (TenantId=1)
+Repo --> Business: Account
+Business -> Business: Verify password (BCrypt)
+Business -> Business: Generate JWT with claims:\n- UserId=123\n- TenantId=1\n- Role=user
+Business --> Web: JWT Token
+Web -> Web: Set HttpOnly cookie
+
+== Request with Tenant Context ==
+UserA -> Web: GET /api/chat/conversations/list
+Web -> Gateway: Request + Cookie (JWT)
+Gateway -> Chat: Forward with JWT
+Chat -> TenantProvider: Extract TenantId from JWT
+TenantProvider --> Chat: TenantId = 1
+
+== Query with Tenant Filtering ==
+Chat -> Business: ListConversations()
+Business -> Business: Create TenancySpecification<ChatConversation>(tenantId=1)
+Business -> Repo: ListAsync(spec)
+Repo -> Repo: Build query with specification
+note right
+  var query = _dbContext.ChatConversations
+    .Where(c => c.TenantId == 1)
+    .OrderByDescending(c => c.CreatedAt);
+end note
+Repo -> DB: SELECT * FROM ChatConversations\nWHERE TenantId = 1\nORDER BY CreatedAt DESC
+DB --> Repo: List of conversations (only Tenant A)
+Repo --> Business: Conversations
+Business --> Chat: Conversations
+Chat --> Web: JSON Response
+
+== Insert with Automatic TenantId ==
+UserA -> Web: POST /api/chat/conversations
+Web -> Gateway: Request + Cookie (JWT)
+Gateway -> Chat: Forward with JWT
+Chat -> TenantProvider: Extract TenantId from JWT
+TenantProvider --> Chat: TenantId = 1
+
+Chat -> Business: CreateConversation(title, userId)
+Business -> Business: Create new ChatConversation entity\n(WITHOUT manually setting TenantId)
+Business -> Repo: AddAsync(conversation)
+Repo -> Interceptor: SavingChanges event
+note right
+  **Interceptor automatically adds TenantId:**
+
+  foreach (var entry in ChangeTracker.Entries<BaseEntity>())
+  {
+    if (entry.State == EntityState.Added)
+    {
+      entry.Entity.TenantId = _currentTenantProvider.GetTenantId(); // = 1
+      entry.Entity.CreatedAt = DateTime.UtcNow;
+    }
+  }
+end note
+Interceptor -> Interceptor: Set TenantId = 1
+Interceptor -> DB: INSERT INTO ChatConversations\n(TenantId, UserId, Title, CreatedAt)\nVALUES (1, 123, 'New Chat', '2024-12-28')
+DB --> Interceptor: Success
+Interceptor --> Repo: Success
+Repo --> Business: New conversation
+Business --> Chat: Conversation created
+Chat --> Web: 201 Created
+
+== Attempt to Access Other Tenant's Data (Security Test) ==
+UserA -> Web: GET /api/chat/conversations/999\n(belongs to Tenant B)
+Web -> Gateway: Request + Cookie (JWT, TenantId=1)
+Gateway -> Chat: Forward
+Chat -> TenantProvider: Extract TenantId = 1
+Chat -> Business: GetConversation(id=999)
+Business -> Business: Create spec: TenancySpecification(tenantId=1)
+Business -> Repo: GetByIdAsync(999, spec)
+Repo -> DB: SELECT * FROM ChatConversations\nWHERE Id = 999 AND TenantId = 1
+DB --> Repo: **No result** (conversation 999 has TenantId=2)
+Repo --> Business: null
+Business --> Chat: null
+Chat --> Web: 404 Not Found
+note right of Web
+  **Security enforced:**
+  User from Tenant A cannot access
+  data from Tenant B even if they
+  know the conversation ID.
+end note
+
+@enduml

@@ -1,0 +1,198 @@
+@startuml rag_pipeline_sequence
+'*****************************************************
+' AIChat2025 - RAG Pipeline Sequence Diagram
+' Purpose: Show 9-step RAG pipeline from query to response
+' Chapter: Chapter 4 - Design & Implementation
+'*****************************************************
+
+title RAG Pipeline - 9 Steps from User Query to Bot Response
+
+actor "User" as User
+participant "WebApp\n(SignalR Client)" as Web
+participant "ChatHub\n(SignalR)" as Hub
+participant "ChatBusiness" as ChatBiz
+participant "RabbitMQ" as MQ
+participant "ChatProcessor\n(Python)" as Processor
+participant "EmbeddingService" as Embed
+participant "Qdrant\n(Vector DB)" as Qdrant
+participant "Ollama\n(LLM Server)" as Ollama
+database "SQL Server" as DB
+
+== Step 1: User Input ==
+User -> Web: Type: "Thời gian thử việc là bao lâu?"
+Web -> Hub: SendMessage(conversationId, message)
+activate Hub
+Hub -> ChatBiz: SendMessage()
+ChatBiz -> DB: Save user message\n(IsBot=false)
+DB --> ChatBiz: Message saved
+ChatBiz -> MQ: Publish UserPromptReceivedEvent\n{\n  conversationId: 123,\n  message: "Thời gian...",\n  tenantId: 1,\n  userId: 456\n}
+MQ --> ChatBiz: Event published
+ChatBiz --> Hub: Success
+Hub --> Web: Message sent
+deactivate Hub
+Web -> Web: Display user message\nShow typing indicator
+
+== Step 2-9: RAG Pipeline (Async) ==
+MQ -> Processor: Consume UserPromptReceivedEvent
+activate Processor
+
+group Step 2: Embedding
+  Processor -> Embed: POST /embed\n{"text": "Thời gian thử việc là bao lâu?"}
+  activate Embed
+  Embed -> Embed: Load model: truro7/vn-law-embedding
+  Embed -> Embed: Encode text to 768-dim vector
+  Embed --> Processor: query_vector: [0.23, -0.45, ..., 0.12]
+  deactivate Embed
+end
+
+group Step 3: Dual-RAG Vector Search
+  par Search Company Rules
+    Processor -> Qdrant: Search(query_vector,\n  filter: {tenant_id: 1},\n  limit: 5)
+    activate Qdrant
+    Qdrant -> Qdrant: HNSW vector search\n(COSINE similarity)
+    Qdrant --> Processor: company_results: [\n  {score: 0.92, payload: {...}},\n  {score: 0.88, payload: {...}}\n]
+    deactivate Qdrant
+  else Search Legal Base
+    Processor -> Qdrant: Search(query_vector,\n  filter: {tenant_id: 1}, # Legal base\n  limit: 5)
+    activate Qdrant
+    Qdrant --> Processor: legal_results: [\n  {score: 0.95, payload: {\n    text: "Điều 24...",\n    document_name: "Bộ luật Lao động 2019",\n    heading1: "Chương XV",\n    heading2: "Điều 24"\n  }}\n]
+    deactivate Qdrant
+  end
+end
+
+group Step 4: Scenario Determination
+  Processor -> Processor: Analyze results
+  note right
+    if (company_results && legal_results):
+      scenario = COMPARISON
+    elif (company_results only):
+      scenario = COMPANY_ONLY
+    elif (legal_results only):
+      scenario = LEGAL_ONLY
+    else:
+      scenario = NO_CONTEXT
+  end note
+  Processor -> Processor: Scenario = LEGAL_ONLY
+end
+
+group Step 5: Context Structuring
+  Processor -> Processor: Extract metadata and build citations
+  note right
+    citation_label = _build_citation_label(result)
+    # Output: "[Bộ luật Lao động 2019 - Chương XV - Điều 24]"
+
+    context = """
+    ═══════════════════════════════════════
+    **═══ VĂN BẢN PHÁP LUẬT ═══**
+    (Nguồn tài liệu duy nhất)
+    ═══════════════════════════════════════
+
+    [Bộ luật Lao động 2019 - Chương XV - Điều 24]
+    Thời gian thử việc được quy định như sau:
+    a) Đối với công việc yêu cầu trình độ từ cao đẳng
+       trở lên, thời gian thử việc không quá 60 ngày.
+    b) Đối với công việc yêu cầu trình độ trung cấp,
+       công nhân kỹ thuật, nhân viên nghiệp vụ,
+       thời gian thử việc không quá 30 ngày.
+    ...
+    """
+  end note
+end
+
+group Step 6: Prompt Construction
+  Processor -> Processor: Build full prompt
+  note right
+    system_prompt = get_system_prompt(LEGAL_ONLY)
+    # "CHỈ IN CÂU TRẢ LỜI CUỐI CÙNG.
+    #  Trả lời ngắn gọn theo mẫu..."
+
+    enhanced_prompt = f"""
+    {system_prompt}
+
+    Thông tin tham khảo:
+    {context}
+
+    Câu hỏi của người dùng: {message}
+    """
+  end note
+end
+
+group Step 7: LLM Generation
+  Processor -> Ollama: POST /api/generate\n{\n  "model": "ontocord/vistral:latest",\n  "prompt": enhanced_prompt,\n  "stream": false\n}
+  activate Ollama
+  Ollama -> Ollama: Load Vistral model
+  Ollama -> Ollama: Generate response based on context
+  note right
+    LLM generates:
+    "Theo Điều 24 Bộ luật Lao động 2019,
+    thời gian thử việc tối đa là 60 ngày
+    đối với công việc yêu cầu trình độ từ
+    cao đẳng trở lên."
+  end note
+  Ollama --> Processor: raw_response
+  deactivate Ollama
+end
+
+group Step 8: Response Cleanup
+  Processor -> Processor: Clean instruction leakage
+  note right
+    # Multi-pass removal of instruction prefixes
+    prefixes_to_remove = [
+      "Trích dẫn chính xác từ ngữ cảnh",
+      "Dựa trên thông tin được cung cấp",
+      ...
+    ]
+
+    cleaned = remove_prefixes(raw_response)
+    cleaned = remove_instruction_sentences(cleaned)
+  end note
+  Processor -> Processor: Final response ready
+end
+
+group Step 9: Publish Response & Log Metrics
+  Processor -> MQ: Publish BotResponseCreatedEvent\n{\n  conversationId: 123,\n  response: cleaned_response,\n  tenantId: 1\n}
+  MQ --> Processor: Event published
+
+  par Log RAGAS Metrics (async)
+    Processor -> Processor: Calculate RAGAS metrics
+    note right
+      faithfulness = calculate_faithfulness(response, context)
+      answer_relevancy = calculate_relevancy(response, query)
+      context_recall = calculate_recall(context, ground_truth)
+      context_precision = calculate_precision(context)
+
+      logger.info(f"RAGAS metrics: {metrics}")
+    end note
+  end
+end
+
+deactivate Processor
+
+== Response Delivery ==
+MQ -> Hub: Consume BotResponseCreatedEvent
+activate Hub
+Hub -> ChatBiz: HandleBotResponse(event)
+ChatBiz -> DB: Save bot message\n(IsBot=true, Content=response)
+DB --> ChatBiz: Message saved
+ChatBiz -> Hub: Broadcast to SignalR group
+Hub -> Web: BotResponse(message)
+deactivate Hub
+Web -> Web: Hide typing indicator
+Web -> Web: Display bot response
+Web -> User: Show: "Theo Điều 24 Bộ luật Lao động 2019,\nthời gian thử việc tối đa là 60 ngày..."
+
+note over User, Ollama
+  **Total latency:** ~5-10 seconds
+  - Embedding: ~300ms
+  - Vector search: ~200ms (x2 for dual search)
+  - LLM generation: ~3-7s (depends on response length)
+  - Overhead: ~500ms
+
+  **Quality metrics (RAGAS):**
+  - Faithfulness: 0.92
+  - Answer Relevancy: 0.88
+  - Context Recall: 0.85
+  - Context Precision: 0.78
+end note
+
+@enduml

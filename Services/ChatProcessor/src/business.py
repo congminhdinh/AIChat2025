@@ -3,10 +3,16 @@ import asyncio
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from qdrant_client.async_qdrant_client import AsyncQdrantClient
-from qdrant_client.models import Filter, FieldCondition, MatchValue, ScoredPoint
+from qdrant_client.models import Filter, FieldCondition, MatchValue, MatchText, ScoredPoint
 from src.config import settings
 from src.logger import logger
 from src.evaluation_logger import get_evaluation_logger
+from src.hybrid_search import (
+    LegalTermExtractor,
+    ReciprocalRankFusion,
+    HybridSearchStrategy,
+    merge_and_deduplicate
+)
 
 class OllamaService:
 
@@ -118,7 +124,7 @@ class QdrantService:
             )
 
             # Filter by similarity score threshold
-            SIMILARITY_THRESHOLD = 0.7
+            SIMILARITY_THRESHOLD = 0.5
             filtered_results = [r for r in results if r.score >= SIMILARITY_THRESHOLD]
 
             # Log filtering activity
@@ -159,7 +165,7 @@ class QdrantService:
             )
 
             # Filter by similarity score threshold
-            SIMILARITY_THRESHOLD = 0.7
+            SIMILARITY_THRESHOLD = 0.5
             filtered_results = [r for r in results if r.score >= SIMILARITY_THRESHOLD]
 
             # Log filtering activity
@@ -217,6 +223,250 @@ class QdrantService:
             logger.error(f'Qdrant health check failed: {e}')
             return False
 
+    async def search_with_keywords(
+        self,
+        query_vector: List[float],
+        keywords: List[str],
+        tenant_id: int,
+        limit: int = 10
+    ) -> List[ScoredPoint]:
+        """
+        Hybrid search: combines vector similarity with keyword matching.
+
+        Uses Qdrant's filter system to boost results containing specific keywords.
+        Keywords are matched against: text, document_name, heading1, heading2.
+
+        Args:
+            query_vector: Embedding vector for semantic search
+            keywords: List of keywords to match (e.g., ["điều 212", "BHXH"])
+            tenant_id: Tenant ID for filtering
+            limit: Maximum number of results
+
+        Returns:
+            List of ScoredPoint results ranked by hybrid score
+        """
+        try:
+            # Build keyword filters - match any of the keywords in text or metadata
+            keyword_conditions = []
+            for keyword in keywords:
+                # Match in text content
+                keyword_conditions.append(
+                    FieldCondition(
+                        key='text',
+                        match=MatchText(text=keyword)
+                    )
+                )
+                # Match in document name
+                keyword_conditions.append(
+                    FieldCondition(
+                        key='document_name',
+                        match=MatchText(text=keyword)
+                    )
+                )
+                # Match in headings
+                keyword_conditions.append(
+                    FieldCondition(
+                        key='heading1',
+                        match=MatchText(text=keyword)
+                    )
+                )
+                keyword_conditions.append(
+                    FieldCondition(
+                        key='heading2',
+                        match=MatchText(text=keyword)
+                    )
+                )
+
+            # Build filter: must match tenant_id, should match keywords
+            search_filter = Filter(
+                must=[
+                    FieldCondition(key='tenant_id', match=MatchValue(value=tenant_id))
+                ],
+                should=keyword_conditions if keyword_conditions else None
+            )
+
+            # Execute search with lower threshold for keyword matches
+            KEYWORD_THRESHOLD = 0.6
+            results = await self.client.search(
+                collection_name=self.collection_name,
+                query_vector=query_vector,
+                query_filter=search_filter,
+                limit=limit,
+                score_threshold=KEYWORD_THRESHOLD
+            )
+
+            logger.info(
+                f'Keyword search completed: tenant_id={tenant_id}, '
+                f'keywords={keywords}, results={len(results)}'
+            )
+
+            return results
+
+        except Exception as e:
+            logger.error(
+                f'Keyword search failed for tenant_id={tenant_id}: {e}',
+                exc_info=True
+            )
+            # Return empty list on error to allow graceful degradation
+            return []
+
+    async def hybrid_search_single_tenant(
+        self,
+        query_vector: List[float],
+        keywords: List[str],
+        tenant_id: int,
+        limit: int = 5
+    ) -> List[ScoredPoint]:
+        """
+        Perform hybrid search for a single tenant using RRF fusion.
+
+        Combines:
+        1. Pure vector search (semantic similarity)
+        2. Keyword-boosted search (exact term matching)
+        3. RRF re-ranking
+
+        Args:
+            query_vector: Query embedding
+            keywords: Extracted legal keywords
+            tenant_id: Tenant to search in
+            limit: Number of results to return
+
+        Returns:
+            Re-ranked results using RRF
+        """
+        try:
+            # Run both searches in parallel
+            vector_task = self.search_exact_tenant(
+                query_vector=query_vector,
+                tenant_id=tenant_id,
+                limit=limit * 2  # Get more for better RRF
+            )
+
+            # Only run keyword search if we have keywords
+            if keywords:
+                keyword_task = self.search_with_keywords(
+                    query_vector=query_vector,
+                    keywords=keywords,
+                    tenant_id=tenant_id,
+                    limit=limit * 2
+                )
+                vector_results, keyword_results = await asyncio.gather(
+                    vector_task, keyword_task, return_exceptions=True
+                )
+
+                # Handle exceptions
+                if isinstance(vector_results, Exception):
+                    logger.error(f'Vector search failed: {vector_results}')
+                    vector_results = []
+                if isinstance(keyword_results, Exception):
+                    logger.error(f'Keyword search failed: {keyword_results}')
+                    keyword_results = []
+
+                # Fuse results using RRF
+                fused_results = ReciprocalRankFusion.fuse(
+                    vector_results=vector_results,
+                    keyword_results=keyword_results,
+                    k=60
+                )
+
+                logger.info(
+                    f'Hybrid search for tenant {tenant_id}: '
+                    f'{len(vector_results)} vector + {len(keyword_results)} keyword '
+                    f'→ {len(fused_results)} fused'
+                )
+
+                return fused_results[:limit]
+            else:
+                # No keywords - fall back to pure vector search
+                logger.debug(f'No keywords for tenant {tenant_id}, using vector search only')
+                vector_results = await vector_task
+                if isinstance(vector_results, Exception):
+                    logger.error(f'Vector search failed: {vector_results}')
+                    return []
+                return vector_results
+
+        except Exception as e:
+            logger.error(
+                f'Hybrid search failed for tenant_id={tenant_id}: {e}',
+                exc_info=True
+            )
+            return []
+
+    async def hybrid_search_with_fallback(
+        self,
+        query_vector: List[float],
+        keywords: List[str],
+        tenant_id: int,
+        limit: int = 5
+    ) -> tuple[List[ScoredPoint], List[ScoredPoint], bool]:
+        """
+        Perform hybrid search with intelligent fallback from tenant to global docs.
+
+        Flow:
+        1. Search tenant docs (hybrid: vector + keyword)
+        2. Search global legal docs (hybrid: vector + keyword)
+        3. Apply fallback logic based on tenant result quality
+
+        Args:
+            query_vector: Query embedding
+            keywords: Extracted legal keywords
+            tenant_id: Tenant ID
+            limit: Total result limit
+
+        Returns:
+            (tenant_results, global_results, fallback_triggered)
+        """
+        try:
+            # Parallel hybrid search in both scopes
+            tenant_task = self.hybrid_search_single_tenant(
+                query_vector=query_vector,
+                keywords=keywords,
+                tenant_id=tenant_id,
+                limit=limit
+            )
+            global_task = self.hybrid_search_single_tenant(
+                query_vector=query_vector,
+                keywords=keywords,
+                tenant_id=1,  # Global legal knowledge base
+                limit=limit
+            )
+
+            tenant_results, global_results = await asyncio.gather(
+                tenant_task, global_task, return_exceptions=True
+            )
+
+            # Handle exceptions
+            if isinstance(tenant_results, Exception):
+                logger.error(f'Tenant search failed: {tenant_results}')
+                tenant_results = []
+            if isinstance(global_results, Exception):
+                logger.error(f'Global search failed: {global_results}')
+                global_results = []
+
+            # Apply fallback logic
+            tenant_filtered, global_filtered, fallback = HybridSearchStrategy.apply_fallback_logic(
+                tenant_results=tenant_results,
+                global_results=global_results,
+                limit=limit
+            )
+
+            if fallback:
+                logger.warning(
+                    f'Fallback activated for tenant {tenant_id}: '
+                    f'{len(tenant_filtered)} tenant + {len(global_filtered)} global results'
+                )
+            else:
+                logger.info(
+                    f'Normal hybrid search for tenant {tenant_id}: '
+                    f'{len(tenant_filtered)} tenant + {len(global_filtered)} global results'
+                )
+
+            return tenant_filtered, global_filtered, fallback
+
+        except Exception as e:
+            logger.error(f'Hybrid search with fallback failed: {e}', exc_info=True)
+            return [], [], False
+
 class ChatBusiness:
 
     @staticmethod
@@ -247,58 +497,71 @@ class ChatBusiness:
             return "NONE"
 
     @staticmethod
-    def _build_comparison_system_prompt() -> str:
+    def _build_comparison_system_prompt(fallback_mode: bool = False) -> str:
         """
         Generates a comprehensive Vietnamese system prompt for COMPARISON mode.
         Used when BOTH company regulation and legal base vectors are found.
         Includes HARD CONSTRAINTS to prevent hallucination and verbosity.
+
+        Args:
+            fallback_mode: If True, indicates that tenant docs were insufficient
+
+        Returns:
+            System prompt string
         """
-        return """Bạn là trợ lý pháp lý AI.
-NHIỆM VỤ: Trả lời câu hỏi dựa trên việc đối chiếu giữa [NỘI QUY CÔNG TY] và [LUẬT NHÀ NƯỚC].
+        base_prompt = """Bạn là trợ lý pháp lý AI chuyên về so sánh quy định.
 
-⛔ CÁC HARD CONSTRAINTS (BẮT BUỘC - KHÔNG ĐƯỢC VI PHẠM):
-1. TUYỆT ĐỐI KHÔNG được in các cụm từ "Bước 1", "Bước 2", "Bước 3", "Step 1", "Step 2", hay bất kỳ hình thức mô tả quy trình suy luận nào.
-2. TUYỆT ĐỐI KHÔNG được giải thích quá trình tư duy hoặc phân tích từng bước.
-3. TUYỆT ĐỐI KHÔNG được trả lời dài dòng. Chỉ trả lời tối đa 2-3 câu ngắn gọn.
-4. CHỈ trích xuất con số/phần trăm khớp CHÍNH XÁC với tình huống người dùng hỏi (ví dụ: nếu hỏi ca ngày thì lấy số liệu ca ngày, nếu hỏi ca đêm thì lấy số liệu ca đêm - KHÔNG được nhầm lẫn).
-5. BẮT BUỘC phải so sánh chính xác giữa quy định Công ty và Luật Nhà nước.
-6. TUYỆT ĐỐI KHÔNG cung cấp thông tin nếu thuộc danh mục tuyệt mật; phải đưa ra câu trả lời từ chối trực tiếp nếu nội dung yêu cầu vi phạm quy định bảo mật.
+⛔ CẤM TUYỆT ĐỐI (VI PHẠM SẼ BỊ TỪ CHỐI):
+- KHÔNG in "Bước 1", "Bước 2", "Bước 3", "Step 1", "Step 2" hay bất kỳ mô tả quy trình nào
+- KHÔNG in các hướng dẫn như "Trích dẫn chính xác", "Trả lời câu hỏi", "Dựa trên ngữ cảnh"
+- KHÔNG in tiền tố như "Trả lời:", "Câu trả lời:", "Kết luận:", "Dựa trên"
+- KHÔNG giải thích quá trình tư duy hoặc phân tích
+- KHÔNG trả lời dài dòng (chỉ tối đa 2-3 câu)
+- KHÔNG nhầm lẫn số liệu (nếu hỏi ca ngày thì lấy ca ngày, hỏi ca đêm thì lấy ca đêm)
+- KHÔNG cung cấp thông tin tuyệt mật
 
-QUY ĐỊNH VỀ CẤU TRÚC CÂU TRẢ LỜI (BẮT BUỘC):
-Bạn phải sử dụng chính xác khuôn mẫu câu dưới đây để trả lời, chỉ thay thế các phần trong ngoặc vuông `[...]` bằng thông tin thực tế tìm được trong văn bản:
+✓ ĐỊNH DẠNG ĐẦU RA (OUTPUT FORMAT):
+Theo [Tên tài liệu nội quy - Điều X], công ty quy định [số liệu cụ thể], [đánh giá: hợp lệ/cao hơn/thấp hơn] mức tối thiểu [số liệu] quy định tại [Tên tài liệu luật - Điều Y].
 
-"Theo [Trích dẫn Điều/Khoản Nội quy], công ty đang quy định [Số liệu/Quyền lợi của Công ty], và nó [Đánh giá: hợp lệ/cao hơn/thấp hơn] theo mức tối thiểu [Số liệu/Quyền lợi của Luật] quy định tại [Trích dẫn Điều/Khoản Luật]."
+📌 LƯU Ý QUAN TRỌNG:
+- Sao chép CHÍNH XÁC tên tài liệu trong ngoặc vuông [...] từ phần "Thông tin tham khảo" bên dưới
+- Trích xuất đúng số liệu (nếu hỏi ca ngày thì lấy ca ngày, hỏi ca đêm thì lấy ca đêm)
+- Chỉ so sánh nội quy công ty với luật nhà nước
+- Không giải thích, không dài dòng, chỉ 1-2 câu"""
 
-HƯỚNG DẪN ĐIỀN THÔNG TIN VÀO KHUÔN MẪU:
-1. [Trích dẫn Điều/Khoản Nội quy]: Ghi rõ Điều số mấy trong Nội quy.
-2. [Số liệu/Quyền lợi của Công ty]: Trích xuất con số hoặc quy định cụ thể của công ty (Ví dụ: số tiền, số %, số ngày...). ⚠️ CHÍNH XÁC với tình huống người dùng hỏi.
-3. [Đánh giá]: So sánh và kết luận (dùng từ "hợp lệ", "cao hơn", hoặc "thấp hơn").
-4. [Số liệu/Quyền lợi của Luật]: Trích xuất con số tương ứng trong Luật để làm mốc so sánh. ⚠️ CHÍNH XÁC với tình huống người dùng hỏi.
-5. [Trích dẫn Điều/Khoản]: Sao chép CHÍNH XÁC nhãn trích dẫn trong dấu ngoặc vuông [...] từ context.
+        if fallback_mode:
+            base_prompt += """\n\n⚠️ CHẾ ĐỘ FALLBACK:
+Hệ thống đã tự động tìm kiếm trong cơ sở dữ liệu pháp luật chung do thiếu thông tin từ nội quy công ty.
+Ưu tiên trích dẫn từ văn bản pháp luật Việt Nam."""
 
-YÊU CẦU TRÍCH DẪN:
-- BẮT BUỘC sử dụng CHÍNH XÁC nhãn trích dẫn có trong context
-- KHÔNG được tự tạo hoặc rút gọn tên tài liệu
-- Nếu context cung cấp nhãn đầy đủ, phải sử dụng nhãn đó
-
-YÊU CẦU:
-- Không được tự ý thay đổi cấu trúc câu.
-- Nếu nội quy công ty tốt hơn luật, hãy dùng từ "cao hơn" hoặc "tốt hơn".
-- Trả lời ngắn gọn, dứt khoát, không giải thích vòng vo.
-- CHỈ IN RA CÂU TRẢ LỜI CUỐI CÙNG. Không in bất kỳ tiêu đề hay tiền tố nào như "Trả lời:", "Câu trả lời:", "Câu trả lời cuối cùng:"."""
+        return base_prompt
 
     @staticmethod
-    def _build_single_source_system_prompt() -> str:
+    def _build_single_source_system_prompt(fallback_mode: bool = False) -> str:
         """
         Generates a minimal Vietnamese system prompt for SINGLE SOURCE mode.
         Ultra-lightweight to reduce memory usage with vistral model.
+
+        Args:
+            fallback_mode: If True, indicates that tenant docs were insufficient
+
+        Returns:
+            System prompt string
         """
-        return """TUYỆT ĐỐI KHÔNG in "Bước 1", "Bước 2", "Bước 3" hoặc bất kỳ quá trình suy luận nào.
-CHỈ IN CÂU TRẢ LỜI CUỐI CÙNG.
+        base_prompt = """⛔ CẤM TUYỆT ĐỐI:
+- KHÔNG in "Bước 1", "Bước 2", "Bước 3" hoặc bất kỳ quá trình suy luận nào
+- KHÔNG in các hướng dẫn như "Trích dẫn chính xác từ ngữ cảnh", "Trả lời câu hỏi"
+- KHÔNG in bất kỳ tiền tố nào như "Trả lời:", "Câu trả lời:", "Dựa trên"
 
-Trả lời ngắn gọn theo mẫu: Theo [Trích dẫn chính xác từ context], [nội dung].
+✓ CHỈ IN CÂU TRẢ LỜI CUỐI CÙNG theo mẫu:
+Theo [Tên tài liệu - Điều X], [nội dung cụ thể].
 
-YÊU CẦU: Sao chép CHÍNH XÁC nhãn trích dẫn trong [...] từ context đã cung cấp."""
+QUAN TRỌNG: Sao chép CHÍNH XÁC nhãn trong ngoặc vuông [...] từ "Thông tin tham khảo" bên dưới."""
+
+        if fallback_mode:
+            base_prompt += """\n\n⚠️ CHẾ ĐỘ FALLBACK: Hệ thống đã tự động tìm kiếm trong cơ sở dữ liệu pháp luật chung."""
+
+        return base_prompt
 
     @staticmethod
     def _cleanup_response(response: str) -> str:
@@ -331,14 +594,44 @@ YÊU CẦU: Sao chép CHÍNH XÁC nhãn trích dẫn trong [...] từ context đ
             "Final answer:",
             "Xây dựng câu trả lời dựa trên các thông tin đã trích xuất.",
             "Dựa trên thông tin đã trích xuất,",
+            "Trích dẫn chính xác từ ngữ cảnh và trả lời câu hỏi của người dùng.",
+            "Trích dẫn chính xác từ ngữ cảnh.",
+            "Trả lời câu hỏi của người dùng.",
+            "Dựa trên ngữ cảnh,",
+            "Dựa trên context,",
+            "Căn cứ vào thông tin,",
+            "Theo thông tin được cung cấp,",
         ]
 
-        # Remove prefixes (case-insensitive)
-        for prefix in prefixes_to_remove:
-            if cleaned.lower().startswith(prefix.lower()):
-                cleaned = cleaned[len(prefix):].strip()
-                logger.debug(f'Removed prefix "{prefix}" from response')
-                break  # Only remove the first matching prefix
+        # Remove prefixes (case-insensitive) - loop multiple times in case of stacked prefixes
+        max_iterations = 5  # Prevent infinite loop
+        iteration = 0
+        while iteration < max_iterations:
+            removed = False
+            for prefix in prefixes_to_remove:
+                if cleaned.lower().startswith(prefix.lower()):
+                    cleaned = cleaned[len(prefix):].strip()
+                    logger.debug(f'Removed prefix "{prefix}" from response')
+                    removed = True
+                    break
+            if not removed:
+                break  # No more prefixes found
+            iteration += 1
+
+        # Remove instruction sentences that might appear as complete lines at the start
+        # Pattern: If first line is an instruction and second line starts with "Theo", keep from second line
+        lines = cleaned.split('\n')
+        if len(lines) > 1:
+            first_line_lower = lines[0].strip().lower()
+            instruction_patterns = [
+                'trích dẫn', 'trả lời', 'dựa trên', 'căn cứ', 'theo thông tin',
+                'hãy', 'cần', 'phải', 'nên', 'vui lòng'
+            ]
+            if any(pattern in first_line_lower for pattern in instruction_patterns):
+                if lines[1].strip().lower().startswith('theo'):
+                    # First line looks like instruction, second line is the real answer
+                    cleaned = '\n'.join(lines[1:]).strip()
+                    logger.debug('Removed instruction sentence from first line')
 
         return cleaned
 
@@ -565,24 +858,34 @@ YÊU CẦU: Sao chép CHÍNH XÁC nhãn trích dẫn trong [...] từ context đ
             enhanced_message = ChatBusiness._expand_query_with_prompt_config(message, system_instruction)
             logger.info(f"[ConversationId: {conversation_id}] Enhanced message: '{enhanced_message[:50]}...'")
 
-            # Step 2: Embedding & Retrieval
+            # Step 2: Legal Term Extraction & Keyword Preparation
+            # Extract legal keywords from query for BM25 matching
+            legal_keywords = LegalTermExtractor.extract_keywords(
+                query=enhanced_message,
+                system_instruction=system_instruction
+            )
+            logger.info(
+                f'[ConversationId: {conversation_id}] Extracted {len(legal_keywords)} keywords: {legal_keywords}'
+            )
+
+            # Step 3: Embedding & Hybrid Retrieval with Fallback
             # CRITICAL: Use enhanced_message (NOT raw message) for vector search
             # to find documents based on full semantic meaning, not abbreviations
             query_embedding = await qdrant_service.get_embedding(enhanced_message)
 
-            # Parallel retrieval for efficiency
-            # Create coroutines (don't await yet) for true parallel execution
-            legal_base_task = qdrant_service.search_exact_tenant(query_vector=query_embedding, tenant_id=1, limit=1)
-            company_rule_task = qdrant_service.search_exact_tenant(query_vector=query_embedding, tenant_id=tenant_id, limit=1)
-            (legal_base_results, company_rule_results) = await asyncio.gather(legal_base_task, company_rule_task, return_exceptions=True)
+            # Perform hybrid search with intelligent fallback
+            company_rule_results, legal_base_results, fallback_triggered = await qdrant_service.hybrid_search_with_fallback(
+                query_vector=query_embedding,
+                keywords=legal_keywords,
+                tenant_id=tenant_id,
+                limit=5
+            )
 
-            # Handle exceptions
-            if isinstance(legal_base_results, Exception):
-                logger.error(f'[ConversationId: {conversation_id}] Legal base query failed: {legal_base_results}')
-                legal_base_results = []
-            if isinstance(company_rule_results, Exception):
-                logger.error(f'[ConversationId: {conversation_id}] Company rule query failed: {company_rule_results}')
-                company_rule_results = []
+            logger.info(
+                f'[ConversationId: {conversation_id}] Hybrid search completed: '
+                f'{len(company_rule_results)} tenant + {len(legal_base_results)} global results '
+                f'(fallback: {fallback_triggered})'
+            )
 
             # NEW: Detect scenario based on which vectors were found
             scenario = ChatBusiness._detect_scenario(company_rule_results, legal_base_results)
@@ -618,9 +921,7 @@ YÊU CẦU: Sao chép CHÍNH XÁC nhãn trích dẫn trong [...] từ context đ
 
 {context_string}
 
-Câu hỏi của người dùng: {message}
-
-Hãy trả lời dựa trên thông tin được cung cấp ở trên, tuân thủ nghiêm ngặt quy trình 3 bước đã được hướng dẫn."""
+Câu hỏi của người dùng: {message}"""
             else:
                 logger.warning(f'[ConversationId: {conversation_id}] No documents retrieved from either source. Using raw query.')
                 enhanced_prompt = f"""Câu hỏi của người dùng: {message}
@@ -630,13 +931,23 @@ Lưu ý: Hiện không tìm thấy tài liệu tham khảo liên quan. Hãy tr�
             # Step 4: Build conversation history with system prompt
             conversation_history = []
 
-            # NEW: Select system prompt based on scenario (BOTH or ONE)
+            # NEW: Select system prompt based on scenario (BOTH or ONE) and fallback status
             if scenario == "BOTH":
-                compliance_system_prompt = ChatBusiness._build_comparison_system_prompt()
-                logger.info(f'[ConversationId: {conversation_id}] Applied COMPARISON system prompt')
+                compliance_system_prompt = ChatBusiness._build_comparison_system_prompt(
+                    fallback_mode=fallback_triggered
+                )
+                logger.info(
+                    f'[ConversationId: {conversation_id}] Applied COMPARISON system prompt '
+                    f'(fallback: {fallback_triggered})'
+                )
             else:  # scenario in ["COMPANY_ONLY", "LEGAL_ONLY"]
-                compliance_system_prompt = ChatBusiness._build_single_source_system_prompt()
-                logger.info(f'[ConversationId: {conversation_id}] Applied SINGLE SOURCE system prompt for {scenario}')
+                compliance_system_prompt = ChatBusiness._build_single_source_system_prompt(
+                    fallback_mode=fallback_triggered
+                )
+                logger.info(
+                    f'[ConversationId: {conversation_id}] Applied SINGLE SOURCE system prompt '
+                    f'for {scenario} (fallback: {fallback_triggered})'
+                )
 
             conversation_history.append({'role': 'system', 'content': compliance_system_prompt})
 
@@ -697,7 +1008,8 @@ Lưu ý: Hiện không tìm thấy tài liệu tham khảo liên quan. Hãy tr�
                 'model_used': ollama_service.model,
                 'rag_documents_used': documents_used,
                 'source_ids': source_ids,
-                'scenario': scenario  # NEW: Include scenario for debugging
+                'scenario': scenario,  # NEW: Include scenario for debugging
+                'fallback_triggered': fallback_triggered  # NEW: Include fallback status
             }
         except Exception as e:
             logger.error(f'[ConversationId: {conversation_id}] Failed to process message: {e}', exc_info=True)
