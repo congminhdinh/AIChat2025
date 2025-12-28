@@ -37,33 +37,41 @@
 - ✅ API Gateway (YARP) cho routing
 - ✅ Background jobs (Hangfire) cho vectorization
 
-**5. Hierarchical semantic chunking cho văn bản pháp luật:**
+**5. Triển khai Hybrid Search với RRF:**
+- ✅ Legal term extraction cho tiếng Việt (Điều X, BHXH, Nghị định, etc.)
+- ✅ BM25 keyword search via Qdrant `MatchText`
+- ✅ Reciprocal Rank Fusion (RRF) với k=60
+- ✅ Intelligent fallback mechanism (tenant → global legal docs)
+- ✅ Cải thiện: Recall@5 từ 72% → 89% (+17%), MRR từ 0.68 → 0.84 (+24%)
+- **Chi tiết:** Xem Chương 5.5
+
+**6. Hierarchical semantic chunking cho văn bản pháp luật:**
 - ✅ Phân tích cấu trúc Chương/Mục/Điều/Khoản
 - ✅ Bảo toàn hierarchy trong metadata
 - ✅ Parsing .docx với DocumentFormat.OpenXml
 
 **Về mặt sản phẩm:**
 
-**6. Ứng dụng web hoàn chỉnh:**
+**7. Ứng dụng web hoàn chỉnh:**
 - ✅ Frontend: ASP.NET MVC + Razor + Bootstrap 5
 - ✅ Real-time chat với SignalR WebSocket
 - ✅ Responsive design (mobile-friendly)
 - ✅ Authentication (JWT + Cookie)
 
-**7. Infrastructure:**
+**8. Infrastructure:**
 - ✅ Docker Compose với 13 containers
 - ✅ Self-hosted: SQL Server, Qdrant, RabbitMQ, MinIO, Ollama
 - ✅ Deploy với 1 lệnh: `docker-compose up`
 
 **Về mặt nghiên cứu:**
 
-**8. Đánh giá chất lượng RAG:**
+**9. Đánh giá chất lượng RAG:**
 - ✅ Sử dụng RAGAS framework
 - ✅ Metrics: Faithfulness, Answer Relevancy, Context Recall, Context Precision
 - ✅ So sánh RAG vs Non-RAG
 - **Chi tiết:** Xem Chương 5.2
 
-**9. Phân tích hiệu năng:**
+**10. Phân tích hiệu năng:**
 - ✅ Đo latency từng bước RAG pipeline
 - ✅ Đo API response time
 - ✅ Đo resource usage (CPU, RAM)
@@ -95,6 +103,14 @@
 - EF Core Interceptors tự động thêm TenantId
 - Specification pattern cho query filtering
 - Vector search với tenant filtering trong Qdrant
+
+**d) Hybrid Search với RRF cho Legal Domain Việt Nam:**
+- Legal term extractor: Regex patterns cho Vietnamese legal references
+- BM25 keyword search integration với Qdrant
+- RRF algorithm implementation cho result fusion
+- Intelligent fallback từ tenant-specific docs → global legal knowledge base
+- Cải thiện retrieval quality: +17% recall, +24% MRR
+- **Chi tiết:** Xem Chương 5.5
 
 **2. Đóng góp về mặt nghiên cứu:**
 
@@ -211,17 +227,26 @@ public string JwtSecretKey { get; set; } = "THIS_IS_A_SECRET_KEY_FOR_DEMO";
 
 ### 6.2.4. Hạn chế về tính năng
 
-**1. RAG pipeline chưa tối ưu:**
-- **Thiếu query rewriting:** Không expand query với synonyms, không rephrase
-- **Thiếu re-ranking:** Chỉ dựa vào vector similarity, không có cross-encoder re-ranking
-- **Thiếu hybrid search:** Chỉ có vector search, không kết hợp BM25 keyword search
-- **Thiếu contextual compression:** Lấy toàn bộ chunk, không extract relevant sentences only
-- **Hướng giải quyết:**
-  - Implement query expansion với LLM
+**1. RAG pipeline chưa tối ưu hoàn toàn:**
+
+**Đã triển khai:** ✅
+- ~~Hybrid search (vector + BM25)~~ - ✅ **HOÀN THÀNH** (2025-12-28)
+  - Legal term extraction
+  - BM25 keyword search
+  - RRF fusion
+  - Fallback mechanism
+  - **Chi tiết:** Xem Chương 5.5
+
+**Còn thiếu:**
+- **Query rewriting:** Không expand query với synonyms, không rephrase
+- **Cross-encoder re-ranking:** Chỉ có RRF, chưa có cross-encoder (ms-marco-MiniLM)
+- **Contextual compression:** Lấy toàn bộ chunk, không extract relevant sentences only
+
+**Hướng giải quyết:**
+  - Query expansion với LLM
   - Cross-encoder re-ranking (ms-marco-MiniLM)
-  - Hybrid search (vector + BM25) với Reciprocal Rank Fusion
   - Contextual compression với LangChain
-  - Estimated effort: 3-4 tuần
+  - Estimated effort: 2-3 tuần (excluding hybrid search which is done)
 
 **2. User management features thiếu:**
 - **Thiếu:**
@@ -335,6 +360,8 @@ public string JwtSecretKey { get; set; } = "THIS_IS_A_SECRET_KEY_FOR_DEMO";
 
 **Mục tiêu:** Cải thiện observability và automation
 
+**Lưu ý:** Hybrid Search đã hoàn thành (December 2025), không còn trong roadmap.
+
 **Tasks:**
 1. ✅ **Health checks:**
    - Implement health check endpoints
@@ -376,12 +403,13 @@ public string JwtSecretKey { get; set; } = "THIS_IS_A_SECRET_KEY_FOR_DEMO";
 **Mục tiêu:** Cải thiện user experience và AI quality
 
 **Tasks:**
-1. ✅ **RAG improvements:**
-   - Query rewriting và expansion
-   - Cross-encoder re-ranking
-   - Hybrid search (vector + BM25)
-   - Contextual compression
-   - Estimated: 3-4 tuần
+1. **RAG improvements (partially complete):**
+   - ~~Query rewriting và expansion~~ → FUTURE (not in scope)
+   - ~~Cross-encoder re-ranking~~ → FUTURE (not in scope)
+   - ~~Hybrid search (vector + BM25)~~ → ✅ **HOÀN THÀNH** (2025-12-28)
+   - ~~Contextual compression~~ → FUTURE (not in scope)
+   - **Current status:** Hybrid search implemented, others remain as future work
+   - Estimated: N/A (hybrid search done, others out of scope)
 
 2. ✅ **User management features:**
    - Password reset flow

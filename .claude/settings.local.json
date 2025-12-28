@@ -4,7 +4,10 @@
       "Bash(pip install:*)",
       "Bash(where:*)",
       "Bash(py -3.11:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(dir \"C:\\Python*\")"
     ]
   }
 }

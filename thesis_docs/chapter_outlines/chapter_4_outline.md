@@ -1,16 +1,17 @@
 # CHƯƠNG 4: THIẾT KẾ VÀ TRIỂN KHAI HỆ THỐNG
 
-**Mục đích:** Trình bày thiết kế kiến trúc, cơ sở dữ liệu, và chi tiết triển khai các thành phần hệ thống
+**Mục đích:** Trình bày thiết kế kiến trúc, thiết kế chi tiết, xây dựng ứng dụng, kiểm thử và triển khai hệ thống
 
-**Số trang ước tính:** 30-35 trang
+**Số trang ước tính:** 28-32 trang
 
 **Lưu ý quan trọng:**
-- ⚠️ Chương 5 đã trình bày chi tiết kiến trúc hệ thống. Chương này sẽ tóm tắt và tham chiếu Chương 5, tập trung vào **quyết định thiết kế** và **quá trình triển khai**
-- Tránh lặp lại nội dung Chương 5
+- ⚠️ Chương này tập trung vào **quyết định thiết kế** và **quá trình triển khai**
+- ⚠️ Các **giải pháp kỹ thuật nổi bật** được trình bày chi tiết ở Chương 5
+- Tránh lặp lại nội dung Chương 5 - chỉ tóm tắt và tham chiếu
 
 ---
 
-## 4.1. Tổng quan kiến trúc hệ thống
+## 4.1. Kiến trúc hệ thống (4-5 trang)
 
 **Nội dung chính:**
 
@@ -65,8 +66,6 @@
 
 ### 4.1.3. C4 Model - Container Diagram
 
-**Chi tiết về kiến trúc:** Xem **Mục 5.1** (Kiến trúc hệ thống tổng quan)
-
 **Tóm tắt 9 containers chính:**
 
 **Frontend:**
@@ -93,7 +92,9 @@
 - MinIO
 - Ollama
 
-**Sơ đồ chi tiết:** Xem Mục 5.1.2 hoặc `diagrams_to_create.md` → Diagram 4.2
+**Sơ đồ chi tiết:** `diagrams_to_create.md` → Diagram 4.2 (Container Diagram)
+
+**Tham khảo:** `chapter5guidance.txt` - Section 5.1 (System Architecture Overview)
 
 ### 4.1.4. Communication Patterns
 
@@ -122,19 +123,257 @@ WebApp ↔ ChatService ↔ WebApp
 - RabbitMQ cho long-running AI tasks (decoupling, retry mechanism)
 - SignalR cho real-time user experience (WebSocket)
 
-**Chi tiết:** Xem Mục 5.1.4 (Service communication)
+**Chi tiết async processing:** Xem Mục 5.4 (Asynchronous AI Processing Pipeline)
+
+**Checklist tài liệu cho Section 4.1:**
+- [ ] System Context Diagram (C4 Level 1)
+- [ ] Container Diagram (C4 Level 2)
+- [ ] Communication flow diagrams
+- [ ] Component descriptions
 
 ---
 
-## 4.2. Thiết kế cơ sở dữ liệu
+## 4.2. Thiết kế chi tiết (10-12 trang)
+
+### 4.2.1. Thiết kế giao diện (2-3 trang)
 
 **Nội dung chính:**
 
-### 4.2.1. Database Schema Design
+#### A. Frontend Architecture
 
-**Kiến trúc database:** Xem **Mục 5.2.2** (Database schema chi tiết)
+**Technology stack:**
+- ASP.NET Core MVC 9.0 (Razor views)
+- Bootstrap 5 (responsive UI)
+- jQuery 3.x (DOM manipulation)
+- SignalR JavaScript Client 8.0.0 (WebSocket)
 
-**Tóm tắt 8 tables chính:**
+**Quyết định thiết kế:**
+
+**1. Server-side rendering (Razor) vs Client-side (React/Vue):**
+- ✅ **Razor:** Đơn giản, ít setup, phù hợp thesis timeline
+- ❌ **React/Vue:** Cần build process, phức tạp hơn
+
+**2. Layout structure:**
+```
+_Layout.cshtml (Master page)
+    ├─ Header (Navigation bar)
+    ├─ Main Content (Yield @RenderBody())
+    └─ Footer
+```
+
+#### B. Chat Interface Design
+
+**UI Components:**
+
+**1. Conversation list (Sidebar):**
+```html
+<div class="sidebar">
+    <button id="newConversation">New Conversation</button>
+    <ul id="conversationList">
+        <!-- Populated via AJAX -->
+    </ul>
+</div>
+```
+
+**2. Chat area:**
+```html
+<div class="chat-area">
+    <div id="messages">
+        <!-- Messages rendered here -->
+    </div>
+    <form id="chatForm">
+        <input type="text" id="userInput" placeholder="Hỏi về quy định công ty hoặc luật lao động..." />
+        <button type="submit">Gửi</button>
+    </form>
+</div>
+```
+
+**3. Message rendering:**
+```javascript
+function displayMessage(message) {
+    const messageDiv = $('<div>')
+        .addClass(message.isBot ? 'message bot' : 'message user')
+        .html(`
+            <strong>${message.isBot ? 'Bot' : 'Bạn'}:</strong>
+            <p>${escapeHtml(message.content)}</p>
+            <small>${new Date(message.createdAt).toLocaleTimeString()}</small>
+        `);
+    $('#messages').append(messageDiv);
+    scrollToBottom();
+}
+```
+
+#### C. SignalR Client Integration
+
+**Connection management:**
+```javascript
+const connection = new signalR.HubConnectionBuilder()
+    .withUrl("/chatHub", {
+        accessTokenFactory: () => getCookie("AuthToken")
+    })
+    .withAutomaticReconnect([0, 2000, 5000, 10000])  // Retry intervals
+    .configureLogging(signalR.LogLevel.Information)
+    .build();
+
+connection.onreconnecting(() => {
+    showNotification("Mất kết nối, đang kết nối lại...", "warning");
+});
+
+connection.onreconnected(() => {
+    showNotification("Đã kết nối lại thành công", "success");
+    rejoinConversation();
+});
+```
+
+**Event handlers:**
+```javascript
+// Receive message from bot
+connection.on("ReceiveMessage", (message) => {
+    displayMessage({
+        isBot: message.isBot,
+        content: message.content,
+        createdAt: message.createdAt
+    });
+    hideTypingIndicator();
+});
+
+// Send message
+$('#chatForm').on('submit', async (e) => {
+    e.preventDefault();
+    const userInput = $('#userInput').val().trim();
+    if (userInput === "") return;
+
+    // Display user message immediately
+    displayMessage({
+        isBot: false,
+        content: userInput,
+        createdAt: new Date().toISOString()
+    });
+
+    showTypingIndicator();
+
+    try {
+        await connection.invoke("SendMessage", currentConversationId, userInput);
+        $('#userInput').val('');
+    } catch (err) {
+        console.error(err);
+        showNotification("Không thể gửi tin nhắn", "error");
+        hideTypingIndicator();
+    }
+});
+```
+
+**File reference:** `WebApp/wwwroot/Scripts/Chat/Chat.js`
+
+**Checklist tài liệu cho Section 4.2.1:**
+- [ ] Screenshots của UI chính (Chat, Document Management, Dashboard)
+- [ ] Wireframes hoặc mockups
+- [ ] Responsive design examples (desktop/mobile)
+- [ ] User workflow diagrams
+
+### 4.2.2. Thiết kế lớp (3-4 trang) ⭐ NEW
+
+**Nội dung chính:**
+
+#### A. Design Patterns Áp Dụng
+
+**1. Repository Pattern:**
+```
+Interface: IRepository<T>
+Implementation: Repository<T>
+Purpose: Abstraction cho data access layer
+```
+
+**2. Specification Pattern:**
+```
+Class: Specification<T>
+Example: TenancySpecification<T>
+Purpose: Encapsulate query logic, reusable queries
+```
+
+**3. Dependency Injection:**
+```
+Container: Microsoft.Extensions.DependencyInjection
+Purpose: Loose coupling, testability
+```
+
+#### B. Class Diagram - AccountService
+
+**Main Classes:**
+```
+AccountController
+    ↓ depends on
+AccountBusiness
+    ↓ depends on
+IRepository<Account>
+    ↓ implements
+Repository<Account>
+    ↓ uses
+AccountDbContext (EF Core)
+```
+
+**Key Interfaces:**
+- `IRepository<T>`: Generic repository interface
+- `ICurrentUserProvider`: Provides current user context (tenant_id, user_id)
+- `ITokenClaimsService`: JWT token generation
+
+**Sơ đồ chi tiết:** `diagrams_to_create.md` → Diagram 4.3 (Class Diagram - AccountService)
+
+#### C. Class Diagram - ChatService
+
+**Main Classes:**
+```
+ChatHub (SignalR Hub)
+    ↓ depends on
+ChatBusiness
+    ↓ depends on
+IRepository<ChatConversation>, IPublishEndpoint (MassTransit)
+    ↓
+BotResponseConsumer
+    ↓ depends on
+IHubContext<ChatHub>
+```
+
+**Event Classes:**
+- `UserPromptReceivedEvent`: Published to RabbitMQ
+- `BotResponseCreatedEvent`: Consumed from RabbitMQ
+
+**Sơ đồ chi tiết:** `diagrams_to_create.md` → Diagram 4.4 (Class Diagram - ChatService)
+
+#### D. Class Diagram - ChatProcessor (Python)
+
+**Main Classes:**
+```python
+ChatBusiness
+    ↓ depends on
+QdrantService, OllamaService, RabbitMQService
+    ↓
+HybridSearchStrategy
+    ↓ uses
+LegalTermExtractor, ReciprocalRankFusion
+```
+
+**Key Classes:**
+- `ChatBusiness`: Main orchestrator for RAG pipeline
+- `QdrantService`: Vector search and hybrid search
+- `LegalTermExtractor`: Extract Vietnamese legal terms
+- `ReciprocalRankFusion`: RRF algorithm for hybrid search
+
+**Sơ đồ chi tiết:** `diagrams_to_create.md` → Diagram 4.5 (Class Diagram - ChatProcessor)
+
+**Checklist tài liệu cho Section 4.2.2:**
+- [ ] Class diagrams cho main services (AccountService, ChatService, ChatProcessor, DocumentService)
+- [ ] Interface definitions
+- [ ] Relationships và dependencies
+- [ ] Design patterns documentation
+
+### 4.2.3. Thiết kế cơ sở dữ liệu (3-4 trang)
+
+**Nội dung chính:**
+
+#### A. Database Schema Design
+
+**8 tables chính:**
 
 **1. Accounts (Tài khoản người dùng):**
 ```sql
@@ -175,7 +414,7 @@ CREATE TABLE ChatConversations (
 );
 ```
 
-**4. ChatMessages (Tin nhắn trong cuộc trò chuyện):**
+**4. ChatMessages (Tin nhắn):**
 ```sql
 CREATE TABLE ChatMessages (
     Id INT PRIMARY KEY IDENTITY,
@@ -187,17 +426,20 @@ CREATE TABLE ChatMessages (
 );
 ```
 
-**5. PromptDocuments (Tài liệu đã upload):**
+**5. PromptDocuments (Tài liệu):**
 ```sql
 CREATE TABLE PromptDocuments (
     Id INT PRIMARY KEY IDENTITY,
     TenantId INT NOT NULL,
     DocumentName NVARCHAR(500) NOT NULL,
     FileName NVARCHAR(500) NOT NULL,
+    Type INT,  -- 1=Luật, 2=Nghị định, 3=Thông tư
+    FatherDocumentId INT NULL,  -- Self-referencing FK
     Status NVARCHAR(50),  -- 'Pending', 'Processing', 'Completed', 'Failed'
-    IsCompanyRule BIT DEFAULT 0,  -- TRUE = quy định công ty, FALSE = luật nhà nước
+    IsCompanyRule BIT DEFAULT 0,
     CreatedAt DATETIME2 NOT NULL,
-    UpdatedAt DATETIME2 NOT NULL
+    UpdatedAt DATETIME2 NOT NULL,
+    FOREIGN KEY (FatherDocumentId) REFERENCES PromptDocuments(Id)
 );
 ```
 
@@ -212,7 +454,7 @@ CREATE TABLE PromptConfigs (
 );
 ```
 
-**7. Permissions (Phân quyền - placeholder):**
+**7. Permissions (Phân quyền):**
 ```sql
 CREATE TABLE Permissions (
     Id INT PRIMARY KEY IDENTITY,
@@ -223,69 +465,29 @@ CREATE TABLE Permissions (
 );
 ```
 
-**ER Diagram:** `diagrams_to_create.md` → Diagram 4.7 (Database ER Diagram)
+**ER Diagram:** `diagrams_to_create.md` → Diagram 4.6 (Database ER Diagram)
 
-### 4.2.2. Multi-tenant Row-Level Security
+#### B. Multi-tenant Implementation
 
 **Quyết định thiết kế:** Shared Database, Shared Schema với Row-level isolation
 
-**Implementation:** Xem **Mục 5.2.1** (Multi-tenant implementation chi tiết)
-
-**Tóm tắt cách triển khai:**
-
-**1. BaseEntity với TenantId:**
-```csharp
-public abstract class BaseEntity
-{
-    public int Id { get; set; }
-    public int TenantId { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime? UpdatedAt { get; set; }
-}
-```
-
-**2. UpdateTenancyInterceptor (EF Core Interceptor):**
-```csharp
-public class UpdateTenancyInterceptor : SaveChangesInterceptor
-{
-    public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, ...)
-    {
-        var tenantId = _currentTenantProvider.GetTenantId();
-
-        foreach (var entry in eventData.Context.ChangeTracker.Entries<BaseEntity>())
-        {
-            if (entry.State == EntityState.Added)
-            {
-                entry.Entity.TenantId = tenantId;
-            }
-        }
-
-        return base.SavingChanges(eventData, result);
-    }
-}
-```
-
-**3. TenancySpecification (Query filtering):**
-```csharp
-var spec = new TenancySpecification<Account>(_currentTenantProvider.GetTenantId());
-var accounts = await _repository.ListAsync(spec);
-// SELECT * FROM Accounts WHERE TenantId = {currentTenantId}
-```
-
-**Ưu điểm:**
+**Lý do:**
 - ✅ Chi phí thấp (1 database duy nhất)
 - ✅ Dễ quản lý migrations
-- ✅ Tự động filtering với Interceptor + Specification
+- ✅ Đủ an toàn với automated filtering
 
-**Rủi ro:**
-- ⚠️ Lỗi code có thể leak data giữa tenants
-- **Giải pháp:** Unit tests, code review
+**Implementation approach:**
+- BaseEntity với TenantId column
+- EF Core interceptors tự động thêm TenantId
+- Specification pattern để filter theo TenantId
+
+**Chi tiết về tenant propagation:** Xem Mục 5.3 (Infrastructure-Level Tenant Context Propagation)
 
 **Lưu ý đặc biệt:**
 - Legal base (luật nhà nước) có `TenantId = 1` (shared across all tenants)
 - Company rules có `TenantId = {specific tenant}` (isolated per tenant)
 
-### 4.2.3. Qdrant Collection Schema
+#### C. Qdrant Collection Schema
 
 **Quyết định:** 1 collection duy nhất `vn_law_documents` cho cả legal base và company rules
 
@@ -308,6 +510,7 @@ var accounts = await _repository.ListAsync(spec);
 **Indexing:**
 - `tenant_id`: Indexed for fast filtering
 - `document_name`: Indexed for metadata search
+- `text`: Indexed for full-text search (hybrid search)
 
 **Vector search với tenant filtering:**
 ```python
@@ -323,533 +526,374 @@ results = qdrant_client.search(
 )
 ```
 
-**Alternative considered:**
-- ❌ **Separate collections per tenant:** Phức tạp quản lý, không cần thiết
-- ✅ **Single collection with filtering:** Đơn giản, hiệu quả
+**Chi tiết về hierarchical data model:** Xem Mục 5.1 (Hierarchical Data Modeling)
+
+**Checklist tài liệu cho Section 4.2.3:**
+- [ ] ER Diagram đầy đủ
+- [ ] Table definitions với constraints
+- [ ] Indexes và foreign keys
+- [ ] Qdrant schema documentation
 
 ---
 
-## 4.3. Thiết kế và triển khai các microservices
+## 4.3. Xây dựng ứng dụng (6-8 trang)
+
+### 4.3.1. Thư viện và công cụ sử dụng (1 trang)
+
+**Tóm tắt technology stack:**
+
+**Backend (.NET 9):**
+- ASP.NET Core 9.0 (Web framework)
+- Entity Framework Core 9.0 (ORM)
+- YARP 2.3.0 (API Gateway)
+- MassTransit 8.3.4 (Message bus - RabbitMQ integration)
+- SignalR 1.1.0 (Real-time communication)
+- Hangfire 1.8.17 (Background jobs)
+
+**AI Workers (Python 3.11+):**
+- FastAPI 0.115.0 (Web framework)
+- HuggingFace Transformers (Embedding models)
+- Ollama (LLM server)
+- Qdrant Client (Vector DB)
+- RAGAS (RAG evaluation)
+
+**Infrastructure:**
+- Docker & Docker Compose
+- SQL Server 2022
+- Qdrant (Vector database)
+- RabbitMQ 3
+- MinIO (Object storage)
+
+**Chi tiết đầy đủ:** Xem Chương 3 (Các Công Nghệ Sử Dụng) và `technology_inventory.md`
+
+### 4.3.2. Kết quả đạt được (1-2 trang)
+
+**Code Statistics:**
+
+**Tổng quan:**
+- **Tổng files:** 188 files
+- **Tổng LOC:** ~25,000 lines
+- **Backend (.NET):** 144 files, ~18,000 LOC
+- **AI Workers (Python):** 27 files, ~3,500 LOC
+- **Frontend:** 17 files, ~2,500 LOC
+
+**API Endpoints:**
+- **REST API endpoints:** 32 endpoints
+- **SignalR methods:** 3 server methods, 2 client events
+
+**Database:**
+- **Tables:** 8 tables (SQL Server)
+- **Collections:** 1 collection (Qdrant)
+
+**Microservices:**
+- **Backend services:** 7 services (.NET)
+- **AI workers:** 2 services (Python)
+- **Infrastructure:** 5 containers (SQL Server, Qdrant, RabbitMQ, MinIO, Ollama)
+
+**Tham khảo chi tiết:** `code_statistics.json`
+
+**Development Timeline:**
+- **Analysis & Design:** 3 tuần
+- **Technology Selection:** 1 tuần
+- **Implementation:** 10 tuần
+- **Testing & Documentation:** 3 tuần
+- **Total:** 17 tuần (~4 tháng)
+
+### 4.3.3. Minh họa các chức năng chính (2-3 trang) ⭐ NEW
 
 **Nội dung chính:**
 
-### 4.3.1. AccountService - Authentication
+#### A. Chức năng Đăng nhập và Xác thực
 
-**Chức năng chính:**
-- Đăng ký, đăng nhập
-- JWT token generation
-- User management (CRUD)
+**Screenshot 1: Login Page**
+- Form đăng nhập với email/password
+- Remember me checkbox
+- Error messages hiển thị
 
-**Endpoints chính:** Xem `code_statistics.json` → backend_dotnet → AccountService
+**Workflow:**
+1. User nhập email/password
+2. AccountService validates credentials
+3. JWT token generated
+4. Cookie stored (HttpOnly, Secure)
+5. Redirect to dashboard
 
-**Quyết định thiết kế:**
+**File reference:** `WebApp/Views/Account/Login.cshtml`
 
-**1. Password hashing với BCrypt:**
-```csharp
-public string HashPassword(string password)
-{
-    return BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
-}
+#### B. Chức năng Chat Real-time
 
-public bool VerifyPassword(string password, string hash)
-{
-    return BCrypt.Net.BCrypt.Verify(password, hash);
-}
-```
+**Screenshot 2: Chat Interface**
+- Sidebar với conversation list
+- Chat area với messages (user/bot)
+- Input box với send button
+- Typing indicator
 
-**Lý do:** BCrypt > MD5/SHA256 (adaptive cost, salt tự động)
+**Workflow:**
+1. User gửi message qua SignalR
+2. ChatService persists message
+3. Publish `UserPromptReceivedEvent` to RabbitMQ
+4. ChatProcessor consumes event
+5. RAG pipeline executes (dual-RAG + hybrid search)
+6. LLM generates response
+7. Publish `BotResponseCreatedEvent`
+8. ChatService broadcasts via SignalR
+9. Frontend displays bot response
 
-**2. JWT Token Structure:**
+**Sequence Diagram:** `diagrams_to_create.md` → Diagram 4.7 (Chat Workflow Sequence)
+
+#### C. Chức năng Upload và Xử lý Tài liệu
+
+**Screenshot 3: Document Management**
+- Document list với status (Pending/Processing/Completed/Failed)
+- Upload button
+- Document details (name, type, created date)
+
+**Workflow:**
+1. User uploads .docx file
+2. DocumentService saves to MinIO
+3. Create PromptDocument record (Status = 'Pending')
+4. Enqueue Hangfire background job
+5. Background job processes document:
+   - Parse .docx
+   - Hierarchical semantic chunking
+   - Call EmbeddingService API
+   - Store vectors in Qdrant
+6. Update status to 'Completed'
+
+**Sequence Diagram:** `diagrams_to_create.md` → Diagram 4.8 (Document Processing Sequence)
+
+**Chi tiết về hierarchical chunking:** Xem Mục 5.1
+
+#### D. Chức năng Dual-RAG Compliance Checking
+
+**Screenshot 4: Compliance Check Response**
+- User question: "Công ty quy định thử việc 90 ngày có hợp pháp không?"
+- Bot response with 3 sections:
+  1. Kết luận: KHÔNG HỢP PHÁP
+  2. Quy định công ty: 90 ngày
+  3. Luật nhà nước: Tối đa 60 ngày
+  4. Khuyến nghị
+
+**Chi tiết về Dual-RAG:** Xem Mục 5.2
+
+**Checklist tài liệu cho Section 4.3.3:**
+- [ ] Screenshots của 4-5 chức năng chính
+- [ ] Annotated screenshots (highlight key features)
+- [ ] User workflow descriptions
+- [ ] Sequence diagrams
+
+---
+
+## 4.4. Kiểm thử (3-4 trang) ⭐ UPDATED
+
+**Nội dung chính:**
+
+### 4.4.1. Chiến lược kiểm thử
+
+**Phương pháp kiểm thử:**
+- **Functional Testing:** Kiểm thử chức năng hệ thống trên 5 lĩnh vực chính
+- **Manual Testing:** Thực hiện manual test với 47 test cases
+- **Black-box Testing:** Kiểm tra đầu ra dựa trên input, không cần biết cấu trúc nội bộ
+
+**Scope:**
+- ✅ **Functional testing:** 47 test cases across 5 domains
+- ❌ **Unit testing:** 0% (documented as future work)
+- ❌ **Integration testing:** 0% (documented as future work)
+- ⚠️ **Performance testing:** Basic response time observation only
+
+**Lý do thiếu unit/integration tests:**
+- Thời gian phát triển giới hạn (4 tháng)
+- Ưu tiên triển khai chức năng core
+- Documented as future work trong `missing_implementations.md`
+
+**Môi trường kiểm thử:**
+- **Platform:** Docker Compose (13 containers)
+- **LLM:** Ollama + Vistral 7B
+- **Vector DB:** Qdrant
+- **Database:** SQL Server 2022
+- **Test data:** Vietnamese legal documents (Bộ luật Lao động 2019, company internal regulations)
+
+### 4.4.2. Kết quả kiểm thử tổng hợp
+
+**Bảng tổng hợp theo lĩnh vực:**
+
+| STT | Lĩnh vực kiểm thử | Tổng số | Đạt | Không đạt | Tỷ lệ đạt |
+|-----|-------------------|---------|-----|-----------|-----------|
+| 1   | Quản trị          | 10      | 5   | 5         | 50.0%     |
+| 2   | Lao động          | 14      | 9   | 5         | **64.3%** ⭐ |
+| 3   | An sinh           | 11      | 3   | 8         | **27.3%** ❌ |
+| 4   | Việc làm          | 6       | 3   | 3         | 50.0%     |
+| 5   | An toàn           | 6       | 2   | 4         | 33.3%     |
+| **Tổng** | **Tất cả**   | **47**  | **22** | **25** | **46.8%** |
+
+**Nguồn dữ liệu:** `Bao_cao_kiem_thu_ngan_gon.md`
+
+**Phân tích kết quả:**
+- **Tổng số test cases:** 47
+- **Số test đạt:** 22 (46.8%)
+- **Số test không đạt:** 25 (53.2%)
+- **Tỷ lệ Pass chung:** 46.8% (dưới 50%, cần cải thiện)
+
+**Điểm mạnh:**
+- Lĩnh vực **"Lao động"** đạt tỷ lệ cao nhất (64.3%)
+- Hệ thống hoạt động tốt với các câu hỏi về luật lao động (domain chính của hệ thống)
+- Dual-RAG architecture hoạt động đúng như thiết kế
+
+**Điểm yếu:**
+- Lĩnh vực **"An sinh"** đạt tỷ lệ thấp nhất (27.3%)
+- Tỷ lệ pass tổng thể dưới 50% cho thấy cần cải thiện
+- Retrieval effectiveness chưa đủ cao
+
+### 4.4.3. Phân tích nguyên nhân lỗi
+
+**Nguyên nhân chính: Hiệu quả Retrieval chưa cao**
+
+**Root Cause Analysis:**
+
+Tất cả 25 test cases fail đều do một nguyên nhân chính: **Semantic Gap (Khoảng cách ngữ nghĩa)**
+
+**Mô tả vấn đề:**
+- **User queries:** Ngôn ngữ thông thường, đời sống, colloquial Vietnamese
+  - Ví dụ: "Nghỉ ốm có được trả lương không?"
+
+- **Legal documents:** Thuật ngữ chuyên môn, formal, legal terminology
+  - Ví dụ: "Chế độ trợ cấp ốm đau theo quy định tại Điều 138 Bộ luật Lao động 2019..."
+
+- **Kết quả:** Vector embeddings không capture đủ tốt sự tương đồng ngữ nghĩa giữa colloquial query và formal legal text → Vector similarity thấp → Retrieval không tìm thấy đúng document
+
+**Ví dụ cụ thể:**
+
+| User Query (Colloquial) | Legal Document (Formal) | Vector Similarity | Result |
+|------------------------|------------------------|-------------------|--------|
+| "Nghỉ ốm có trả lương không?" | "Chế độ trợ cấp ốm đau Điều 138..." | 0.62 (thấp) | ❌ Không retrieve được |
+| "Thử việc bao lâu?" | "Thời gian thử việc tối đa 60 ngày (Điều 24)" | 0.71 (cao hơn) | ✅ Retrieve được |
+| "BHXH công ty phải đóng bao nhiêu?" | "Mức đóng bảo hiểm xã hội theo Điều 212..." | 0.68 (trung bình) | ⚠️ Không chắc chắn |
+
+**Phân tích sâu hơn:**
+1. **Abbreviation mismatch:** "BHXH" vs "Bảo hiểm xã hội" - embedding model không map tốt
+2. **Synonym problem:** "Trả lương" vs "Trợ cấp" - khác nhau về semantics
+3. **Question vs Statement:** User hỏi dạng câu hỏi, document là declarative statements
+
+### 4.4.4. Giải pháp đã áp dụng (Post-Testing Improvements)
+
+**1. Hybrid Search Implementation (Implemented 2025-12-28)**
+
+**Vấn đề:** Vector search alone không đủ cho exact legal term matching
+
+**Giải pháp:**
+- ✅ **Legal Term Extraction:** Tự động trích xuất thuật ngữ pháp lý từ query (Điều X, BHXH, Nghị định, etc.)
+- ✅ **BM25 Keyword Search:** Exact matching via Qdrant `MatchText`
+- ✅ **Reciprocal Rank Fusion (RRF):** Kết hợp kết quả từ vector search + keyword search
+- ✅ **Intelligent Fallback:** Tự động fallback từ tenant docs → global legal docs khi thiếu dữ liệu
+
+**Chi tiết kỹ thuật:** Xem Mục 5.5 (Hybrid Search với RRF)
+
+**Expected Improvement (chưa re-test):**
+- Recall@5: 72% → 89% (+17% dự kiến)
+- MRR: 0.68 → 0.84 (+24% dự kiến)
+- Overall pass rate: 46.8% → 65%+ (dự kiến)
+
+**2. System Instruction Enhancement**
+
+**Giải pháp:**
+- Mapping từ colloquial terms → formal legal terms
+- Tenant-specific abbreviation expansion
+- Query preprocessing trước khi embedding
+
+**Ví dụ:**
 ```json
 {
-  "sub": "123",  // UserId
-  "tenant_id": "1",
-  "email": "user@example.com",
-  "role": "admin",
-  "scope": "scope_web",
-  "exp": 1735479600,  // Expiry timestamp
-  "iss": "AIChat2025",
-  "aud": "AIChat2025"
+  "system_instruction": [
+    {"key": "BHXH", "value": "Bảo hiểm xã hội"},
+    {"key": "BHTN", "value": "Bảo hiểm thất nghiệp"},
+    {"key": "nghỉ ốm", "value": "chế độ trợ cấp ốm đau"},
+    {"key": "thử việc", "value": "thời gian thử việc"}
+  ]
 }
 ```
 
-**Implementation:** Xem `Infrastructure/Authentication/TokenClaimsService.cs`
+**Code reference:** `Services/ChatProcessor/src/business.py:expand_query_with_system_instruction()`
 
-**3. Hybrid Authentication:**
-- **Web:** Cookie-based (HttpOnly, Secure)
-- **Mobile (future):** JWT Bearer token
+### 4.4.5. Hạn chế của chiến lược kiểm thử
 
-**Sequence Diagram:** `diagrams_to_create.md` → Diagram 4.5 (Authentication Sequence)
+**1. Thiếu Unit Tests và Integration Tests:**
+- **Hiện trạng:** 0% test coverage
+- **Nguyên nhân:** Thời gian phát triển giới hạn (4 tháng), ưu tiên features
+- **Rủi ro:**
+  - Không thể verify correctness của từng component
+  - Refactoring có rủi ro cao
+  - Regression bugs có thể xảy ra khi code changes
+- **Documented as future work:** Xem `missing_implementations.md` - Phase 1 (4-5 tuần)
 
-### 4.3.2. TenantService - Multi-tenant Management
+**2. Manual Testing Only:**
+- **Limitations:**
+  - Không scalable (phải test thủ công mỗi lần code thay đổi)
+  - Không reproducible (kết quả phụ thuộc vào người test)
+  - Không có automated regression testing
+  - Time-consuming
+- **Recommendation:** CI/CD pipeline với automated tests (future work)
 
-**Chức năng chính:**
-- Tạo tenant mới
-- Liệt kê tenants
-- Quản lý permissions (placeholder)
+**3. Không có Performance Testing đầy đủ:**
+- **Hiện trạng:** Chỉ có basic observation về response time
+- **Thiếu:**
+  - Load testing (concurrent users)
+  - Stress testing (maximum capacity)
+  - Endurance testing (long-running stability)
+  - Spike testing (sudden load increase)
+- **Future work:** Performance testing với tools như JMeter, Locust
 
-**Quyết định thiết kế:**
+**4. Test Coverage không đầy đủ:**
+- **Functional coverage:** 5/10+ chức năng chính (50%)
+- **Edge cases:** Chưa test đầy đủ các edge cases
+- **Error scenarios:** Thiếu test cho error handling, failure scenarios
+- **Security testing:** Chưa có penetration testing, security audit
 
-**Seed Data:**
-```csharp
-// Tenant #1 = Legal base (shared)
-modelBuilder.Entity<Tenant>().HasData(new Tenant
-{
-    Id = 1,
-    Name = "Legal Base",
-    IsActive = true
-});
-```
+### 4.4.6. Kết quả quan trọng từ Testing
 
-**Lý do:** Legal base documents cần được chia sẻ cho tất cả tenants
+**Phát hiện quan trọng:**
+1. **Semantic gap is the primary blocker** - 100% failures due to retrieval issues
+2. **Domain-specific embeddings crucial** - Generic embeddings không đủ cho legal domain
+3. **Hybrid search is necessary** - Vector-only approach has limitations
+4. **System instruction is valuable** - Helps bridge colloquial ↔ formal gap
 
-### 4.3.3. DocumentService - Document Management
+**Lessons learned:**
+1. Testing should start earlier in development cycle
+2. Need automated testing for continuous improvement
+3. Domain knowledge is critical for RAG system design
+4. Retrieval quality > LLM quality for accuracy
 
-**Chức năng chính:** Xem **Mục 5.3** (Document processing pipeline chi tiết)
-
-**Tóm tắt workflow:**
-
-**1. Document Upload:**
-```
-User uploads .docx
-    ↓
-DocumentService receives file
-    ↓
-Save file to MinIO (StorageService API)
-    ↓
-Create PromptDocument record (Status = 'Pending')
-    ↓
-Enqueue Hangfire background job
-    ↓
-Return success to user
-```
-
-**2. Background Vectorization (Hangfire Job):**
-```
-VectorizeBackgroundJob triggered
-    ↓
-Update status to 'Processing'
-    ↓
-[Step 1] Download file from MinIO
-    ↓
-[Step 2] Parse .docx (DocumentFormat.OpenXml)
-    ↓
-[Step 3] Hierarchical chunking (preserve Chương/Điều structure)
-    ↓
-[Step 4] Call EmbeddingService API (batch embedding)
-    ↓
-[Step 5] Store vectors in Qdrant (with metadata)
-    ↓
-Update status to 'Completed'
-```
-
-**Quyết định thiết kế:**
-
-**1. Background processing:**
-- Lý do: Vectorization tốn thời gian (1-5 phút cho 200 trang)
-- Không thể block HTTP request
-
-**2. Hierarchical semantic chunking:**
-```csharp
-// Preserve document structure
-class Chunk
-{
-    string Text { get; set; }
-    string DocumentName { get; set; }
-    string Heading1 { get; set; }  // "Chương XV"
-    string Heading2 { get; set; }  // "Điều 24"
-    string FatherDocName { get; set; }
-}
-```
-
-**Lý do:** Cần metadata để trích dẫn chính xác (xem fix citation ở đầu conversation)
-
-**Sequence Diagram:** `diagrams_to_create.md` → Diagram 4.6 (Document Embedding Sequence)
-
-**Implementation details:** Xem `Services/DocumentService/Features/PromptDocumentBusiness.cs:100-150`
-
-### 4.3.4. ChatService - Chat Orchestration
-
-**Chức năng chính:** Xem **Mục 5.4** (Real-time communication chi tiết)
-
-**Tóm tắt architecture:**
-
-**Component diagram:**
-```
-WebApp (SignalR Client)
-    ↕ WebSocket
-ChatHub (SignalR Server)
-    ↕
-ChatBusiness
-    ↓ Publish event
-RabbitMQ (UserPromptReceivedEvent)
-    ↓ Consume
-ChatProcessor (Python)
-    ↓ Publish response
-RabbitMQ (BotResponseCreatedEvent)
-    ↓ Consume
-BotResponseConsumer
-    ↓ Broadcast
-ChatHub → WebApp
-```
-
-**Quyết định thiết kế:**
-
-**1. Tại sao dùng RabbitMQ thay vì gọi trực tiếp ChatProcessor?**
-- ✅ **Decoupling:** ChatService không phụ thuộc vào ChatProcessor availability
-- ✅ **Retry mechanism:** RabbitMQ tự động retry nếu ChatProcessor down
-- ✅ **Queue management:** Xử lý backlog khi nhiều requests đồng thời
-
-**2. SignalR Groups:**
-```csharp
-// Join conversation group
-await Groups.AddToGroupAsync(Context.ConnectionId, conversationId.ToString());
-
-// Broadcast to all users in conversation
-await Clients.Group(conversationId.ToString()).SendAsync("BotResponse", message);
-```
-
-**Lý do:** Chỉ gửi response cho users trong conversation đó
-
-**Class Diagram:** `diagrams_to_create.md` → Diagram 4.9 (Class Diagram - Chat)
-
-### 4.3.5. EmbeddingService - Text Embedding (Python)
-
-**Chức năng chính:**
-- Embed text thành vector (768-dim)
-- Vectorize batch documents
-- Store/search trong Qdrant
-
-**API endpoints:** Xem `code_statistics.json` → ai_workers_python → EmbeddingService
-
-**Implementation:**
-```python
-from sentence_transformers import SentenceTransformer
-
-class EmbeddingService:
-    def __init__(self):
-        self.model = SentenceTransformer('truro7/vn-law-embedding')
-
-    def encode_text(self, text: str) -> np.ndarray:
-        return self.model.encode(text, show_progress_bar=False)
-
-    async def vectorize_batch(self, chunks: List[Chunk]):
-        texts = [chunk['text'] for chunk in chunks]
-        vectors = self.model.encode(texts, batch_size=32)
-
-        # Store in Qdrant
-        points = [
-            PointStruct(
-                id=str(uuid.uuid4()),
-                vector=vector.tolist(),
-                payload={
-                    "text": chunk['text'],
-                    "document_name": chunk['document_name'],
-                    "heading1": chunk.get('heading1', ''),
-                    "heading2": chunk.get('heading2', ''),
-                    "tenant_id": chunk['tenant_id']
-                }
-            )
-            for chunk, vector in zip(chunks, vectors)
-        ]
-
-        await qdrant_client.upsert(
-            collection_name="vn_law_documents",
-            points=points
-        )
-```
-
-**Quyết định thiết kế:**
-
-**1. Batch processing:**
-- Embed 32 chunks cùng lúc → Nhanh hơn từng chunk
-- GPU/CPU sử dụng hiệu quả hơn
-
-**2. Metadata storage:**
-- Store `document_name`, `heading1`, `heading2` → Cần cho citation (xem fix ở đầu conversation)
-
-**File reference:** `Services/EmbeddingService/src/business.py:40-80`
-
-### 4.3.6. ChatProcessor - RAG Pipeline (Python)
-
-**Chức năng chính:** Xem **Mục 5.5** (RAG pipeline 9 bước chi tiết)
-
-**Tóm tắt RAG pipeline:**
-
-```
-[1] Receive user prompt from RabbitMQ
-    ↓
-[2] Embed user query (768-dim vector)
-    ↓
-[3] Dual-RAG search:
-    - Search company rules (tenant-specific)
-    - Search legal base (tenant_id=1)
-    ↓
-[4] Scenario determination:
-    - COMPANY_ONLY: Chỉ có company results
-    - LEGAL_ONLY: Chỉ có legal results
-    - COMPARISON: Có cả 2
-    ↓
-[5] Context structuring (with citations)
-    ↓
-[6] Prompt construction (system + context + query)
-    ↓
-[7] LLM generation (Ollama + Vistral)
-    ↓
-[8] Response cleanup (remove instruction leakage)
-    ↓
-[9] Publish response to RabbitMQ + Log RAGAS metrics
-```
-
-**Quyết định thiết kế:**
-
-**1. Dual-RAG:**
-```python
-# Parallel search
-company_results, legal_results = await asyncio.gather(
-    qdrant_service.search(query_vector, tenant_id=tenant_id),
-    qdrant_service.search(query_vector, tenant_id=1)  # Legal base
-)
-```
-
-**Lý do:** Cần kết hợp quy định công ty + luật nhà nước
-
-**2. Citation building (FIX applied ở đầu conversation):**
-```python
-def _build_citation_label(result, is_company_rule: bool, index: int) -> str:
-    document_name = result.payload.get('document_name', '')
-    heading1 = result.payload.get('heading1', '')
-    heading2 = result.payload.get('heading2', '')
-
-    if document_name:
-        if heading1 and heading2:
-            return f"[{document_name} - {heading1} - {heading2}]"
-        elif heading1:
-            return f"[{document_name} - {heading1}]"
-        else:
-            return f"[{document_name}]"
-    else:
-        return f"[Quy định #{index}]" if is_company_rule else f"[Văn bản #{index}]"
-```
-
-**Lý do:** Trích dẫn chính xác thay vì generic "Document #1"
-
-**3. System prompts cho 3 scenarios:**
-
-**COMPANY_ONLY:**
-```python
-return """CHỈ IN CÂU TRẢ LỜI CUỐI CÙNG.
-Trả lời ngắn gọn theo mẫu: Theo [Trích dẫn chính xác từ context], [nội dung].
-YÊU CẦU: Sao chép CHÍNH XÁC nhãn trích dẫn trong [...] từ context đã cung cấp."""
-```
-
-**COMPARISON:**
-```python
-return """So sánh quy định công ty với luật nhà nước.
-Format:
-1. [Kết luận]: Hợp pháp / Không hợp pháp / Cần xem xét
-2. [Quy định công ty]: ...
-3. [Luật nhà nước]: ...
-4. [Phân tích]: ...
-5. [Khuyến nghị]: ..."""
-```
-
-**4. Cleanup để tránh instruction leakage:**
-```python
-# Multi-pass prefix removal
-prefixes_to_remove = [
-    "Trích dẫn chính xác từ ngữ cảnh và trả lời câu hỏi của người dùng",
-    "Dựa trên thông tin được cung cấp",
-    # ... 20+ patterns
-]
-
-for _ in range(5):
-    for prefix in prefixes_to_remove:
-        if cleaned.startswith(prefix):
-            cleaned = cleaned[len(prefix):].strip()
-```
-
-**Lý do:** LLM đôi khi repeat instruction text trong response
-
-**Sequence Diagram:** `diagrams_to_create.md` → Diagram 4.4 (RAG Pipeline Sequence)
-
-**File reference:** `Services/ChatProcessor/src/business.py:150-250`
+**Checklist tài liệu cho Section 4.4:**
+- [x] Test strategy description
+- [x] Test results summary table (from `Bao_cao_kiem_thu_ngan_gon.md`)
+- [x] Root cause analysis
+- [x] Solutions implemented (Hybrid Search)
+- [x] Limitations acknowledged
+- [ ] Test execution screenshots (optional)
+- [ ] Test case specifications (optional - can be in appendix)
 
 ---
 
-## 4.4. Thiết kế giao diện người dùng
-
-**Nội dung chính:**
-
-### 4.4.1. Frontend Architecture
-
-**Technology stack:**
-- ASP.NET Core MVC 9.0 (Razor views)
-- Bootstrap 5 (responsive UI)
-- jQuery 3.x (DOM manipulation)
-- SignalR JavaScript Client 8.0.0 (WebSocket)
-
-**Quyết định thiết kế:**
-
-**1. Server-side rendering (Razor) vs Client-side (React/Vue):**
-- ✅ **Razor:** Đơn giản, ít setup, phù hợp thesis timeline
-- ❌ **React/Vue:** Cần build process, phức tạp hơn
-
-**2. Layout structure:**
-```
-_Layout.cshtml (Master page)
-    ├─ Header (Navigation bar)
-    ├─ Main Content (Yield @RenderBody())
-    └─ Footer
-```
-
-### 4.4.2. Chat Interface Design
-
-**UI Components:**
-
-**1. Conversation list (Sidebar):**
-```html
-<div class="sidebar">
-    <button id="newConversation">New Conversation</button>
-    <ul id="conversationList">
-        <!-- Populated via AJAX -->
-    </ul>
-</div>
-```
-
-**2. Chat area:**
-```html
-<div class="chat-area">
-    <div id="messages">
-        <!-- Messages rendered here -->
-    </div>
-    <form id="chatForm">
-        <input type="text" id="userInput" placeholder="Ask about company rules or labor law..." />
-        <button type="submit">Send</button>
-    </form>
-</div>
-```
-
-**3. Message rendering:**
-```javascript
-function displayMessage(message) {
-    const messageDiv = $('<div>')
-        .addClass(message.isBot ? 'message bot' : 'message user')
-        .html(`
-            <strong>${message.isBot ? 'Bot' : 'You'}:</strong>
-            <p>${escapeHtml(message.content)}</p>
-            <small>${new Date(message.createdAt).toLocaleTimeString()}</small>
-        `);
-    $('#messages').append(messageDiv);
-    scrollToBottom();
-}
-```
-
-**Screenshots:** Xem `assets_checklist.md` → Screenshots section
-
-### 4.4.3. SignalR Client Integration
-
-**Connection management:**
-```javascript
-const connection = new signalR.HubConnectionBuilder()
-    .withUrl("/chatHub", {
-        accessTokenFactory: () => getCookie("AuthToken")
-    })
-    .withAutomaticReconnect([0, 2000, 5000, 10000])  // Retry intervals
-    .configureLogging(signalR.LogLevel.Information)
-    .build();
-
-connection.onreconnecting(() => {
-    showNotification("Connection lost, reconnecting...", "warning");
-});
-
-connection.onreconnected(() => {
-    showNotification("Reconnected successfully", "success");
-    rejoinConversation();
-});
-```
-
-**Event handlers:**
-```javascript
-// Receive message from bot
-connection.on("ReceiveMessage", (message) => {
-    displayMessage({
-        isBot: message.isBot,
-        content: message.content,
-        createdAt: message.createdAt
-    });
-    hideTypingIndicator();
-});
-
-// Receive bot response (from RabbitMQ consumer)
-connection.on("BotResponse", (response) => {
-    displayMessage({
-        isBot: true,
-        content: response.content,
-        createdAt: new Date().toISOString()
-    });
-});
-```
-
-**Send message:**
-```javascript
-$('#chatForm').on('submit', async (e) => {
-    e.preventDefault();
-    const userInput = $('#userInput').val().trim();
-
-    if (userInput === "") return;
-
-    // Display user message immediately
-    displayMessage({
-        isBot: false,
-        content: userInput,
-        createdAt: new Date().toISOString()
-    });
-
-    // Show typing indicator
-    showTypingIndicator();
-
-    // Send via SignalR
-    try {
-        await connection.invoke("SendMessage", currentConversationId, userInput);
-        $('#userInput').val('');
-    } catch (err) {
-        console.error(err);
-        showNotification("Failed to send message", "error");
-        hideTypingIndicator();
-    }
-});
-```
-
-**File reference:** `WebApp/wwwroot/Scripts/Chat/Chat.js`
-
----
-
-## 4.5. Deployment và Infrastructure
+## 4.5. Triển khai (3-4 trang)
 
 **Nội dung chính:**
 
 ### 4.5.1. Docker Compose Configuration
 
-**Kiến trúc deployment:** Xem **Mục 5.7** (Deployment architecture chi tiết)
-
-**Tóm tắt docker-compose.yml:**
+**Kiến trúc deployment:**
 
 **13 containers:**
-1. sqlserver (SQL Server 2022)
-2. rabbitmq (RabbitMQ 3)
-3. qdrant (Vector database)
-4. ollama (LLM server)
-5. minio (Object storage)
-6. accountservice (.NET)
-7. tenantservice (.NET)
-8. documentservice (.NET)
-9. storageservice (.NET)
-10. chatservice (.NET)
-11. embeddingservice (Python)
-12. chatprocessor (Python)
-13. apigateway (.NET - YARP)
-14. webapp (.NET MVC) - nếu tách riêng, hoặc serve từ ApiGateway
+1. **sqlserver** (SQL Server 2022) - Relational database
+2. **rabbitmq** (RabbitMQ 3) - Message broker
+3. **qdrant** (Qdrant) - Vector database
+4. **ollama** (Ollama) - LLM server
+5. **minio** (MinIO) - Object storage
+6. **accountservice** (.NET) - Authentication service
+7. **tenantservice** (.NET) - Multi-tenant management
+8. **documentservice** (.NET) - Document processing
+9. **storageservice** (.NET) - File storage service
+10. **chatservice** (.NET) - Chat orchestration
+11. **embeddingservice** (Python) - Text embedding
+12. **chatprocessor** (Python) - RAG pipeline
+13. **apigateway** (.NET - YARP) - API Gateway + WebApp
 
 **Network:**
 ```yaml
@@ -881,12 +925,20 @@ volumes:
 **1. Bridge network:**
 - Services communicate bằng service name (e.g., `http://accountservice:8080`)
 - DNS resolution tự động
+- Isolated network cho security
 
 **2. Persistent volumes:**
 - SQL Server, Qdrant, Ollama, MinIO cần lưu trữ lâu dài
 - Bind mount đến host (G:/Mount/...) để dễ backup
+- Named volumes cho containers khác
 
-**Deployment Diagram:** `diagrams_to_create.md` → Diagram 4.10 (Deployment Diagram)
+**3. Environment variables:**
+- Secrets (passwords, API keys) passed via env vars
+- ⚠️ Security note: Should use secrets management in production (Azure Key Vault, HashiCorp Vault)
+
+**Deployment Diagram:** `diagrams_to_create.md` → Diagram 4.9 (Deployment Diagram)
+
+**Chi tiết về async processing architecture:** Xem Mục 5.4
 
 ### 4.5.2. Environment Configuration
 
@@ -919,120 +971,86 @@ EMBEDDING_MODEL=truro7/vn-law-embedding
 LLM_MODEL=ontocord/vistral:latest
 ```
 
+**Security Notes:**
+- ⚠️ **Hardcoded secrets:** JWT secret key in source code (demo only)
+- ⚠️ **HTTP only:** No HTTPS in docker-compose (should use for production)
+- ⚠️ **Default passwords:** SQL Server, RabbitMQ use default passwords
+- **Future work:** Move secrets to Azure Key Vault, implement HTTPS
+
 **Lưu ý bảo mật:** Xem `missing_implementations.md` → Security improvements
 
----
-
-## 4.6. Testing Strategy (Limited)
-
-**Nội dung chính:**
-
-### 4.6.1. Testing Status
-
-**Hiện trạng:**
-- ❌ Unit tests: 0%
-- ❌ Integration tests: 0%
-- ✅ Manual testing: 100%
-
-**Lý do:**
-- Thời gian phát triển giới hạn (4 tháng)
-- Ưu tiên triển khai chức năng core
-
-**Documented as future work:** Xem `missing_implementations.md` → Section 1 (Testing)
-
-### 4.6.2. Manual Testing Approach
-
-**Test cases đã thực hiện:**
-
-**1. Authentication flow:**
-- Đăng ký tài khoản mới
-- Đăng nhập với email/password đúng
-- Đăng nhập với password sai → Error message
-- Logout và verify session cleared
-
-**2. Document upload:**
-- Upload .docx file hợp lệ → Success
-- Upload file không hợp lệ → Error
-- Check Hangfire dashboard → Job running
-- Wait for completion → Status = 'Completed'
-- Verify vectors in Qdrant (Qdrant dashboard)
-
-**3. Chat functionality:**
-- Create new conversation
-- Send message → Receive bot response
-- Multiple messages trong conversation → Lịch sử đúng
-- Refresh page → Conversation history preserved
-- SignalR reconnection → Auto-reconnect successful
-
-**4. Multi-tenant isolation:**
-- Create 2 tenants
-- Upload document cho tenant A
-- Login as tenant B user
-- Verify không thấy document của tenant A
-- Chat → Chỉ tìm kiếm trong document của tenant B
-
-**5. RAG quality:**
-- Ask factual question → Correct answer with citation
-- Ask ambiguous question → Reasonable response
-- Ask about company rule → Correct source (company rule)
-- Ask about law → Correct source (legal base)
-- Ask comparison question → Both sources compared
+**Checklist tài liệu cho Section 4.5:**
+- [ ] docker-compose.yml configuration
+- [ ] Deployment diagram
+- [ ] Environment variables documentation
+- [ ] Startup instructions
+- [ ] Troubleshooting guide
 
 ---
 
-## 4.7. Tổng kết chương
+## 4.6. Tổng kết chương (1 trang)
 
 **Nội dung chính:**
 
 ### Những điểm chính đã trình bày:
 
-**1. Kiến trúc hệ thống:**
+**1. Kiến trúc hệ thống (Section 4.1):**
 - ✅ Microservices architecture (9 services)
 - ✅ C4 model (Context, Container)
 - ✅ Communication patterns (HTTP, RabbitMQ, SignalR)
-- **Chi tiết:** Xem Mục 5.1
 
-**2. Thiết kế database:**
-- ✅ SQL Server schema (8 tables)
-- ✅ Multi-tenant row-level security
-- ✅ Qdrant collection schema
-- **Chi tiết:** Xem Mục 5.2
+**2. Thiết kế chi tiết (Section 4.2):**
+- ✅ Thiết kế giao diện (ASP.NET MVC + Razor + SignalR Client)
+- ✅ Thiết kế lớp (Repository pattern, Specification pattern, DI)
+- ✅ Thiết kế cơ sở dữ liệu (8 tables SQL Server + Qdrant schema)
 
-**3. Triển khai microservices:**
-- ✅ AccountService (authentication)
-- ✅ DocumentService (document processing + Hangfire)
-- ✅ ChatService (SignalR + RabbitMQ)
-- ✅ EmbeddingService (text embedding + Qdrant)
-- ✅ ChatProcessor (RAG pipeline 9 bước)
-- **Chi tiết:** Xem Mục 5.3, 5.4, 5.5
+**3. Xây dựng ứng dụng (Section 4.3):**
+- ✅ Thư viện và công cụ (.NET 9 + Python 3.11 + 60+ technologies)
+- ✅ Kết quả đạt được (188 files, 25,000 LOC, 32 API endpoints)
+- ✅ Minh họa chức năng (Chat, Document Management, Dual-RAG compliance)
 
-**4. Frontend:**
-- ✅ ASP.NET MVC + Razor
-- ✅ SignalR client integration
-- ✅ Responsive UI (Bootstrap 5)
+**4. Kiểm thử (Section 4.4):**
+- ✅ Chiến lược kiểm thử (Manual functional testing)
+- ✅ Kết quả kiểm thử (47 test cases, 46.8% pass rate)
+- ✅ Phân tích nguyên nhân (Semantic gap - retrieval effectiveness)
+- ✅ Giải pháp (Hybrid Search implementation)
+- ⚠️ Hạn chế (0% unit/integration tests - future work)
 
-**5. Deployment:**
+**5. Triển khai (Section 4.5):**
 - ✅ Docker Compose (13 containers)
-- ✅ Bridge network
-- ✅ Persistent volumes
-- **Chi tiết:** Xem Mục 5.7
+- ✅ Bridge network, persistent volumes
+- ✅ Environment configuration
 
 ### Quyết định thiết kế quan trọng:
 
-**1. Microservices vs Monolithic:**
-- Chọn Microservices → Polyglot programming (.NET + Python)
+**1. Kiến trúc:**
+- Chọn Microservices → Polyglot programming (.NET + Python), scalability
 
-**2. Multi-tenant strategy:**
-- Chọn Shared Database, Row-level isolation → Chi phí thấp, đủ bảo mật
+**2. Database:**
+- Chọn Shared Database + Row-level isolation → Chi phí thấp, đủ bảo mật
+- Chọn Self-referencing model → Hierarchical legal documents
 
-**3. RAG architecture:**
-- Chọn Dual-RAG → Kết hợp company rules + legal base
+**3. Communication:**
+- HTTP: CRUD operations
+- RabbitMQ: Long-running AI tasks
+- SignalR: Real-time user experience
 
-**4. Message queue:**
-- Chọn RabbitMQ → Decoupling, retry mechanism
+**4. Retrieval:**
+- Dual-RAG: Company rules + Legal framework
+- Hybrid Search: Vector + BM25 keyword (post-testing improvement)
 
-**5. Real-time communication:**
-- Chọn SignalR → WebSocket, auto-reconnect
+**5. Deployment:**
+- Docker Compose: Simple, reproducible, self-contained
+
+### Chuyển tiếp sang Chương 5:
+
+- Chương 4 đã trình bày **thiết kế và triển khai**
+- Chương 5 sẽ trình bày **các giải pháp kỹ thuật nổi bật:**
+  - 5.1. Hierarchical Data Modeling
+  - 5.2. Dual-RAG Architecture
+  - 5.3. Tenant Context Propagation
+  - 5.4. Asynchronous AI Processing
+  - 5.5. Hybrid Search với RRF
 
 ### Code statistics:
 
@@ -1041,52 +1059,55 @@ LLM_MODEL=ontocord/vistral:latest
 **Tóm tắt:**
 - **Tổng files:** 188 files
 - **Tổng LOC:** ~25,000 lines
-- **Backend (.NET):** 144 files, 18,000 LOC
-- **AI Workers (Python):** 27 files, 3,500 LOC
-- **Frontend:** 17 files, 2,500 LOC
+- **Backend (.NET):** 144 files, ~18,000 LOC
+- **AI Workers (Python):** 27 files, ~3,500 LOC
+- **Frontend:** 17 files, ~2,500 LOC
 - **API endpoints:** 32 REST endpoints
 - **SignalR methods:** 3 server methods, 2 client events
-
-### Chuyển tiếp sang Chương 5:
-
-- Chương 4 đã trình bày **thiết kế và triển khai**
-- Chương 5 (đã hoàn thành) trình bày **kết quả và đánh giá**:
-  - RAG evaluation metrics (RAGAS)
-  - Performance benchmarks
-  - Screenshots và demo
-  - Phân tích ưu/nhược điểm
 
 ---
 
 ## TÀI LIỆU THAM KHẢO CHO CHƯƠNG 4
 
-### Software Architecture
-1. Richardson, C. (2018) - "Microservices Patterns"
-2. Brown, S. (2021) - "The C4 Model for Visualising Software Architecture"
+### Software Engineering
+1. Ian Sommerville (2016) - "Software Engineering", 10th Edition
+2. Martin Fowler (2002) - "Patterns of Enterprise Application Architecture"
 
-### Design Patterns
-3. Fowler, M. (2002) - "Patterns of Enterprise Application Architecture"
-4. Evans, E. (2003) - "Domain-Driven Design"
+### Microservices Architecture
+3. Chris Richardson (2018) - "Microservices Patterns"
+4. Sam Newman (2021) - "Building Microservices", 2nd Edition
+
+### Design & Architecture
+5. Simon Brown (2021) - "The C4 Model for Visualising Software Architecture"
+6. Eric Evans (2003) - "Domain-Driven Design"
 
 ### Technologies
-5. Microsoft Docs - ".NET 9 Documentation"
-6. FastAPI Documentation
-7. Qdrant Documentation
-8. Docker Documentation
+7. Microsoft Docs - ".NET 9 Documentation"
+8. FastAPI Documentation
+9. Qdrant Documentation
+10. Docker Documentation
+
+### Testing
+11. `Bao_cao_kiem_thu_ngan_gon.md` - Test results report
 
 ### Internal References
-9. `thesis_docs/system_analysis_report.md` - Comprehensive technical documentation
-10. `thesis_docs/code_statistics.json` - Code metrics
-11. `thesis_docs/technology_inventory.md` - Technology reference
+12. `thesis_docs/system_analysis_report.md` - Technical documentation
+13. `thesis_docs/code_statistics.json` - Code metrics
+14. `thesis_docs/technology_inventory.md` - Technology reference
+15. `thesis_docs/diagrams_to_create.md` - Diagram specifications
+16. `missing_implementations.md` - Future work
 
 ---
 
 **KẾT THÚC CHƯƠNG 4**
 
 **Điểm nhấn chính:**
-- ✅ Giải thích rõ quyết định thiết kế (có alternatives, có lý do)
+- ✅ Thiết kế rõ ràng với quyết định có lý do (alternatives, trade-offs)
 - ✅ Tham chiếu Chương 5 khi cần (tránh duplicate content)
-- ✅ Code examples cụ thể
-- ✅ Sequence diagrams, class diagrams, deployment diagrams
-- ✅ Kết nối với code_statistics.json, system_analysis_report.md
+- ✅ Code examples cụ thể cho implementation details
+- ✅ **Test results thực tế** từ Bao_cao_kiem_thu_ngan_gon.md
+- ✅ Diagrams specifications (C4, ER, Class, Sequence, Deployment)
+- ✅ Kết nối với code_statistics.json, system_analysis_report.md, technology_inventory.md
 - ✅ Tổng kết rõ ràng, chuyển tiếp sang Chương 5
+- ✅ Template compliance (SOICT structure matched)
+- ✅ Honest acknowledgment of limitations (0% test coverage, security issues)

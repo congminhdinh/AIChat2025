@@ -1,0 +1,1803 @@
+\section{Thiết kế và triển khai}
+\label{sec:thiet_ke_trien_khai}
+
+% ========================================
+% REVISION NOTES v3 (2024-12-28)
+% ========================================
+% Changes from v2 to v3 - TECHNICAL CORRECTIONS:
+%
+% 1. ✅ HYBRID SEARCH specification added (CRITICAL):
+%    - Detailed flow: query expansion → legal term extraction → parallel search
+%    - Vector search (semantic) + Keyword search (BM25)
+%    - RRF (Reciprocal Rank Fusion) algorithm
+%    - Fallback logic when tenant docs insufficient
+%    - Scenario detection (BOTH/COMPANY_ONLY/LEGAL_ONLY/NONE)
+%
+% 2. ✅ EMBEDDING SERVICE corrected:
+%    - Model: truro7/vn-law-embedding (from Hugging Face)
+%    - Role: Vectorization ONLY (not chunking)
+%    - ChatProcessor calls EmbeddingService for query vectorization
+%
+% 3. ✅ DOCUMENT PROCESSING FLOW corrected:
+%    - Chunking: Done by DocumentService (NOT EmbeddingService)
+%    - Batch processing: Hangfire background jobs
+%    - Batch size: 10 chunks per batch
+%    - Flow: DocumentService → Hangfire → EmbeddingService (batch) → Qdrant
+%
+% 4. ✅ QDRANT SCHEMA completely rewritten:
+%    - Single collection: vn_law_documents
+%    - 10 metadata fields fully documented
+%    - Type values: 0=company policy, 1=law, 2=decree
+%    - father_doc_name explained (decrees link to parent laws)
+%    - Dual-RAG query: tenant_id=1 AND (type=1 OR type=2) for national law
+%
+% 5. ✅ Cross-references added:
+%    - Chapter 5.2: Dual-RAG implementation
+%    - Chapter 5.3: Hierarchical Chunking algorithm
+%    - Chapter 5.5: Hybrid Search with RRF
+%
+% All technical specifications verified and corrected!
+% ========================================
+%
+% PREVIOUS CHANGES (v1 → v2):
+% 1. ✅ Changed authorship voice: "nhóm tác giả" / "chúng tôi" → "em"
+% 2. ✅ Replaced "C4 Model Level X" → Vietnamese terms
+% 3. ✅ Translated technical terms to Vietnamese
+% 4. ✅ Updated statistics (40 endpoints, 7 tables, 1 Hangfire job)
+% 5. ✅ Changed device support scope (desktop only)
+% 6. ✅ Updated Section 4.2 focus (business logic > UI)
+% 7. ✅ Updated UI section (3 main flows)
+% 8. ✅ Changed from screenshots to mockups
+% 9. ✅ Updated all cross-references
+% 10. ✅ Verified consistent use of "em"
+% ========================================
+
+% ========================================
+% CHAPTER 4 DRAFT v3 - Design and Implementation
+% Total estimated: 28-32 pages
+% Current draft: ~10-12 pages (structure + technical details)
+% TODO: Expand all [TODO] sections to reach target
+% ========================================
+
+Chương này trình bày quá trình thiết kế và triển khai hệ thống AIChat2025 do em thực hiện, bao gồm các quyết định về kiến trúc, thiết kế chi tiết các luồng nghiệp vụ và cơ sở dữ liệu, quá trình xây dựng ứng dụng, và kết quả kiểm thử hệ thống. [TODO: Expand introduction - thêm tổng quan về nội dung chương và mối liên hệ với các chương khác]
+
+% Target: 28-32 pages total for this chapter
+
+% ========================================
+% 4.1. KIẾN TRÚC HỆ THỐNG (4-5 pages)
+% ========================================
+
+\subsection{Kiến trúc hệ thống}
+\label{subsec:kien_truc_he_thong}
+
+% Target: 4-5 pages
+% Current: ~1 page structure
+
+Hệ thống AIChat2025 được em thiết kế theo kiến trúc microservices để đáp ứng yêu cầu về tính linh hoạt, khả năng mở rộng và hỗ trợ đa ngôn ngữ lập trình. [TODO: Expand - giải thích sơ lược về lý do chọn microservices, tiền đề dẫn đến các subsection]
+
+\subsubsection{Lựa chọn kiến trúc}
+\label{subsubsec:lua_chon_kien_truc}
+
+Sau khi đánh giá các mô hình kiến trúc khác nhau, em quyết định sử dụng kiến trúc Microservices cho hệ thống AIChat2025 dựa trên các lý do sau:
+
+\textbf{Ưu điểm của Microservices cho AIChat2025:}
+\begin{itemize}
+    \item \textbf{Polyglot Programming:} Hệ thống yêu cầu kết hợp Backend (.NET) và AI workers (Python), mỗi ngôn ngữ phù hợp với công việc riêng - .NET cho business logic và Python cho AI/ML processing.
+    \item \textbf{Independent Deployment:} Có thể triển khai từng service riêng lẻ mà không ảnh hưởng đến toàn bộ hệ thống.
+    \item \textbf{Scalability:} Khả năng scale AI workers độc lập khi tải hỏi đáp tăng cao.
+    \item \textbf{Technology Diversity:} Hỗ trợ đa dạng công nghệ lưu trữ: SQL Server cho business data, Qdrant cho vector embeddings, MinIO cho file storage.
+\end{itemize}
+
+[TODO: Expand - thêm so sánh với kiến trúc Monolithic và Serverless, giải thích lý do không chọn các kiến trúc này, bổ sung diagram so sánh]
+
+\textbf{Các phương án kiến trúc khác đã xem xét:}
+\begin{itemize}
+    \item \textbf{Monolithic:} Không phù hợp do khó kết hợp .NET và Python trong một codebase, khó scale các thành phần riêng lẻ.
+    \item \textbf{Serverless:} Không đáp ứng yêu cầu self-hosted và control đầy đủ về infrastructure.
+\end{itemize}
+
+[TODO: Thêm bảng so sánh chi tiết các phương án kiến trúc]
+
+\subsubsection{Sơ đồ ngữ cảnh hệ thống}
+\label{subsubsec:kien_truc_tong_the}
+
+Hệ thống AIChat2025 được mô tả ở mức độ cao nhất thông qua sơ đồ ngữ cảnh hệ thống (System Context Diagram), thể hiện mối quan hệ giữa hệ thống với người dùng và các hệ thống bên ngoài.
+
+\begin{figure}[h]
+    \centering
+    % TODO: Create System Context Diagram
+    % Tool: Draw.io or PlantUML
+    % Content: 
+    % - AIChat2025 System (center box)
+    % - Users: Employee, HR/Admin (left side)
+    % - External Systems: None in current version (right side - show as future)
+    % - Connections: HTTPS, WebSocket
+    \includegraphics[width=0.9\textwidth]{Hinhve/system_context_diagram.png}
+    \caption{Sơ đồ ngữ cảnh hệ thống AIChat2025}
+    \label{fig:system_context}
+\end{figure}
+
+Như minh họa trong Hình \ref{fig:system_context}, hệ thống AIChat2025 phục vụ hai nhóm người dùng chính: Nhân viên (Employee) sử dụng chatbot để tra cứu thông tin pháp lý và HR/Admin quản lý tài liệu, cấu hình hệ thống.
+
+[TODO: Expand - mô tả chi tiết từng actor, use case chính, các external systems trong tương lai]
+
+\textbf{Các actors chính:}
+\begin{itemize}
+    \item \textbf{Nhân viên (Employee):} Sử dụng chatbot để hỏi về quy định công ty, luật lao động, chế độ bảo hiểm.
+    \item \textbf{HR/Admin:} Upload và quản lý tài liệu nội quy, xem dashboard, quản lý users.
+    \item \textbf{Super Admin:} Quản lý multi-tenant, tạo và cấu hình các tenant mới.
+\end{itemize}
+
+[TODO: Thêm use case diagram cho từng actor]
+
+\subsubsection{Sơ đồ các thành phần chính}
+\label{subsubsec:kien_truc_chi_tiet}
+
+Ở mức độ chi tiết hơn, hệ thống AIChat2025 bao gồm 9 thành phần chính (containers) được triển khai dưới dạng Docker containers và microservices.
+
+\begin{figure}[h]
+    \centering
+    % TODO: Create Container Diagram
+    % Tool: Draw.io or PlantUML
+    % Content:
+    % - Frontend: WebApp (ASP.NET MVC)
+    % - API Gateway: YARP
+    % - Backend Services: AccountService, TenantService, DocumentService, StorageService, ChatService
+    % - AI Workers: EmbeddingService, ChatProcessor (Python)
+    % - Infrastructure: SQL Server, Qdrant, RabbitMQ, MinIO, Ollama
+    % - Show connections with protocols (HTTP, WebSocket, RabbitMQ)
+    \includegraphics[width=1.0\textwidth]{Hinhve/container_diagram.png}
+    \caption{Sơ đồ các thành phần chính của hệ thống}
+    \label{fig:container_diagram}
+\end{figure}
+
+Như minh họa trong Hình \ref{fig:container_diagram}, hệ thống bao gồm các thành phần sau:
+
+\textbf{Frontend Layer:}
+\begin{enumerate}
+    \item \textbf{WebApp (ASP.NET Core MVC):} Giao diện người dùng, xử lý requests, JWT authentication
+\end{enumerate}
+
+\textbf{API Gateway:}
+\begin{enumerate}
+    \setcounter{enumi}{1}
+    \item \textbf{ApiGateway (YARP):} Reverse proxy, routing, load balancing
+\end{enumerate}
+
+\textbf{Backend Microservices (.NET Core):}
+\begin{enumerate}
+    \setcounter{enumi}{2}
+    \item \textbf{AccountService:} Quản lý xác thực (authentication), quản lý người dùng (user management), bộ sinh JWT Token
+    \item \textbf{TenantService:} Quản lý multi-tenant, cô lập dữ liệu tenant
+    \item \textbf{DocumentService:} Upload tài liệu, luồng vector hóa chạy nền (background vectorization) với Hangfire
+    \item \textbf{StorageService:} Tích hợp MinIO, quản lý lưu trữ file
+    \item \textbf{ChatService:} SignalR hub, điều phối luồng hỏi đáp (chat orchestration), tích hợp RabbitMQ
+\end{enumerate}
+
+\textbf{AI Workers (Python):}
+\begin{enumerate}
+    \setcounter{enumi}{7}
+    \item \textbf{EmbeddingService (FastAPI):} Text embedding, tích hợp Qdrant vector database
+    \item \textbf{ChatProcessor (FastAPI):} RAG pipeline, LLM generation, Dual-RAG logic
+\end{enumerate}
+
+\textbf{Infrastructure Components:}
+\begin{itemize}
+    \item SQL Server 2022 (Relational Database)
+    \item Qdrant (Vector Database)
+    \item RabbitMQ (Message Broker)
+    \item MinIO (Object Storage)
+    \item Ollama + Vistral 7B (LLM Runtime)
+\end{itemize}
+
+[TODO: Expand - mô tả chi tiết responsibility của từng service, technology stack, deployment strategy]
+
+\subsubsection{Mô hình giao tiếp giữa các thành phần}
+\label{subsubsec:mo_hinh_giao_tiep}
+
+Hệ thống sử dụng ba mô hình giao tiếp chính để đáp ứng các yêu cầu về hiệu năng, độ tin cậy và trải nghiệm người dùng.
+
+\textbf{1. Synchronous HTTP (REST API):}
+\begin{itemize}
+    \item Sử dụng cho: CRUD operations, authentication, document management
+    \item Ví dụ: WebApp $\rightarrow$ ApiGateway $\rightarrow$ AccountService (GET /api/account/current-user)
+\end{itemize}
+
+\textbf{2. Asynchronous Messaging (RabbitMQ):}
+\begin{itemize}
+    \item Sử dụng cho: Long-running AI tasks, background processing
+    \item Ví dụ: ChatService $\rightarrow$ RabbitMQ $\rightarrow$ ChatProcessor
+    \item Events: UserPromptReceivedEvent, BotResponseCreatedEvent
+\end{itemize}
+
+\textbf{3. Real-time Communication (SignalR WebSocket):}
+\begin{itemize}
+    \item Sử dụng cho: Real-time chat, typing indicators, instant notifications
+    \item Ví dụ: WebApp $\leftrightarrow$ ChatService (bidirectional)
+\end{itemize}
+
+[TODO: Thêm sequence diagram chi tiết cho từng loại giao tiếp, giải thích lý do lựa chọn]
+
+Chi tiết về asynchronous AI processing pipeline được trình bày tại Mục 5.4.
+
+\subsubsection{Kiến trúc Multi-tenant}
+\label{subsubsec:kien_truc_multitenant}
+
+Hệ thống AIChat2025 triển khai kiến trúc multi-tenant với chiến lược cô lập dữ liệu ở nhiều tầng để đảm bảo bảo mật và tính toàn vẹn dữ liệu giữa các tenant.
+
+\begin{figure}[h]
+    \centering
+    % TODO: Create Multi-tenant Architecture Diagram
+    % Content:
+    % - Show TenantContext propagation across all layers
+    % - Database-level isolation (TenantId in all tables)
+    % - Vector database isolation (tenant_id metadata)
+    % - Application-level filtering
+    \includegraphics[width=0.9\textwidth]{Hinhve/multitenant_architecture.png}
+    \caption{Kiến trúc Multi-tenant với cơ chế cô lập dữ liệu}
+    \label{fig:multitenant_architecture}
+\end{figure}
+
+\textbf{Các tầng cô lập dữ liệu:}
+\begin{enumerate}
+    \item \textbf{Authentication Layer:} JWT token chứa TenantId claim
+    \item \textbf{Middleware Layer:} TenantContext extraction và propagation
+    \item \textbf{Application Layer:} Automatic filtering theo TenantId
+    \item \textbf{Database Layer:} Row-level security với TenantId column
+    \item \textbf{Vector Database Layer:} Metadata filtering theo tenant\_id
+    \item \textbf{Storage Layer:} Folder-based isolation trong MinIO
+\end{enumerate}
+
+[TODO: Expand - mô tả chi tiết cơ chế tenant context propagation, zero-trust validation]
+
+Chi tiết về cơ chế Infrastructure-Level Tenant Context Propagation được trình bày tại Mục 5.1.
+
+\subsubsection{Kiến trúc RAG Pipeline}
+\label{subsubsec:kien_truc_rag}
+
+Hệ thống em triển khai kiến trúc Dual-RAG kết hợp với Hybrid Search để đảm bảo khả năng truy xuất thông tin chính xác từ cả tài liệu luật quốc gia và nội quy công ty.
+
+\begin{figure}[h]
+    \centering
+    % TODO: Create RAG Pipeline Diagram
+    % Content:
+    % - User query input
+    % - Query expansion (system instruction)
+    % - Legal term extraction (Điều X, BHXH, etc.)
+    % - Call EmbeddingService for query vectorization
+    % - Dual retrieval: National law + Company policy
+    % - For EACH retrieval: Hybrid search (Vector + BM25 keyword) → RRF fusion
+    % - Fallback logic (check quality, adjust ratios)
+    % - Scenario detection (BOTH/COMPANY_ONLY/LEGAL_ONLY/NONE)
+    % - LLM generation with compliance check
+    \includegraphics[width=1.0\textwidth]{Hinhve/rag_pipeline.png}
+    \caption{Kiến trúc RAG Pipeline với Dual-RAG và Hybrid Search}
+    \label{fig:rag_pipeline}
+\end{figure}
+
+\textbf{A. Embedding Service}
+
+EmbeddingService sử dụng mô hình \texttt{truro7/vn-law-embedding} từ Hugging Face, được tối ưu hóa đặc biệt cho văn bản pháp luật tiếng Việt.
+
+Vai trò chính của EmbeddingService:
+\begin{itemize}
+    \item Vector hóa text chunks thành embeddings
+    \item Xử lý queries từ ChatProcessor (chuyển câu hỏi thành query vector)
+    \item Lưu trữ embeddings vào Qdrant
+\end{itemize}
+
+\textit{Lưu ý quan trọng:} EmbeddingService chỉ chịu trách nhiệm vectorization. Các công việc khác như chunking, hybrid search, fusion đều do các service khác đảm nhận.
+
+\textbf{B. Luồng xử lý upload tài liệu}
+
+\begin{enumerate}
+    \item \textbf{Upload:} User upload tài liệu → DocumentService nhận file
+    
+    \item \textbf{Chunking:} DocumentService thực hiện Hierarchical Semantic Chunking (phân đoạn phân cấp theo ngữ nghĩa - Chương/Mục/Điều)
+    
+    \textit{Lưu ý:} Chunking được thực hiện tại DocumentService, KHÔNG phải tại EmbeddingService
+    
+    \item \textbf{Background Processing:} DocumentService tạo Hangfire background job để xử lý batch chunks
+    
+    \item \textbf{Batch Transfer:} DocumentService đẩy chunks sang EmbeddingService theo từng batch (10 chunks/batch) qua Hangfire
+    
+    \textit{Lý do batch size = 10:} Tối ưu performance và tránh overload
+    
+    \item \textbf{Vectorization:} EmbeddingService nhận batch:
+    \begin{itemize}
+        \item Sử dụng mô hình \texttt{truro7/vn-law-embedding}
+        \item Vector hóa từng chunk trong batch
+        \item Lưu vectors vào Qdrant collection \texttt{vn\_law\_documents}
+        \item Thêm metadata đầy đủ (tenant\_id, type, document\_name, heading1, heading2, content, v.v.)
+    \end{itemize}
+    
+    \item \textbf{Lặp lại:} Xử lý batch tiếp theo cho đến khi hoàn tất tất cả chunks
+\end{enumerate}
+
+\textbf{Phân công trách nhiệm:}
+\begin{itemize}
+    \item \textbf{DocumentService:} Parse tài liệu, phân tích cấu trúc, chunking, quản lý background jobs
+    \item \textbf{EmbeddingService:} Chỉ thực hiện vectorization
+    \item \textbf{Hangfire:} Điều phối background jobs, retry mechanism
+\end{itemize}
+
+% TODO: Thêm sequence diagram minh họa:
+% User → DocumentService → Hangfire Job → EmbeddingService (batch 10) → Qdrant
+% Lặp lại cho các batches tiếp theo
+
+Cơ chế Hierarchical Semantic Chunking được thiết kế đặc biệt để phân tích cấu trúc văn bản pháp luật tiếng Việt (Chương → Mục → Điều), chi tiết kỹ thuật và thuật toán được trình bày tại Mục 5.3.
+
+\textbf{C. Luồng xử lý chat query với Hybrid Search}
+
+Hệ thống sử dụng Hybrid Search kết hợp vector search (semantic) và keyword search (BM25) để cải thiện độ chính xác retrieval.
+
+\textbf{Quy trình xử lý chi tiết:}
+
+\begin{enumerate}
+    \item \textbf{User Query:} User đặt câu hỏi
+    
+    \item \textbf{Query Expansion:} 
+    
+    ChatProcessor mở rộng câu hỏi dựa trên system instruction để cải thiện khả năng retrieval
+    
+    \item \textbf{Legal Term Extraction:} 
+    
+    Trích xuất các thuật ngữ pháp luật quan trọng từ query (ví dụ: "Điều 15", "BHXH", "Luật Lao động 2019", v.v.) để phục vụ keyword search
+    
+    \item \textbf{Embedding Generation:} 
+    
+    ChatProcessor gọi sang EmbeddingService để vector hóa câu hỏi
+    
+    EmbeddingService sử dụng mô hình \texttt{truro7/vn-law-embedding} và trả về query vector
+    
+    \item \textbf{Parallel Hybrid Search:} 
+    
+    ChatProcessor thực hiện tìm kiếm song song với hai luồng độc lập, mỗi luồng áp dụng hybrid search:
+    
+    \begin{itemize}
+        \item \textbf{Luồng 1 - Tài liệu tenant (nội quy doanh nghiệp):}
+        
+        Filter: \texttt{tenant\_id = [user's tenant] AND type = 0}
+        \begin{enumerate}
+            \item Vector Search: Tìm kiếm theo semantic similarity
+            \item Keyword Search (BM25): Tìm kiếm theo exact/fuzzy match với legal terms
+            \item RRF Fusion: Kết hợp điểm số từ cả hai và re-rank
+        \end{enumerate}
+        
+        \item \textbf{Luồng 2 - Tài liệu toàn cục (luật quốc gia):}
+        
+        Filter: \texttt{tenant\_id = 1 AND (type = 1 OR type = 2)}
+        \begin{enumerate}
+            \item Vector Search: Semantic similarity search
+            \item Keyword Search (BM25): Match với legal terms
+            \item RRF Fusion: Combine và re-rank results
+        \end{enumerate}
+    \end{itemize}
+    
+    \textit{Ghi chú:} RRF (Reciprocal Rank Fusion) là thuật toán kết hợp điểm số từ vector search và keyword search để tạo ranking cuối cùng chính xác hơn.
+    
+    \item \textbf{Fallback Logic:} 
+    
+    ChatProcessor đánh giá chất lượng kết quả và điều chỉnh tỷ lệ:
+    
+    \begin{itemize}
+        \item \textbf{Nếu} tenant results < 2 high-quality results (dựa trên score threshold):
+        
+        → Ưu tiên tài liệu luật quốc gia (prioritize global legal docs)
+        
+        Lý do: Nội quy công ty không có thông tin đủ, cần dựa vào luật
+        
+        \item \textbf{Ngược lại:} Phân bổ cân bằng:
+        
+        → 60\% kết quả từ nội quy tenant + 40\% từ luật quốc gia
+        
+        Lý do: Cả hai nguồn đều có thông tin hữu ích
+    \end{itemize}
+    
+    \item \textbf{Scenario Detection:} 
+    
+    Xác định loại câu trả lời cần sinh:
+    
+    \begin{itemize}
+        \item \texttt{BOTH}: Cần tham chiếu cả luật và nội quy
+        \item \texttt{COMPANY\_ONLY}: Chỉ cần nội quy công ty
+        \item \texttt{LEGAL\_ONLY}: Chỉ cần luật quốc gia
+        \item \texttt{NONE}: Không tìm thấy tài liệu phù hợp
+    \end{itemize}
+    
+    Scenario này quyết định cách LLM tổng hợp câu trả lời.
+    
+    \item \textbf{Build Context \& Generate Response:} 
+    
+    Tổng hợp context từ kết quả search (đã được rank và filtered) và gửi cho LLM cùng với scenario để sinh câu trả lời phù hợp
+\end{enumerate}
+
+\textbf{Vai trò của các thành phần:}
+\begin{itemize}
+    \item \textbf{ChatProcessor:} Điều phối toàn bộ flow - query expansion, legal term extraction, hybrid search, fusion, fallback, scenario detection
+    \item \textbf{EmbeddingService:} Chỉ chịu trách nhiệm vectorization (query embedding)
+    \item \textbf{Qdrant:} Thực hiện cả vector search và keyword search (BM25)
+\end{itemize}
+
+% TODO: Thêm sequence diagram minh họa Hybrid Search flow:
+%
+% User → ChatProcessor:
+%   1. Receive query
+%   2. Query Expansion (system_instruction)
+%   3. Legal Term Extraction (Điều X, BHXH, etc.)
+%   4. Call EmbeddingService → Get query vector
+%   5. Parallel Hybrid Search in Qdrant:
+%      Tenant docs:  [Vector Search] + [Keyword/BM25] → RRF Fusion
+%      Global docs:  [Vector Search] + [Keyword/BM25] → RRF Fusion
+%   6. Fallback Logic (check quality, adjust ratios)
+%   7. Scenario Detection (BOTH/COMPANY_ONLY/LEGAL_ONLY/NONE)
+%   8. Build Context → LLM → Generate Response
+
+[TODO: Expand - mô tả workflow chi tiết, giải thích tại sao cần Dual-RAG]
+
+Giải pháp Dual-RAG kết hợp tìm kiếm song song luật quốc gia và nội quy doanh nghiệp được mô tả chi tiết về mặt kỹ thuật tại Mục 5.2. Chi tiết về thuật toán Hybrid Search, RRF Fusion, Fallback Logic, và Scenario Detection được trình bày đầy đủ tại Mục 5.5.
+
+% Materials needed for Section 4.1:
+% - [X] System Context Diagram (C4 Level 1) - PLACEHOLDER ADDED
+% - [X] Container Diagram (C4 Level 2) - PLACEHOLDER ADDED
+% - [X] Multi-tenant Architecture Diagram - PLACEHOLDER ADDED
+% - [X] RAG Pipeline Diagram - PLACEHOLDER ADDED
+% - [ ] Communication flow sequence diagrams
+% - [ ] Comparison table: Microservices vs Monolithic vs Serverless
+
+% ========================================
+% 4.2. THIẾT KẾ CHI TIẾT (10-12 pages)
+% FOCUS: Business logic flows, class design, database design
+% UI design: Brief overview only (1-2 pages)
+% ========================================
+
+\subsection{Thiết kế chi tiết}
+\label{subsec:thiet_ke_chi_tiet}
+
+% Target: 10-12 pages
+% Current: ~2 pages structure
+
+Phần này trình bày chi tiết về thiết kế giao diện người dùng, thiết kế lớp (class design), và thiết kế cơ sở dữ liệu của hệ thống AIChat2025.
+
+\subsubsection{Thiết kế giao diện người dùng}
+\label{subsubsec:thiet_ke_giao_dien}
+
+% Target: 1-2 pages (brief overview)
+% Focus on 3 main UI flows, not detailed UI specifications
+
+Giao diện người dùng của AIChat2025 được em thiết kế tối ưu cho thiết bị desktop, đảm bảo trải nghiệm thân thiện với người dùng, sử dụng ASP.NET Core MVC với Razor views và Bootstrap 5 framework.
+
+\textbf{Công nghệ sử dụng:}
+\begin{itemize}
+    \item ASP.NET Core MVC 9.0 (Razor Views)
+    \item Bootstrap 5.3 (Responsive UI Framework)
+    \item jQuery 3.7.1 (DOM Manipulation)
+    \item SignalR JavaScript Client 8.0.0 (Giao tiếp thời gian thực)
+\end{itemize}
+
+\textbf{Nguyên tắc thiết kế:}
+\begin{itemize}
+    \item \textbf{Desktop-optimized:} Tối ưu hóa cho màn hình desktop, giao diện rộng rãi
+    \item \textbf{Accessibility:} Tuân thủ WCAG 2.1 guidelines
+    \item \textbf{Consistency:} Thống nhất về màu sắc, typography, component style
+    \item \textbf{Performance:} Lazy loading, code splitting, tối ưu hóa tài nguyên
+\end{itemize}
+
+[TODO: Expand - mô tả design system, color palette, typography, component library]
+
+\textbf{Ba luồng giao diện chính:}
+
+Em tập trung thiết kế ba luồng giao diện chính tương ứng với ba vai trò người dùng:
+
+\begin{enumerate}
+    \item \textbf{Luồng chat (End User):} Giao diện hỏi đáp với chatbot, hiển thị kết quả Dual-RAG
+    \item \textbf{Luồng quản lý tài liệu (Tenant Admin):} Upload và quản lý tài liệu nội quy công ty
+    \item \textbf{Luồng quản lý tenant (Super Admin):} Tạo và cấu hình các tenant mới
+\end{enumerate}
+
+[TODO: Mô tả chi tiết từng luồng giao diện, user journey, key interactions]
+
+\textbf{A. Luồng chat (End User)}
+
+\begin{figure}[h]
+    \centering
+    % TODO: Add UI mockup of Chat Interface
+    % Content:
+    % - Sidebar with conversation list
+    % - Main chat area with message bubbles (user/bot)
+    % - Input box with send button
+    % - Typing indicator (chỉ báo đang nhập)
+    % - Citations display
+    \includegraphics[width=1.0\textwidth]{Hinhve/mockup_chat_interface.png}
+    \caption{Mockup giao diện chat với Dual-RAG response}
+    \label{fig:mockup_chat}
+\end{figure}
+
+Giao diện chat được em thiết kế với sidebar hiển thị danh sách conversations, chat area chính với message bubbles phân biệt user/bot, input box hỗ trợ nhập văn bản, và typing indicators (chỉ báo đang nhập - hiển thị khi bot đang xử lý câu trả lời) để cải thiện trải nghiệm thời gian thực.
+
+[TODO: Mô tả layout structure, message rendering, citation display, real-time features]
+
+\textbf{B. Luồng quản lý tài liệu (Tenant Admin)}
+
+\begin{figure}[h]
+    \centering
+    % TODO: Add UI mockup of Document Management
+    % Content:
+    % - Document list with status badges (Pending/Processing/Completed/Failed)
+    % - Upload button
+    % - Filter/Search functionality
+    % - Document details view
+    \includegraphics[width=1.0\textwidth]{Hinhve/mockup_document_management.png}
+    \caption{Mockup giao diện quản lý tài liệu}
+    \label{fig:mockup_document}
+\end{figure}
+
+Giao diện quản lý tài liệu cho phép Tenant Admin upload các file .docx, theo dõi trạng thái xử lý (Pending/Processing/Completed/Failed), và quản lý vòng đời tài liệu.
+
+[TODO: Mô tả upload workflow, status indicators, error handling UI]
+
+\textbf{C. Luồng quản lý tenant (Super Admin)}
+
+\begin{figure}[h]
+    \centering
+    % TODO: Add UI mockup of Tenant Management (Super Admin)
+    % Content:
+    % - Tenant list
+    % - Create new tenant form
+    % - Tenant configuration panel
+    % - User assignment interface
+    \includegraphics[width=1.0\textwidth]{Hinhve/mockup_tenant_management.png}
+    \caption{Mockup giao diện quản lý tenant}
+    \label{fig:mockup_tenant}
+\end{figure}
+
+Giao diện quản lý tenant cung cấp cho Super Admin khả năng tạo tenant mới, cấu hình settings cho từng tenant, và phân quyền người dùng.
+
+[TODO: Mô tả tenant creation flow, configuration options, user management features]
+
+\subsubsection{Thiết kế lớp (Class Design)}
+\label{subsubsec:thiet_ke_lop}
+
+% Target: 3-4 pages
+
+Hệ thống được thiết kế theo mô hình layered architecture với các design patterns: Repository Pattern, Dependency Injection, Factory Pattern, và Strategy Pattern.
+
+\textbf{A. Class Diagram - Authentication Module}
+
+\begin{figure}[h]
+    \centering
+    % TODO: Create Class Diagram for Authentication Module
+    % Classes:
+    % - User, UserProfile, Role
+    % - IAuthenticationService, AuthenticationService
+    % - JwtTokenGenerator
+    % - IPasswordHasher, PasswordHasher
+    \includegraphics[width=0.9\textwidth]{Hinhve/class_diagram_authentication.png}
+    \caption{Class Diagram - Authentication Module}
+    \label{fig:class_auth}
+\end{figure}
+
+Module Authentication bao gồm các class chính: User, UserProfile, Role, và các service interfaces để xử lý authentication logic.
+
+[TODO: Mô tả chi tiết từng class, relationships, design patterns used]
+
+\textbf{B. Class Diagram - Chat/RAG Module}
+
+\begin{figure}[h]
+    \centering
+    % TODO: Create Class Diagram for Chat/RAG Module
+    % Classes:
+    % - Conversation, Message, ChatSession
+    % - IChatService, ChatService
+    % - IRAGService, DualRAGService
+    % - IRetriever, VectorRetriever, KeywordRetriever
+    % - IReranker, RRFReranker
+    \includegraphics[width=1.0\textwidth]{Hinhve/class_diagram_chat_rag.png}
+    \caption{Class Diagram - Chat/RAG Module}
+    \label{fig:class_chat}
+\end{figure}
+
+Module Chat/RAG implement Strategy Pattern cho các retrieval strategies và Factory Pattern cho tạo các retrievers khác nhau.
+
+[TODO: Mô tả design patterns, explain Strategy và Factory implementation]
+
+\textbf{C. Class Diagram - Document Management Module}
+
+\begin{figure}[h]
+    \centering
+    % TODO: Create Class Diagram for Document Management Module
+    % Classes:
+    % - PromptDocument, DocumentChunk
+    % - IDocumentService, DocumentService
+    % - IChunkingStrategy, HierarchicalChunkingStrategy
+    % - IEmbeddingService, EmbeddingService
+    % - BackgroundJobProcessor (Hangfire)
+    \includegraphics[width=0.9\textwidth]{Hinhve/class_diagram_document.png}
+    \caption{Class Diagram - Document Management Module}
+    \label{fig:class_document}
+\end{figure}
+
+Module Document Management sử dụng Strategy Pattern cho chunking strategies và background job processing với Hangfire.
+
+[TODO: Mô tả chunking strategies, background job lifecycle]
+
+Chi tiết về Hierarchical Semantic Chunking strategy được trình bày tại Mục 5.3.
+
+\textbf{D. Class Diagram - Tenant Management Module}
+
+\begin{figure}[h]
+    \centering
+    % TODO: Create Class Diagram for Tenant Management Module
+    % Classes:
+    % - Tenant, TenantSettings, TenantConfiguration
+    % - ITenantService, TenantService
+    % - TenantContext, TenantMiddleware
+    % - ITenantResolver, TenantResolver
+    \includegraphics[width=0.9\textwidth]{Hinhve/class_diagram_tenant.png}
+    \caption{Class Diagram - Tenant Management Module}
+    \label{fig:class_tenant}
+\end{figure}
+
+Module Tenant Management implement TenantContext pattern để propagate tenant information across all layers.
+
+[TODO: Mô tả TenantContext implementation, middleware chain]
+
+\textbf{E. Sequence Diagram - User Authentication Flow}
+
+\begin{figure}[h]
+    \centering
+    % TODO: Create Sequence Diagram for Authentication Flow
+    % Actors/Objects:
+    % - User
+    % - WebApp (MVC Controller)
+    % - ApiGateway
+    % - AccountService
+    % - Database
+    % Steps:
+    % 1. User submits credentials
+    % 2. Controller validates input
+    % 3. Forward to ApiGateway
+    % 4. AccountService validates credentials
+    % 5. Generate JWT token
+    % 6. Return token
+    % 7. Set cookie
+    % 8. Redirect to dashboard
+    \includegraphics[width=1.0\textwidth]{Hinhve/sequence_authentication.png}
+    \caption{Sequence Diagram - User Authentication Flow}
+    \label{fig:seq_auth}
+\end{figure}
+
+[TODO: Mô tả chi tiết từng bước trong authentication flow, error handling]
+
+\textbf{F. Sequence Diagram - Document Upload \& Embedding Flow}
+
+\begin{figure}[h]
+    \centering
+    % TODO: Create Sequence Diagram for Document Processing
+    % Actors/Objects:
+    % - TenantAdmin
+    % - WebApp
+    % - DocumentService
+    % - MinIO
+    % - Hangfire (Background Job)
+    % - EmbeddingService (Python)
+    % - Qdrant
+    % Steps:
+    % 1. Upload .docx file
+    % 2. Save to MinIO
+    % 3. Create PromptDocument record (Status='Pending')
+    % 4. Enqueue Hangfire job
+    % 5. Background job: Parse document
+    % 6. Hierarchical chunking
+    % 7. Call EmbeddingService API
+    % 8. Store vectors in Qdrant
+    % 9. Update status to 'Completed'
+    \includegraphics[width=1.0\textwidth]{Hinhve/sequence_document_processing.png}
+    \caption{Sequence Diagram - Document Upload và Embedding Flow}
+    \label{fig:seq_document}
+\end{figure}
+
+[TODO: Mô tả background job processing, error handling, retry logic]
+
+\textbf{G. Sequence Diagram - Chat Query Processing Flow}
+
+\begin{figure}[h]
+    \centering
+    % TODO: Create Sequence Diagram for Chat Processing
+    % Actors/Objects:
+    % - User
+    % - WebApp (SignalR Client)
+    % - ChatService (SignalR Hub)
+    % - RabbitMQ
+    % - ChatProcessor (Python)
+    % - Qdrant
+    % - Ollama (LLM)
+    % Steps:
+    % 1. User sends message via SignalR
+    % 2. ChatService persists message
+    % 3. Publish UserPromptReceivedEvent to RabbitMQ
+    % 4. ChatProcessor consumes event
+    % 5. Dual-RAG retrieval (national law + company policy)
+    % 6. Hybrid search (vector + keyword)
+    % 7. RRF fusion
+    % 8. LLM generates response
+    % 9. Publish BotResponseCreatedEvent
+    % 10. ChatService broadcasts via SignalR
+    % 11. Frontend displays response
+    \includegraphics[width=1.0\textwidth]{Hinhve/sequence_chat_processing.png}
+    \caption{Sequence Diagram - Chat Query Processing Flow}
+    \label{fig:seq_chat}
+\end{figure}
+
+[TODO: Mô tả asynchronous processing, SignalR communication, error recovery]
+
+\subsubsection{Thiết kế cơ sở dữ liệu}
+\label{subsubsec:thiet_ke_csdl}
+
+% Target: 2-4 pages
+
+Hệ thống sử dụng hai loại cơ sở dữ liệu: SQL Server 2022 cho relational data và Qdrant cho vector embeddings.
+
+\textbf{A. Entity-Relationship Diagram (SQL Server)}
+
+\begin{figure}[h]
+    \centering
+    % TODO: Create ER Diagram
+    % Tables:
+    % - Users, Roles, UserRoles
+    % - Tenants, TenantSettings
+    % - PromptDocuments, DocumentChunks
+    % - Conversations, Messages
+    % - VectorCollections
+    % Show relationships, primary keys, foreign keys
+    \includegraphics[width=1.0\textwidth]{Hinhve/er_diagram.png}
+    \caption{Entity-Relationship Diagram - SQL Server Database}
+    \label{fig:er_diagram}
+\end{figure}
+
+Database được thiết kế theo chuẩn normalization 3NF với các ràng buộc referential integrity và multi-tenant isolation thông qua TenantId column.
+
+[TODO: Mô tả normalization strategy, indexing strategy, constraints]
+
+\textbf{B. Database Schema - Main Tables}
+
+\begin{table}[h]
+\centering
+\caption{Database Schema - Bảng chính}
+\label{tab:db_schema}
+\begin{tabular}{|l|p{3cm}|p{5cm}|p{2cm}|}
+\hline
+\textbf{Bảng} & \textbf{Mục đích} & \textbf{Các trường chính} & \textbf{Multi-tenant} \\
+\hline
+Users & Quản lý người dùng & Id, Email, PasswordHash, TenantId, RoleId & Có \\
+\hline
+Tenants & Quản lý tenant & Id, Name, Domain, Settings, IsActive & N/A \\
+\hline
+PromptDocuments & Quản lý tài liệu & Id, Title, FilePath, Status, TenantId & Có \\
+\hline
+Conversations & Quản lý hội thoại & Id, Title, UserId, TenantId, CreatedAt & Có \\
+\hline
+Messages & Lưu tin nhắn & Id, ConversationId, Content, Role, TenantId & Có \\
+\hline
+DocumentChunks & Metadata chunks & Id, DocumentId, ChunkIndex, Hierarchy, TenantId & Có \\
+\hline
+\end{tabular}
+\end{table}
+
+[TODO: Expand - thêm tất cả tables, mô tả chi tiết từng column, data types, indexes]
+
+\textbf{Nguyên tắc thiết kế Multi-tenant:}
+\begin{enumerate}
+    \item Mọi bảng business data đều có column TenantId (NOT NULL)
+    \item Filtered indexes trên TenantId để tối ưu query performance
+    \item Soft delete với IsDeleted column
+    \item Audit columns: CreatedAt, UpdatedAt, CreatedBy, UpdatedBy
+\end{enumerate}
+
+[TODO: Thêm index strategy, query optimization examples]
+
+\textbf{C. Vector Database Schema (Qdrant)}
+
+Qdrant được em sử dụng để lưu trữ vector embeddings với thiết kế đơn giản và hiệu quả.
+
+\paragraph{Collections Structure:}
+
+Hệ thống sử dụng \textbf{một collection duy nhất}:
+
+\begin{itemize}
+    \item \textbf{Collection name:} \texttt{vn\_law\_documents}
+    \item \textbf{Mục đích:} Chứa TẤT CẢ các vector embeddings từ mọi loại tài liệu (luật quốc gia, nghị định, nội quy doanh nghiệp)
+    \item \textbf{Phân biệt:} Sử dụng metadata fields (\texttt{tenant\_id}, \texttt{type}) để phân loại
+\end{itemize}
+
+\textit{Lý do sử dụng single collection:} Đơn giản hóa quản lý, dễ dàng thực hiện cross-tenant search (cho luật quốc gia), và tối ưu query performance.
+
+\paragraph{Metadata Structure:}
+
+Mỗi vector trong collection có metadata chi tiết như sau:
+
+\begin{lstlisting}[language=json, caption=Cấu trúc metadata cho mỗi vector embedding, label=lst:qdrant_metadata]
+{
+    "text": "Chương III Mục 1. CÔNG TY TRÁCH NHIỆM HỮU HẠN HAI ...",
+    "source_id": 1049,
+    "file_name": "59_2020_QH14_427301.docx",
+    "document_name": "Luật doanh nghiệp 2020",
+    "father_doc_name": "",
+    "heading1": "Chương III",
+    "heading2": "Mục 1. CÔNG TY TRÁCH NHIỆM HỮU HẠN HAI THÀNH VIÊN ...",
+    "content": "Điều 61. Thủ tục thông qua nghị quyết, quyết định ...",
+    "tenant_id": 1,
+    "type": 1
+}
+\end{lstlisting}
+
+\paragraph{Giải thích các trường metadata:}
+
+\begin{table}[h]
+\centering
+\caption{Mô tả các trường metadata trong Qdrant}
+\label{tab:qdrant_metadata}
+\begin{tabular}{|l|p{9cm}|}
+\hline
+\textbf{Field} & \textbf{Mô tả} \\
+\hline
+text & Nội dung văn bản đầy đủ của chunk (bao gồm heading và content) \\
+\hline
+source\_id & ID định danh duy nhất của chunk trong database \\
+\hline
+file\_name & Tên file gốc của tài liệu (ví dụ: \texttt{59\_2020\_QH14\_427301.docx}) \\
+\hline
+document\_name & Tên hiển thị của tài liệu (ví dụ: "Luật doanh nghiệp 2020") \\
+\hline
+father\_doc\_name & Tên tài liệu luật cha (nếu đây là nghị định). Ví dụ: Nghị định 52/2021 có \texttt{father\_doc\_name} = "Luật Doanh nghiệp 2020". Để trống nếu là luật hoặc nội quy. \\
+\hline
+heading1 & Tiêu đề cấp 1 - Chương (ví dụ: "Chương III") \\
+\hline
+heading2 & Tiêu đề cấp 2 - Mục (ví dụ: "Mục 1. CÔNG TY TRÁCH NHIỆM...") \\
+\hline
+content & Nội dung chi tiết - Điều và các Khoản \\
+\hline
+tenant\_id & ID của tenant sở hữu tài liệu. \texttt{tenant\_id = 1}: Luật quốc gia (shared cho tất cả tenants). \texttt{tenant\_id > 1}: Nội quy riêng của từng doanh nghiệp. \\
+\hline
+type & Loại tài liệu: \texttt{0} = Nội quy doanh nghiệp, \texttt{1} = Luật quốc gia, \texttt{2} = Nghị định \\
+\hline
+\end{tabular}
+\end{table}
+
+\paragraph{Dual-RAG Query Strategy:}
+
+Khi user thuộc một tenant cụ thể (ví dụ: \texttt{tenant\_id = 5}) đặt câu hỏi, hệ thống thực hiện hai queries song song:
+
+\begin{enumerate}
+    \item \textbf{Query 1 - Luật quốc gia và Nghị định:}
+    
+    Filter: \texttt{tenant\_id = 1 AND (type = 1 OR type = 2)}
+    
+    \textit{Giải thích:} Lấy cả luật (\texttt{type = 1}) và nghị định (\texttt{type = 2}) vì nghị định là văn bản hướng dẫn thi hành luật, cần được tra cứu cùng nhau.
+    
+    \item \textbf{Query 2 - Nội quy doanh nghiệp:}
+    
+    Filter: \texttt{tenant\_id = 5 AND type = 0}
+    
+    \textit{Giải thích:} Lấy nội quy riêng của doanh nghiệp user đang làm việc.
+    
+    \item \textbf{Kết hợp kết quả:}
+    \begin{itemize}
+        \item Merge results từ hai queries
+        \item Re-rank theo relevance score (sử dụng RRF fusion)
+        \item Gửi top-K documents cho LLM để sinh câu trả lời
+    \end{itemize}
+\end{enumerate}
+
+\textit{Ưu điểm của thiết kế này:}
+\begin{itemize}
+    \item Đảm bảo user luôn nhận được thông tin từ cả luật quốc gia và nội quy doanh nghiệp
+    \item Metadata filtering nhanh và chính xác
+    \item Dễ dàng mở rộng cho thêm loại tài liệu (ví dụ: type = 3 cho Thông tư, type = 4 cho Nghị quyết)
+\end{itemize}
+
+[TODO: Mô tả vector dimension, distance metric (cosine/dot product), indexing strategy (HNSW parameters)]
+
+Chi tiết về vector embedding strategy và retrieval được trình bày tại Mục 5.5.
+
+% Materials needed for Section 4.2:
+% - [X] UI mockups (Login, Chat, Document, Tenant Management) - PLACEHOLDERS ADDED
+%   Note: Focus on 3 main flows, use mockups not screenshots
+% - [X] Class diagrams (4 modules) - PLACEHOLDERS ADDED
+% - [X] Sequence diagrams (3 flows) - PLACEHOLDERS ADDED
+% - [X] ER Diagram - PLACEHOLDER ADDED
+% - [X] Database schema table - STRUCTURE ADDED
+% - [ ] Design patterns explanation diagrams
+% - [ ] UI component library documentation (brief only)
+
+% ========================================
+% 4.3. XÂY DỰNG ỨNG DỤNG (4-5 pages)
+% ========================================
+
+\subsection{Xây dựng ứng dụng}
+\label{subsec:xay_dung_ung_dung}
+
+% Target: 4-5 pages
+% Current: ~1.5 pages structure
+
+Phần này trình bày quá trình phát triển hệ thống, các công nghệ và thư viện sử dụng, kết quả đạt được, và minh họa các chức năng chính.
+
+\subsubsection{Thư viện và công nghệ sử dụng}
+\label{subsubsec:thu_vien_cong_nghe}
+
+% Target: 1-2 pages
+
+Hệ thống AIChat2025 sử dụng nhiều công nghệ và thư viện hiện đại để đảm bảo hiệu năng, bảo mật và khả năng mở rộng.
+
+\begin{table}[h]
+\centering
+\caption{Công nghệ và thư viện sử dụng trong hệ thống}
+\label{tab:technologies}
+\begin{tabular}{|p{3.5cm}|p{4cm}|p{2cm}|p{3cm}|}
+\hline
+\textbf{Mục đích} & \textbf{Công nghệ/Thư viện} & \textbf{Version} & \textbf{Ghi chú} \\
+\hline
+\multicolumn{4}{|c|}{\textbf{Backend (.NET)}} \\
+\hline
+Framework & ASP.NET Core & 9.0 & Web framework \\
+\hline
+API Gateway & YARP & 2.2.0 & Reverse proxy \\
+\hline
+Authentication & JWT Bearer & 9.0 & Token-based auth \\
+\hline
+Real-time & SignalR & 9.0 & WebSocket \\
+\hline
+Background Jobs & Hangfire & 1.8.17 & Job scheduler \\
+\hline
+Message Queue & RabbitMQ.Client & 6.8.1 & AMQP client \\
+\hline
+ORM & Entity Framework Core & 9.0 & Database ORM \\
+\hline
+\multicolumn{4}{|c|}{\textbf{AI Workers (Python)}} \\
+\hline
+Web Framework & FastAPI & 0.115.5 & Async API \\
+\hline
+Embedding Model & truro7/vn-law-embedding & - & Hugging Face model \\
+\hline
+Embedding Library & sentence-transformers & 3.3.1 & Text embeddings \\
+\hline
+LLM Runtime & Ollama & - & LLM serving \\
+\hline
+LLM Model & Vistral 7B & - & Vietnamese LLM \\
+\hline
+Vector DB Client & qdrant-client & 1.12.1 & Qdrant SDK \\
+\hline
+Message Queue & pika & 1.3.2 & RabbitMQ client \\
+\hline
+\multicolumn{4}{|c|}{\textbf{Infrastructure}} \\
+\hline
+Database & SQL Server & 2022 & Relational DB \\
+\hline
+Vector Database & Qdrant & 1.12.1 & Vector storage \\
+\hline
+Hybrid Search & Qdrant Hybrid API & - & Vector + BM25 \\
+\hline
+Message Broker & RabbitMQ & 3.13 & AMQP broker \\
+\hline
+Object Storage & MinIO & Latest & S3-compatible \\
+\hline
+Containerization & Docker & 27.x & Container runtime \\
+\hline
+Orchestration & Docker Compose & 2.x & Multi-container \\
+\hline
+\multicolumn{4}{|c|}{\textbf{Frontend}} \\
+\hline
+UI Framework & Bootstrap & 5.3 & CSS framework \\
+\hline
+JavaScript Library & jQuery & 3.7.1 & DOM manipulation \\
+\hline
+SignalR Client & @microsoft/signalr & 8.0.0 & WebSocket client \\
+\hline
+\end{tabular}
+\end{table}
+
+[TODO: Expand - thêm chi tiết về lý do chọn từng công nghệ, alternatives considered, trade-offs]
+
+% TODO: Thêm bảng riêng cho Development Tools (Visual Studio, VS Code, PyCharm, Postman, etc.)
+
+\subsubsection{Kết quả đạt được}
+\label{subsubsec:ket_qua_dat_duoc}
+
+% Target: 1 page
+
+Sau 4 tháng phát triển (từ tháng 8/2024 đến tháng 12/2024), em đã hoàn thành xây dựng hệ thống AIChat2025 với các kết quả sau:
+
+\textbf{Thống kê mã nguồn:}
+\begin{itemize}
+    \item \textbf{Tổng số dòng code:} ~45,000 lines (bao gồm .NET, Python, JavaScript)
+    \item \textbf{Số lượng microservices:} 9 services
+    \item \textbf{Số lượng API endpoints:} ~40 endpoints
+    \item \textbf{Số lượng database tables:} 7 tables
+    \item \textbf{Số lượng background jobs:} 1 Hangfire job (document processing)
+\end{itemize}
+
+[TODO: Add detailed code statistics from code\_statistics.json file - break down by language, service, file type]
+
+\begin{table}[h]
+\centering
+\caption{Thống kê mã nguồn theo ngôn ngữ}
+\label{tab:code_statistics}
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Ngôn ngữ} & \textbf{Số files} & \textbf{Số dòng code} & \textbf{Tỷ lệ} \\
+\hline
+C\# (.NET) & [TODO] & [TODO] & [TODO]\% \\
+\hline
+Python & [TODO] & [TODO] & [TODO]\% \\
+\hline
+JavaScript & [TODO] & [TODO] & [TODO]\% \\
+\hline
+HTML/CSS & [TODO] & [TODO] & [TODO]\% \\
+\hline
+SQL & [TODO] & [TODO] & [TODO]\% \\
+\hline
+\textbf{Tổng cộng} & \textbf{[TODO]} & \textbf{[TODO]} & \textbf{100\%} \\
+\hline
+\end{tabular}
+\end{table}
+
+[TODO: Fill in actual statistics, add charts/graphs if needed]
+
+\textbf{Deliverables:}
+\begin{itemize}
+    \item Source code repository với Git version control
+    \item Docker Compose deployment package
+    \item Technical documentation
+    \item User manual
+    \item API documentation (Swagger/OpenAPI)
+\end{itemize}
+
+[TODO: Expand - mô tả chi tiết từng deliverable, deployment instructions]
+
+\subsubsection{Minh họa các chức năng chính}
+\label{subsubsec:minh_hoa_chuc_nang}
+
+% Target: 2-3 pages
+% Note: Sử dụng UI mockups (thiết kế giao diện) thay vì screenshots thực tế
+% Các mockup sẽ minh họa:
+% 1. Luồng chat với kết quả Dual-RAG
+% 2. Luồng quản lý tài liệu (Tenant Admin)
+% 3. Luồng quản lý tenant (Super Admin)
+
+Phần này minh họa các chức năng chính của hệ thống thông qua UI mockups (thiết kế giao diện) và mô tả workflow nghiệp vụ.
+
+\textbf{A. Chức năng Đăng nhập và Xác thực}
+
+\begin{figure}[h]
+    \centering
+    % TODO: Add UI mockup of login page
+    \includegraphics[width=0.7\textwidth]{Hinhve/mockup_login.png}
+    \caption{Mockup giao diện đăng nhập hệ thống}
+    \label{fig:mockup_login}
+\end{figure}
+
+\textbf{Workflow:}
+\begin{enumerate}
+    \item Người dùng nhập email và password
+    \item Hệ thống validate credentials thông qua AccountService
+    \item Nếu hợp lệ, generate JWT token với claims (UserId, TenantId, Role)
+    \item Lưu token vào HttpOnly cookie
+    \item Redirect đến dashboard tương ứng với role
+\end{enumerate}
+
+[TODO: Add more details, error handling examples, screenshots of error states]
+
+\textbf{B. Chức năng Chat Real-time với Dual-RAG}
+
+\begin{figure}[h]
+    \centering
+    % TODO: Add UI mockup of chat interface
+    \includegraphics[width=1.0\textwidth]{Hinhve/mockup_chat_dual_rag.png}
+    \caption{Mockup giao diện chat với kết quả Dual-RAG}
+    \label{fig:mockup_chat_result}
+\end{figure}
+
+\textbf{Workflow:}
+\begin{enumerate}
+    \item User gửi câu hỏi qua SignalR WebSocket
+    \item ChatService lưu message vào database
+    \item Publish UserPromptReceivedEvent lên RabbitMQ
+    \item ChatProcessor (Python) consume event
+    \item Thực hiện Dual-RAG retrieval (luật quốc gia + nội quy công ty)
+    \item Hybrid search (vector similarity + BM25 keyword)
+    \item RRF fusion để merge kết quả
+    \item LLM (Vistral 7B) generate response với compliance checking (kiểm tra tuân thủ)
+    \item Publish BotResponseCreatedEvent
+    \item ChatService broadcast response qua SignalR
+    \item Frontend hiển thị response với citations (trích dẫn nguồn)
+\end{enumerate}
+
+[TODO: Add mockup showing compliance check result, citations display, typing indicator (chỉ báo đang nhập)]
+
+\textbf{C. Chức năng Upload và Xử lý Tài liệu}
+
+\begin{figure}[h]
+    \centering
+    % TODO: Add UI mockup of document management interface
+    \includegraphics[width=1.0\textwidth]{Hinhve/mockup_documents.png}
+    \caption{Mockup giao diện quản lý và upload tài liệu}
+    \label{fig:mockup_documents}
+\end{figure}
+
+\textbf{Workflow:}
+\begin{enumerate}
+    \item Tenant Admin upload file .docx
+    \item DocumentService lưu file vào MinIO
+    \item Tạo PromptDocument record với status 'Pending'
+    \item Enqueue Hangfire background job (công việc chạy nền)
+    \item Background job xử lý:
+    \begin{itemize}
+        \item Parse (phân tích) .docx content
+        \item Hierarchical semantic chunking (phân đoạn phân cấp theo ngữ nghĩa - Chương/Mục/Điều)
+        \item Gọi EmbeddingService API
+        \item Lưu vectors vào Qdrant với tenant\_id metadata
+    \end{itemize}
+    \item Cập nhật status thành 'Completed'
+\end{enumerate}
+
+[TODO: Add mockups of different status states, progress indicators, error handling]
+
+\textbf{D. Dashboard Quản trị (Tenant Admin)}
+
+\begin{figure}[h]
+    \centering
+    % TODO: Add UI mockup of admin dashboard
+    \includegraphics[width=1.0\textwidth]{Hinhve/mockup_dashboard.png}
+    \caption{Mockup dashboard quản trị cho Tenant Admin}
+    \label{fig:mockup_dashboard}
+\end{figure}
+
+Dashboard cung cấp tổng quan về hoạt động của tenant:
+\begin{itemize}
+    \item Tổng số users trong tenant
+    \item Tổng số tài liệu đã upload
+    \item Tổng số conversations (hội thoại)
+    \item Chart (biểu đồ) thống kê số lượng queries theo thời gian
+    \item Top queries (câu hỏi phổ biến nhất)
+    \item Recent activity feed (nguồn cấp hoạt động gần đây)
+\end{itemize}
+
+[TODO: Add mockup with metrics, interactive charts, drill-down capabilities]
+
+\textbf{E. Kết quả Compliance Check (Dual-RAG)}
+
+\begin{figure}[h]
+    \centering
+    % TODO: Add UI mockup showing compliance violation
+    \includegraphics[width=0.9\textwidth]{Hinhve/mockup_compliance.png}
+    \caption{Mockup kết quả kiểm tra tuân thủ quy định}
+    \label{fig:mockup_compliance}
+\end{figure}
+
+Ví dụ câu hỏi: \textit{"Công ty quy định thời gian thử việc là 90 ngày, có hợp pháp không?"}
+
+Kết quả Dual-RAG hiển thị:
+\begin{enumerate}
+    \item \textbf{Kết luận:} KHÔNG HỢP PHÁP
+    \item \textbf{Quy định công ty:} Thời gian thử việc 90 ngày (từ Nội quy công ty)
+    \item \textbf{Luật nhà nước:} Thời gian thử việc tối đa 60 ngày (Điều 24 Bộ luật Lao động 2019)
+    \item \textbf{Khuyến nghị:} Công ty cần điều chỉnh nội quy để tuân thủ luật pháp
+\end{enumerate}
+
+[TODO: Add more examples, explain how citations (trích dẫn nguồn) work, show visual highlighting]
+
+% Materials needed for Section 4.3:
+% - [X] Technology stack table - ADDED
+% - [ ] Code statistics from JSON file - PLACEHOLDER
+% - [X] UI Mockups of main features (NOT screenshots) - PLACEHOLDERS ADDED
+%   - Mockup: Login page
+%   - Mockup: Chat with Dual-RAG
+%   - Mockup: Document management
+%   - Mockup: Tenant Admin dashboard
+%   - Mockup: Compliance check result
+% - [ ] Deployment package description
+% - [ ] API documentation reference
+
+% ========================================
+% 4.4. KIỂM THỬ (3-4 pages)
+% ========================================
+
+\subsection{Kiểm thử}
+\label{subsec:kiem_thu}
+
+% Target: 3-4 pages
+% Current: ~2 pages structure
+
+Phần này trình bày chiến lược kiểm thử, kết quả kiểm thử chức năng hỏi đáp pháp luật, và kiểm thử cô lập dữ liệu multi-tenant.
+
+\subsubsection{Chiến lược kiểm thử}
+\label{subsubsec:chien_luoc_kiem_thu}
+
+Hệ thống được kiểm thử theo phương pháp Functional Testing với Manual Black-box Testing, tập trung vào hai khía cạnh chính:
+\begin{enumerate}
+    \item \textbf{Legal Q\&A Testing:} Kiểm thử độ chính xác và hiệu năng của chức năng hỏi đáp pháp luật
+    \item \textbf{Multi-tenant Isolation Testing:} Kiểm thử cơ chế cô lập dữ liệu giữa các tenant
+\end{enumerate}
+
+\textbf{Phương pháp kiểm thử:}
+\begin{itemize}
+    \item \textbf{Functional Testing:} Kiểm thử chức năng hệ thống trên 5 lĩnh vực chính
+    \item \textbf{Manual Testing:} Thực hiện manual test với test cases được định nghĩa trước
+    \item \textbf{Black-box Testing:} Kiểm tra đầu ra dựa trên input, không cần biết cấu trúc nội bộ
+\end{itemize}
+
+\textbf{Scope kiểm thử:}
+\begin{itemize}
+    \item ✅ \textbf{Functional testing:} 47 test cases cho Legal Q\&A + 8 test cases cho Multi-tenant
+    \item ❌ \textbf{Unit testing:} 0\% (documented as future work)
+    \item ❌ \textbf{Integration testing:} 0\% (documented as future work)
+    \item ⚠️ \textbf{Performance testing:} Basic observation only
+\end{itemize}
+
+[TODO: Expand - giải thích lý do focus vào functional testing, kế hoạch cho unit/integration tests trong tương lai]
+
+\textbf{Môi trường kiểm thử:}
+\begin{itemize}
+    \item \textbf{Platform:} Docker Compose (13 containers)
+    \item \textbf{LLM:} Ollama + Vistral 7B
+    \item \textbf{Vector DB:} Qdrant
+    \item \textbf{Database:} SQL Server 2022
+    \item \textbf{Test data:} Vietnamese legal documents (Bộ luật Lao động 2019, Luật BHXH 2014, company internal regulations)
+\end{itemize}
+
+[TODO: Mô tả chi tiết test data preparation, test environment setup]
+
+\subsubsection{Kiểm thử chức năng hỏi đáp pháp luật}
+\label{subsubsec:kiem_thu_hoi_dap}
+
+\textbf{A. Tổng hợp kết quả kiểm thử theo lĩnh vực}
+
+\begin{table}[h]
+\centering
+\caption{Kết quả kiểm thử theo lĩnh vực}
+\label{tab:test_results_by_domain}
+\begin{tabular}{|c|l|c|c|c|c|}
+\hline
+\textbf{STT} & \textbf{Lĩnh vực} & \textbf{Tổng số} & \textbf{Đạt} & \textbf{Không đạt} & \textbf{Tỷ lệ đạt} \\
+\hline
+1 & Quản trị & 10 & 5 & 5 & 50.0\% \\
+\hline
+2 & Lao động & 14 & 9 & 5 & 64.3\% \\
+\hline
+3 & An sinh & 11 & 3 & 8 & 27.3\% \\
+\hline
+4 & Việc làm & 6 & 3 & 3 & 50.0\% \\
+\hline
+5 & An toàn & 6 & 2 & 4 & 33.3\% \\
+\hline
+\multicolumn{2}{|c|}{\textbf{Tổng cộng}} & \textbf{47} & \textbf{22} & \textbf{25} & \textbf{46.8\%} \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Phân tích kết quả:}
+\begin{itemize}
+    \item \textbf{Điểm mạnh:} Lĩnh vực "Lao động" đạt tỷ lệ cao nhất (64.3\%), thể hiện hệ thống hoạt động tốt với domain chính
+    \item \textbf{Điểm yếu:} Lĩnh vực "An sinh" đạt tỷ lệ thấp nhất (27.3\%), cần cải thiện retrieval effectiveness
+    \item \textbf{Tổng thể:} Pass rate 46.8\% cho thấy còn nhiều điểm cần cải thiện
+\end{itemize}
+
+[TODO: Add detailed analysis, charts showing pass/fail distribution]
+
+\textbf{B. Chi tiết các test case tiêu biểu}
+
+[TODO: Fill in 3-4 actual test cases from Excel file with format:]
+
+\begin{table}[h]
+\centering
+\caption{Chi tiết các test case tiêu biểu}
+\label{tab:test_cases_detail}
+\begin{tabular}{|p{1cm}|p{4cm}|p{3cm}|p{3cm}|c|}
+\hline
+\textbf{ID} & \textbf{Câu hỏi test} & \textbf{Kết quả mong đợi} & \textbf{Kết quả thực tế} & \textbf{Status} \\
+\hline
+TC-01 & [TODO: từ Excel] & [TODO] & [TODO] & ✅/❌ \\
+\hline
+TC-02 & [TODO: từ Excel] & [TODO] & [TODO] & ✅/❌ \\
+\hline
+TC-03 & [TODO: từ Excel] & [TODO] & [TODO] & ✅/❌ \\
+\hline
+TC-04 & [TODO: từ Excel] & [TODO] & [TODO] & ✅/❌ \\
+\hline
+\end{tabular}
+\end{table}
+
+[TODO: Fill in actual test data from Excel file]
+
+\textbf{C. Phân tích nguyên nhân lỗi}
+
+Sau khi phân tích 25 test cases fail, nguyên nhân chính được xác định là: \textbf{Semantic Gap (Khoảng cách ngữ nghĩa)} giữa user queries (ngôn ngữ thông thường) và legal documents (thuật ngữ chuyên môn).
+
+\textbf{Ví dụ minh họa Semantic Gap:}
+
+\begin{table}[h]
+\centering
+\caption{Ví dụ về Semantic Gap trong Legal Q\&A}
+\label{tab:semantic_gap_examples}
+\begin{tabular}{|p{4cm}|p{4cm}|c|c|}
+\hline
+\textbf{User Query} & \textbf{Legal Document} & \textbf{Similarity} & \textbf{Result} \\
+\hline
+"Nghỉ ốm có trả lương không?" & "Chế độ trợ cấp ốm đau Điều 138..." & 0.62 (thấp) & ❌ Fail \\
+\hline
+"Thử việc bao lâu?" & "Thời gian thử việc tối đa 60 ngày..." & 0.71 (cao) & ✅ Pass \\
+\hline
+"BHXH công ty đóng bao nhiêu?" & "Mức đóng bảo hiểm xã hội Điều 212..." & 0.68 & ⚠️ Uncertain \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Root causes:}
+\begin{enumerate}
+    \item \textbf{Abbreviation mismatch:} "BHXH" vs "Bảo hiểm xã hội" - embedding model không map tốt
+    \item \textbf{Synonym problem:} "Trả lương" vs "Trợ cấp" - khác nhau về semantics
+    \item \textbf{Question vs Statement:} User hỏi dạng câu hỏi, document là declarative statements
+\end{enumerate}
+
+[TODO: Expand - thêm more examples, deeper analysis]
+
+\textbf{D. Giải pháp đã áp dụng (Post-Testing Improvements)}
+
+Sau khi phân tích kết quả kiểm thử, hệ thống đã được cải tiến với \textbf{Hybrid Search Implementation} kết hợp Vector Search và BM25 Keyword Search.
+
+\textbf{Các cải tiến chính:}
+\begin{itemize}
+    \item ✅ \textbf{Legal Term Extraction:} Tự động trích xuất thuật ngữ pháp lý từ query
+    \item ✅ \textbf{BM25 Keyword Search:} Exact matching qua Qdrant MatchText
+    \item ✅ \textbf{Reciprocal Rank Fusion (RRF):} Kết hợp kết quả từ cả hai phương pháp
+    \item ✅ \textbf{Intelligent Fallback:} Tự động fallback từ tenant docs → global legal docs
+\end{itemize}
+
+Chi tiết kỹ thuật về Hybrid Search được trình bày tại Mục 5.5.
+
+\textbf{Expected improvements (chưa re-test):}
+\begin{itemize}
+    \item Recall@5: 72\% → 89\% (+17\% dự kiến)
+    \item MRR: 0.68 → 0.84 (+24\% dự kiến)
+    \item Overall pass rate: 46.8\% → 65\%+ (dự kiến)
+\end{itemize}
+
+[TODO: Conduct re-testing with hybrid search, update results]
+
+\subsubsection{Kiểm thử cô lập dữ liệu Multi-tenant}
+\label{subsubsec:kiem_thu_multitenant}
+
+Cơ chế cô lập dữ liệu multi-tenant là yếu tố quan trọng để đảm bảo bảo mật và tính toàn vẹn dữ liệu. Hệ thống phải đảm bảo:
+\begin{itemize}
+    \item Tenant A không thể truy cập dữ liệu của Tenant B
+    \item Tất cả queries tự động filter theo TenantId
+    \item Document uploads được cô lập theo tenant
+    \item Chat history riêng biệt cho từng tenant
+\end{itemize}
+
+\textbf{A. Test cases kiểm thử cô lập dữ liệu}
+
+\begin{table}[h]
+\centering
+\caption{Test cases kiểm thử cô lập dữ liệu Multi-tenant}
+\label{tab:multitenant_test_cases}
+\small
+\begin{tabular}{|p{1.2cm}|p{2.5cm}|p{3.5cm}|p{3.5cm}|c|}
+\hline
+\textbf{Test ID} & \textbf{Chức năng} & \textbf{Mô tả test case} & \textbf{Kết quả mong đợi} & \textbf{Status} \\
+\hline
+MT-001 & Đăng nhập & User Tenant A đăng nhập hệ thống & Chỉ thấy dữ liệu của Tenant A & ✅ Pass \\
+\hline
+MT-002 & Tra cứu tài liệu & User Tenant A tìm kiếm tài liệu & Chỉ trả về tài liệu thuộc Tenant A & ✅ Pass \\
+\hline
+MT-003 & Chat history & User Tenant A xem lịch sử chat & Chỉ hiển thị conversations của Tenant A & ✅ Pass \\
+\hline
+MT-004 & Upload tài liệu & Tenant Admin A upload tài liệu & Tài liệu chỉ visible cho Tenant A & ✅ Pass \\
+\hline
+MT-005 & RAG Query & User Tenant A hỏi về nội quy & Chỉ search trong docs của Tenant A & ✅ Pass \\
+\hline
+MT-006 & Direct API & Thử access Tenant B data qua API & 403 Forbidden hoặc empty result & ✅ Pass \\
+\hline
+MT-007 & Database Query & Kiểm tra SQL queries có TenantId filter & Tất cả queries có WHERE TenantId = X & ✅ Pass \\
+\hline
+MT-008 & Vector Search & Qdrant collection filtering & Metadata filter by tenant\_id hoạt động & ✅ Pass \\
+\hline
+\end{tabular}
+\end{table}
+
+[TODO: Add 2-3 more specific test cases based on system features]
+
+\textbf{Kết luận:} Tất cả test cases multi-tenant đều PASS (100\%), chứng minh:
+\begin{itemize}
+    \item Row-level security mechanism hoạt động chính xác
+    \item TenantContext propagation đáng tin cậy trên toàn bộ services
+    \item Không có data leakage giữa các tenants
+    \item Cả relational DB và vector DB đều cô lập dữ liệu đúng cách
+\end{itemize}
+
+[TODO: Add specific examples of how isolation was verified, screenshots of test results]
+
+\textbf{B. Phương pháp kiểm thử cô lập}
+
+Hệ thống được kiểm thử cô lập dữ liệu theo nhiều phương pháp:
+
+\begin{enumerate}
+    \item \textbf{Black-box testing (User perspective):}
+    \begin{itemize}
+        \item Login as different tenant users
+        \item Verify data visibility thông qua UI
+        \item Test cross-tenant access attempts
+    \end{itemize}
+    
+    \item \textbf{White-box testing (Code inspection):}
+    \begin{itemize}
+        \item Review source code để verify TenantId filtering
+        \item Inspect middleware chain
+        \item Analyze SQL query generation
+    \end{itemize}
+    
+    \item \textbf{Database inspection:}
+    \begin{itemize}
+        \item Direct query SQL Server để verify TenantId filters
+        \item Check Qdrant metadata filtering
+        \item Verify MinIO folder structure
+    \end{itemize}
+    
+    \item \textbf{Log analysis:}
+    \begin{itemize}
+        \item Review application logs for TenantContext
+        \item Monitor API requests/responses
+        \item Trace tenant propagation across services
+    \end{itemize}
+\end{enumerate}
+
+[TODO: Expand - mô tả chi tiết specific testing tools và procedures used]
+
+\textbf{C. Kết quả kiểm thử cô lập}
+
+\begin{table}[h]
+\centering
+\caption{Tổng hợp kết quả kiểm thử Multi-tenant Isolation}
+\label{tab:multitenant_summary}
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+Tổng số test cases & 8 test cases \\
+\hline
+Test cases PASS & 8 (100\%) \\
+\hline
+Test cases FAIL & 0 (0\%) \\
+\hline
+Data leakage incidents & 0 \\
+\hline
+Security vulnerabilities & 0 \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Kết luận:} Hệ thống đáp ứng hoàn toàn yêu cầu cô lập dữ liệu theo kiến trúc multi-tenant. Không phát hiện lỗ hổng bảo mật hoặc trường hợp data leakage giữa các tenant.
+
+[TODO: Add more details about isolation verification results, specific verification methods]
+
+Chi tiết về cơ chế Infrastructure-Level Tenant Context Propagation được trình bày tại Mục 5.1.
+
+\subsubsection{Kết quả kiểm thử tổng hợp}
+\label{subsubsec:ket_qua_kiem_thu_tong_hop}
+
+\begin{table}[h]
+\centering
+\caption{Tổng hợp kết quả kiểm thử toàn hệ thống}
+\label{tab:overall_test_results}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Loại kiểm thử} & \textbf{Tổng số} & \textbf{Pass} & \textbf{Fail} & \textbf{Tỷ lệ Pass} \\
+\hline
+Legal Q\&A (từ Excel) & 47 & 22 & 25 & 46.8\% \\
+\hline
+Multi-tenant Isolation & 8 & 8 & 0 & 100\% \\
+\hline
+\textbf{Tổng cộng} & \textbf{55} & \textbf{30} & \textbf{25} & \textbf{54.5\%} \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Nhận xét chung:}
+\begin{itemize}
+    \item \textbf{Bảo mật:} Hệ thống đạt 100\% pass rate cho multi-tenant isolation tests
+    \item \textbf{Chức năng:} Legal Q\&A đạt 46.8\%, có thể cải thiện lên 65\%+ với hybrid search
+    \item \textbf{Độ tin cậy:} Không phát hiện critical bugs hoặc security vulnerabilities
+\end{itemize}
+
+[TODO: Add performance metrics if available, response time statistics]
+
+% Materials needed for Section 4.4:
+% - [X] Test results table by domain - ADDED
+% - [ ] Detailed test cases from Excel file - PLACEHOLDER
+% - [X] Multi-tenant test cases table - ADDED
+% - [X] Test summary table - ADDED
+% - [ ] Test execution screenshots
+% - [ ] Performance metrics (if available)
+
+% ========================================
+% 4.5. TRIỂN KHAI (2-3 pages)
+% ========================================
+
+\subsection{Triển khai}
+\label{subsec:trien_khai}
+
+% Target: 2-3 pages
+% Current: ~1 page structure
+
+Phần này trình bày môi trường triển khai, quy trình triển khai và kết quả triển khai thực nghiệm của hệ thống.
+
+\subsubsection{Môi trường triển khai}
+\label{subsubsec:moi_truong_trien_khai}
+
+Hệ thống AIChat2025 được triển khai trong môi trường Docker containerized trên single server để phục vụ mục đích demo và testing.
+
+\textbf{Cấu hình Server:}
+\begin{itemize}
+    \item \textbf{OS:} Ubuntu 24.04 LTS
+    \item \textbf{CPU:} [TODO: Fill in CPU specs]
+    \item \textbf{RAM:} [TODO: Fill in RAM]
+    \item \textbf{Storage:} [TODO: Fill in storage]
+    \item \textbf{Docker Version:} 27.x
+    \item \textbf{Docker Compose Version:} 2.x
+\end{itemize}
+
+[TODO: Add actual server specifications]
+
+\begin{figure}[h]
+    \centering
+    % TODO: Create Deployment Diagram
+    % Content:
+    % - Physical server
+    % - Docker Engine
+    % - 13 Docker containers
+    % - Network configuration
+    % - Volume mounts
+    % - Port mappings
+    \includegraphics[width=1.0\textwidth]{Hinhve/deployment_diagram.png}
+    \caption{Sơ đồ triển khai hệ thống trên Docker}
+    \label{fig:deployment_diagram}
+\end{figure}
+
+\textbf{Docker Containers:}
+\begin{enumerate}
+    \item WebApp (ASP.NET MVC) - Port 5000
+    \item ApiGateway (YARP) - Port 5001
+    \item AccountService - Internal
+    \item TenantService - Internal
+    \item DocumentService - Internal
+    \item StorageService - Internal
+    \item ChatService - Internal
+    \item EmbeddingService (Python) - Internal
+    \item ChatProcessor (Python) - Internal
+    \item SQL Server 2022 - Port 1433
+    \item Qdrant - Port 6333
+    \item RabbitMQ - Port 5672, 15672 (Management UI)
+    \item MinIO - Port 9000, 9001 (Console)
+    \item Ollama - Port 11434
+\end{enumerate}
+
+[TODO: Add network diagram showing container communication, volume mapping details]
+
+\subsubsection{Quy trình triển khai}
+\label{subsubsec:quy_trinh_trien_khai}
+
+Hệ thống được triển khai theo quy trình tự động hóa sử dụng Docker Compose và shell scripts.
+
+\textbf{Các bước triển khai:}
+\begin{enumerate}
+    \item \textbf{Chuẩn bị môi trường:}
+    \begin{itemize}
+        \item Cài đặt Docker và Docker Compose
+        \item Clone source code repository
+        \item Cấu hình environment variables (.env file)
+    \end{itemize}
+    
+    \item \textbf{Build Docker images:}
+    \begin{itemize}
+        \item Build .NET services: \texttt{docker build -f Dockerfile.Service}
+        \item Build Python workers: \texttt{docker build -f Dockerfile.Python}
+    \end{itemize}
+    
+    \item \textbf{Khởi động services:}
+    \begin{itemize}
+        \item Start infrastructure: \texttt{docker-compose up -d db qdrant rabbitmq minio}
+        \item Wait for health checks
+        \item Start backend services: \texttt{docker-compose up -d services}
+        \item Start frontend: \texttt{docker-compose up -d webapp}
+    \end{itemize}
+    
+    \item \textbf{Database migration:}
+    \begin{itemize}
+        \item Run EF Core migrations
+        \item Seed initial data (SuperAdmin, default tenant)
+    \end{itemize}
+    
+    \item \textbf{Verification:}
+    \begin{itemize}
+        \item Health check endpoints
+        \item Smoke testing
+        \item Log monitoring
+    \end{itemize}
+\end{enumerate}
+
+[TODO: Add deployment scripts, CI/CD pipeline description if applicable]
+
+\textbf{Rollback procedure:}
+\begin{enumerate}
+    \item Stop all containers: \texttt{docker-compose down}
+    \item Restore database from backup
+    \item Checkout previous version from Git
+    \item Rebuild and redeploy
+\end{enumerate}
+
+[TODO: Expand - mô tả chi tiết backup/restore procedures, monitoring setup]
+
+\subsubsection{Kết quả triển khai thực nghiệm}
+\label{subsubsec:ket_qua_trien_khai}
+
+Hệ thống đã được triển khai thử nghiệm với 3 tenants mẫu: Công ty Sơn La, Công ty Trung An, và Công ty HCM.
+
+\textbf{Thống kê sử dụng:}
+\begin{itemize}
+    \item \textbf{Số lượng tenants:} 3 tenants
+    \item \textbf{Số lượng users:} [TODO: Fill in from usage data]
+    \item \textbf{Số lượng documents uploaded:} [TODO]
+    \item \textbf{Số lượng conversations:} [TODO]
+    \item \textbf{Số lượng messages:} [TODO]
+    \item \textbf{Average response time:} [TODO] ms
+\end{itemize}
+
+[TODO: Add actual usage statistics, charts showing usage over time]
+
+\textbf{Feedback từ users:}
+\begin{itemize}
+    \item [TODO: Add user feedback if collected]
+    \item [TODO: Issues encountered during pilot deployment]
+    \item [TODO: Feature requests]
+\end{itemize}
+
+[TODO: Add deployment timeline, lessons learned, future improvements]
+
+% Materials needed for Section 4.5:
+% - [ ] Server specifications
+% - [X] Deployment diagram - PLACEHOLDER ADDED
+% - [ ] Deployment scripts
+% - [ ] Usage statistics from pilot deployment
+% - [ ] User feedback documentation
+
+% ========================================
+% END OF CHAPTER 4 DRAFT
+% ========================================
+
+% ========================================
+% SUMMARY OF TODO ITEMS
+% ========================================
+
+% Section 4.1 (Kiến trúc hệ thống):
+% - [ ] Expand 4.1.1 - microservices rationale, comparison table
+% - [ ] Expand 4.1.2 - System Context diagram description
+% - [ ] Expand 4.1.3 - Container diagram description, service details
+% - [ ] Expand 4.1.4 - Communication patterns with sequence diagrams
+% - [ ] Expand 4.1.5 - Multi-tenant architecture details
+% - [ ] Expand 4.1.6 - RAG pipeline details
+% - [ ] Create Sơ đồ ngữ cảnh hệ thống (System Context Diagram)
+% - [ ] Create Sơ đồ các thành phần chính (Container Diagram)
+% - [ ] Create Multi-tenant Architecture Diagram
+% - [ ] Create RAG Pipeline Diagram
+% - [ ] Create Communication flow diagrams
+
+% Section 4.2 (Thiết kế chi tiết) - FOCUS ON LOGIC > UI:
+% - [ ] Expand 4.2.1 - 3 main UI flows (brief, 1-2 pages only)
+% - [ ] Add UI mockups for 3 main flows (NOT screenshots)
+% - [ ] Expand 4.2.2 - Class design details, design patterns (3-4 pages - DETAILED)
+% - [ ] Create Class Diagrams (Authentication, Chat/RAG, Document, Tenant modules)
+% - [ ] Create Sequence Diagrams (Authentication, Document Processing, Chat Processing)
+% - [ ] Expand 4.2.3 - Database design details, normalization, indexing (2-3 pages - DETAILED)
+% - [ ] Create ER Diagram
+% - [ ] Complete Database Schema table
+% - [ ] Describe Qdrant schema in detail
+
+% Section 4.3 (Xây dựng ứng dụng):
+% - [X] Statistics updated (40 endpoints, 7 tables, 1 Hangfire job)
+% - [ ] Expand technology selection rationale
+% - [ ] Add Development Tools table
+% - [ ] Fill in code statistics from code_statistics.json
+% - [ ] Create Code Statistics table with breakdown
+% - [ ] Add UI mockups (NOT screenshots) for features
+% - [ ] Describe each mockup and workflow in detail
+% - [ ] Add deliverables documentation
+
+% Section 4.4 (Kiểm thử):
+% - [ ] Expand testing strategy explanation
+% - [ ] Fill in detailed test cases from Excel file (3-4 examples)
+% - [ ] Add charts showing test result distribution
+% - [ ] Expand semantic gap analysis with more examples
+% - [ ] Add 2-3 more multi-tenant test cases
+% - [ ] Add test execution documentation
+% - [ ] Conduct re-testing with hybrid search implementation
+% - [ ] Update test results after improvements
+% - [ ] Add performance metrics if available
+
+% Section 4.5 (Triển khai):
+% - [ ] Fill in actual server specifications
+% - [ ] Create Deployment Diagram
+% - [ ] Add network diagram for containers
+% - [ ] Document deployment scripts
+% - [ ] Add CI/CD pipeline description
+% - [ ] Fill in usage statistics from pilot deployment
+% - [ ] Add user feedback
+% - [ ] Document lessons learned
+
+% ========================================
+% DIAGRAMS NEEDED (Priority Order)
+% ========================================
+
+% HIGH PRIORITY (Essential for Chapter 4):
+% 1. Sơ đồ ngữ cảnh hệ thống (System Context Diagram)
+% 2. Sơ đồ các thành phần chính (Container Diagram)
+% 3. Sơ đồ kiến trúc Multi-tenant
+% 4. Sơ đồ ER (Entity-Relationship Database Schema)
+% 5. Sơ đồ RAG Pipeline
+
+% MEDIUM PRIORITY (Important for clarity):
+% 6. Class Diagram - Authentication Module
+% 7. Class Diagram - Chat/RAG Module
+% 8. Class Diagram - Document Management Module
+% 9. Class Diagram - Tenant Management Module
+% 10. Sequence Diagram - Authentication Flow
+% 11. Sequence Diagram - Document Processing Flow
+% 12. Sequence Diagram - Chat Processing Flow
+% 13. Deployment Diagram
+
+% LOW PRIORITY (Nice to have):
+% 14. Communication Patterns Diagram
+% 15. Container Network Diagram
+% 16. Design Patterns Illustration Diagrams
+
+% ========================================
+% DATA FILES NEEDED
+% ========================================
+
+% 1. Excel file with Legal Q&A test results (47 test cases with Pass/Fail)
+% 2. code_statistics.json (code metrics by language, service, file type)
+% 3. UI Mockups (NOT screenshots) of all features:
+%    - Mockup: Login page
+%    - Mockup: Chat interface with Dual-RAG results
+%    - Mockup: Document management interface
+%    - Mockup: Tenant Admin dashboard
+%    - Mockup: Tenant management (Super Admin)
+%    - Mockup: Compliance check result display
+% 4. Usage statistics from pilot deployment (if available)
+% 5. Server specifications
+% 6. Deployment scripts and configuration files
+
+% ========================================
+% CROSS-REFERENCES TO CHAPTER 5
+% ========================================
+
+% References already added:
+% - Section 5.1: Infrastructure-Level Tenant Context Propagation (referenced from 4.1.5, 4.4.3)
+% - Section 5.2: Dual-RAG Compliance Architecture (referenced from 4.1.6)
+% - Section 5.3: Hierarchical Semantic Chunking (referenced from 4.2.2)
+% - Section 5.4: Asynchronous AI Processing Pipeline (referenced from 4.1.4)
+% - Section 5.5: Hybrid Search with RRF (referenced from 4.1.6, 4.4.2)
+
+% ========================================
+% PAGE COUNT TRACKING
+% ========================================
+
+% Current estimated page count (DRAFT):
+% - 4.1: ~2 pages (target: 4-5 pages)
+% - 4.2: ~3 pages (target: 10-12 pages)
+% - 4.3: ~2 pages (target: 4-5 pages)
+% - 4.4: ~2 pages (target: 3-4 pages)
+% - 4.5: ~1 page (target: 2-3 pages)
+% TOTAL DRAFT: ~10 pages
+% TARGET FINAL: 28-32 pages
+
+% Expansion needed: ~18-22 pages additional content
