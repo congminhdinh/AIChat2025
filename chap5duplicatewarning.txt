@@ -1,0 +1,28 @@
+🔴 LƯU Ý QUAN TRỌNG CHO CLAUDE: TRÁNH TRÙNG LẶP CHƯƠNG 4
+1. KHÔNG VẼ LẠI/MÔ TẢ LẠI CÁC HÌNH SAU (Đã có ở Chương 4):
+
+Kiến trúc: Sơ đồ ngữ cảnh (Context), Container, Deployment (Docker), 6 tầng cô lập (Isolation Layers).
+
+Quy trình: RAG Pipeline tổng quát, Sequence Diagram (Xử lý tài liệu & Chat Flow).
+
+Database: ER Diagram (Sơ đồ quan hệ thực thể).
+
+Giao diện: Tất cả hình ảnh Mockup (Login, Chat, Quản lý tài liệu, Cấu hình).
+
+Yêu cầu: Chỉ dùng câu: "Như đã minh họa tại Hình [X] trong Chương 4..." để tham chiếu.
+
+2. TRỌNG TÂM NỘI DUNG CHƯƠNG 5:
+
+Tập trung vào "HOW" (Thuật toán/Logic sâu): Ví dụ: Thay vì vẽ lại RAG Pipeline, hãy giải thích công thức RRF, logic đệ quy của dữ liệu, hoặc cơ chế hoạt động của Hybrid Search.
+
+Tập trung vào "WHY" (Tại sao chọn giải pháp này): Sử dụng kết quả kiểm thử ở Chương 4 làm "đề bài".
+
+Ví dụ: "Vì kết quả kiểm thử Chương 4 chỉ đạt 46.8% do lỗi ngữ nghĩa -> Nên Chương 5 đề xuất Hybrid Search."
+
+Ví dụ: "Vì kết quả kiểm thử bảo mật đạt 100% -> Chương 5 giải thích cơ chế Defense-in-Depth đã làm điều đó như thế nào."
+
+3. TUYỆT ĐỐI KHÔNG:
+
+Liệt kê lại Tech Stack (.NET, Python, Qdrant...) đã nêu ở Chương 4.
+
+Mô tả lại các bảng Database (Schema) trừ khi cần giải thích logic đệ quy (ParentId).
