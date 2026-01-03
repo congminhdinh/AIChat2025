@@ -1,12 +1,8 @@
 ﻿@{
-    Layout = null;
+    ViewData["Title"] = "Quản lý tài liệu";
 }
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý tài liệu - AI Chat 2025</title>
+
+@section Styles {
     <style>
         :root {
             --primary-color: #0d6efd;
@@ -401,21 +397,9 @@
             }
         }
     </style>
-</head>
-<body>
+}
 
-    <header class="header">
-        <div class="logo">AI CHAT 2025</div>
-        <nav class="nav-tabs">
-            <a href="#" class="nav-item">Chat</a>
-            <a href="#" class="nav-item active">Tài liệu</a>
-            <a href="#" class="nav-item">Quản lý Account</a>
-            <a href="#" class="nav-item">Cấu hình</a>
-        </nav>
-        <div class="user-profile">👤</div>
-    </header>
-
-    <div class="main-container">
+<div class="main-container">
         <div class="content-card">
 
             <div class="page-header">
@@ -475,15 +459,11 @@
         </div>
     </div>
 
-    <div id="modal-overlay" class="modal-overlay">
-        <div id="modal-content-container" class="modal-content-container">
-        </div>
+<div id="modal-overlay" class="modal-overlay">
+    <div id="modal-content-container" class="modal-content-container">
     </div>
+</div>
 
-    <!-- SweetAlert2 for notifications -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+@section Scripts {
     <script src="~/Scripts/Document/document.js" asp-append-version="true"></script>
-</body>
-</html>
+}

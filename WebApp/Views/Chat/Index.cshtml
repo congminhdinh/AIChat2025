@@ -1,12 +1,8 @@
 ﻿@{
-    Layout = null;
+    ViewData["Title"] = "Chat";
 }
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat - AI Chat 2025</title>
+
+@section Styles {
     <style>
         /* --- STYLE GIỮ NGUYÊN TỪ THIẾT KẾ CŨ --- */
         :root {
@@ -390,21 +386,9 @@
             }
         }
     </style>
-</head>
-<body>
+}
 
-    <header class="header">
-        <div class="logo">AI CHAT 2025</div>
-        <nav class="nav-tabs">
-            <a href="#" class="nav-item active">Chat</a>
-            <a href="#" class="nav-item">Tài liệu</a>
-            <a href="#" class="nav-item">Quản lý Account</a>
-            <a href="#" class="nav-item">Cấu hình</a>
-        </nav>
-        <div class="user-profile">👤</div>
-    </header>
-
-    <div class="main-container">
+<div class="main-container">
 
         <aside class="sidebar">
             <button id="btn-new-chat" class="new-chat-btn">
@@ -437,12 +421,12 @@
 
     </div>
 
-    <div id="modal-overlay" class="modal-overlay">
-        <div id="modal-content-container" class="modal-content-container">
-        </div>
+<div id="modal-overlay" class="modal-overlay">
+    <div id="modal-content-container" class="modal-content-container">
     </div>
+</div>
 
+@section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js" integrity="sha512-VKOOv3pNe/ux9v0rkDg3RSLk/Pg+csN+6lMaLQLKBN3lhQvEBDRFOI09DkpjAI/Vxp3qbP8qj0yPYOZqC7F9qw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="~/Scripts/Chat/chat.js" asp-append-version="true"></script>
-</body>
-</html>
+}

@@ -1,38 +1,73 @@
-Role: Senior .NET Fullstack Developer Context: AIChat2025 - Multi-tenant AI Chatbot System (Vietnamese Legal Documents) Task: Refactor the Document Management Module to support AJAX-based interactions, Partial View rendering, and a dedicated Document Viewer, while maintaining existing multi-tenant upload logic.
+Role: Expert .NET Fullstack Developer Task: System-wide UI Refactoring with Dynamic WebAppUrl Configuration & RBAC. Update the WebApp project:
 
-1. Technical Abstract
-This update focuses on transitioning the Document Management module from static page reloads to a dynamic AJAX-driven architecture. The goal is to implement a seamless CRUD and Visualization experience using ASP.NET Core Partial Views. Key features include asynchronous list filtering, modal-based editing with hardcoded business logic (DocType = Initial, FatherDocumentId = -1), and a dedicated Document Viewer. A strict constraint is to preserve the existing multi-tenant upload pipeline, enhancing it only with success/error notifications (SweetAlert2/Toastr) to ensure a smooth user experience via the Index view.
+1. Technical Abstract Unify the UI architecture of the AIChat2025 system using a centralized _Layout.cshtml. The system must move away from relative paths (~/) for assets and navigation. Instead, it must use a Strongly Typed Configuration approach by injecting the AppSettings class (from the Infrastructure layer) to prepend a global WebAppUrl to all static files and routing paths.
 
-2. Implementation Requirements
-Please refactor my code according to these technical specifications:
+2. Strongly Typed Configuration Integration
 
-A. Controller Structure (DocumentController.cs)
-Index(): Return only the main layout shell.
+Infrastructure Access: In _Layout.cshtml, inject the AppSettings using: @inject Microsoft.Extensions.Options.IOptions<Infrastructure.AppSettings> AppSettingsOptions
 
-GetDocuments(string keyword, int page): Return PartialView("GetListDocumentPartial") with filtered and paginated data.
+Global Variable: Define a local variable @{ var webAppUrl = AppSettingsOptions.Value.WebAppUrl; } at the top of the layout.
 
-GetById(int id): Return PartialView("GetDocumentDetail") for the edit modal.
+Asset Path Refactoring: All <script>, <link>, and <img> tags must use this prefix.
 
-Update(int id, string name): Update the document name, but strictly set DocType = "Initial" and FatherDocumentId = -1.
+Example: <script src="@(webAppUrl)/Scripts/Document/document.js" asp-append-version="true"></script>
 
-Delete(int id): Implement logic to remove the record and trigger the Vector DB (Qdrant) cleanup.
+Link Refactoring: Apply the same logic to the href attributes in the navigation bar.
 
-Vectorize(int id): Trigger the AI processing pipeline.
+3. Header & Routing Definition Update the Header with the following mapping (all prefixed with webAppUrl):
 
-Upload Logic: DO NOT modify the internal storage/tenant logic. Only ensure it returns a JSON result or TempData that can be intercepted for notifications.
+Chat: /Chat
 
-B. Frontend & AJAX Logic (document.js)
-Implement a loadList(keyword, page) function to fetch the partial view into the main container.
+Tài liệu: /Document
 
-Search: Trigger loadList on search input.
+Tài khoản: /Account (Renamed from Quản lý Account)
 
-Vectorize/Delete: Use AJAX POST/DELETE with SweetAlert2 confirmation dialogs and success/error toasts.
+Cấu hình: /SystemPrompt
 
-Edit Modal: Fetch HTML from GetById, inject into a modal, and handle the Update submission via AJAX.
+Thuật ngữ: /PromptConfig (New Tab)
 
-Upload Integration: After a successful file upload, trigger a success notification and refresh the list using loadList.
+Thống kê: /Stat (New Tab)
 
-C. View Refactoring
-Index.cshtml: Clean up to act as a container with placeholders for the list and modals.
+4. Layout & Assets Refactoring
 
-GetListDocumentPartial.cshtml: Implement the table with Bootstrap pagination. Map status Enums to Vietnamese labels. Add action icons (CPU for Vectorize, Pencil for Edit, Trash for Delete).
+Unified Header: Integrate a responsive Bootstrap header with the navigation mapping above.
+
+Assets: Include CSS/JS libraries from the Document/Index view (SweetAlert2, Toastr, Bootstrap). Ensure no duplication between Layout and Child views.
+
+Dynamic Active State: Implement logic to add the active class to the current navigation item based on the Request path.
+
+View Integration:
+
+Remove Layout = null; from Chat/Index.cshtml and Document/Index.cshtml.
+
+Utilize @RenderBody() and @RenderSection("Scripts", required: false).
+
+5. Permission Helper (RBAC) Implementation Use the IdentityHelper class to control visibility:
+
+If IdentityHelper.IsAdmin == true: Show all 6 tabs (Chat, Tài liệu, Tài khoản, Cấu hình, Thuật ngữ, Thống kê).
+
+If IdentityHelper.IsAdmin == false: Show ONLY the "Chat" tab.
+
+Logic: Wrap <li> elements in @if (IdentityHelper.IsAdmin) { ... }.
+
+6. Detailed Quality Requirements:
+
+Date Formatting: In the Document list, format LastModifiedAt as dd/MM/yyyy HH:mm. Hide the field if the value is null.
+
+Environment Badge: Add a small badge in the footer indicating if the app is running in "Development" vs "Production" (via IConfiguration).
+
+Global JS Variables: In the <head>, initialize a global JS variable const WEB_APP_URL = '@webAppUrl'; so external JS files can also use the base path for AJAX calls.
+
+Source Files for Modification:
+
+_Layout.cshtml
+
+Document/Index.cshtml
+
+Chat/Index.cshtml
+
+IdentityHelper.cs
+
+Infrastructure/AppSettings.cs (The class containing the WebAppUrl property)
+
+appsettings.Development.json

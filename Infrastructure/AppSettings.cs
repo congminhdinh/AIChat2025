@@ -27,5 +27,8 @@
         public string MinioAccessKey { get; set; }
         public string MinioSecretKey { get; set; }
         public string MinioBucket { get; set; }
+
+        //webapp url
+        public string WebAppUrl { get; set; }
     }
 }
