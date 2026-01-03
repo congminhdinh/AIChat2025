@@ -25,13 +25,39 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> GetDocuments([FromQuery] string? keyword, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
+        {
+            var request = new GetDocumentListRequest
+            {
+                FileName = keyword,
+                PageIndex = pageIndex,
+                PageSize = pageSize
+            };
+
+            var response = await _documentBusiness.GetListAsync(request);
+
+            if (response.Status == BaseResponseStatus.Error)
+            {
+                return PartialView("GetListDocumentPartial", new WebApp.Models.PaginatedListDto<DocumentDto>
+                {
+                    Items = new List<DocumentDto>(),
+                    PageIndex = 1,
+                    TotalPages = 0,
+                    PageSize = 0
+                });
+            }
+
+            return PartialView("GetListDocumentPartial", response.Data);
+        }
+
+        [HttpGet]
         public IActionResult UploadDocumentPartial()
         {
             return PartialView();
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetDocuments([FromQuery] GetDocumentListRequest request)
+        public async Task<IActionResult> GetListDocumentPartial([FromQuery] GetDocumentListRequest request)
         {
             var response = await _documentBusiness.GetListAsync(request);
 
@@ -81,7 +107,26 @@ namespace WebApp.Controllers
 
             return Json(new { success = true, data = response.Data, message = "Tải lên tài liệu thành công" });
         }
+        [HttpGet]
+        public async Task<IActionResult> GetDocumentById(int id)
+        {
+            var response = await _documentBusiness.GetByIdAsync(id);
 
+            if (response.Status == BaseResponseStatus.Error)
+            {
+                return Json(new { success = false, message = response.Message });
+            }
+
+            ViewBag.DocumentId = id;
+            ViewBag.DocumentName = response.Data.FileName;
+
+            return PartialView("GetDocumentDetail");
+        }
+
+        public IActionResult GetDocumentDetail()
+        {
+            return PartialView();
+        }
         [HttpPost]
         public async Task<IActionResult> Edit([FromBody] UpdateDocumentRequest request)
         {
@@ -89,6 +134,10 @@ namespace WebApp.Controllers
             {
                 return Json(new { success = false, message = "ID tài liệu không hợp lệ" });
             }
+
+            // ENFORCE HARDCODED VALUES AS PER REQUIREMENTS
+            request.DocType = Models.Document.Enums.DocType.Initial;
+            request.FatherDocumentId = -1;
 
             var response = await _documentBusiness.UpdateAsync(request);
 

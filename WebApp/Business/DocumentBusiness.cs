@@ -1,6 +1,8 @@
 using Infrastructure;
 using Infrastructure.Logging;
 using Infrastructure.Web;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Buffers.Text;
 using WebApp.Helpers;
 using WebApp.Models;
 using WebApp.Models.Document;
@@ -120,14 +122,14 @@ namespace WebApp.Business
             }
         }
 
-        public async Task<BaseResponse<DocumentDto>> UploadAsync(CreateDocumentRequest request, CancellationToken cancellationToken = default)
+        public async Task<BaseResponse<int>> UploadAsync(CreateDocumentRequest request, CancellationToken cancellationToken = default)
         {
             try
             {
                 var token = await _identityHelper.GetAccessTokenAsync();
                 if (string.IsNullOrEmpty(token))
                 {
-                    return new BaseResponse<DocumentDto>
+                    return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
                         Message = "Không tìm thấy token xác thực"
@@ -142,17 +144,26 @@ namespace WebApp.Business
                     fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(request.File.ContentType);
                     form.Add(fileContent, "file", request.File.FileName);
                 }
-
-                form.Add(new StringContent(request.DocumentType.ToString()), "doctype");
-                form.Add(new StringContent(request.FatherDocumentId.ToString()), "fatherDocumentId");
+                var queryParams = new Dictionary<string, string?>
+                {
+                    { "doctype", request.DocumentType.ToString() },
+                    { "fatherDocumentId", request.FatherDocumentId.ToString() }
+                };
 
                 if (!string.IsNullOrEmpty(request.DocumentName))
                 {
-                    form.Add(new StringContent(request.DocumentName), "documentName");
+                    queryParams.Add("documentName", request.DocumentName);
                 }
+                //form.Add(new StringContent(request.DocumentType.ToString()), "Doctype");
+                //form.Add(new StringContent(request.FatherDocumentId.ToString()), "FatherDocumentId");
 
-                var response = await PostFormDataWithTokenAsync<BaseResponse<DocumentDto>>(
-                    "/web-api/document/",
+                //if (!string.IsNullOrEmpty(request.DocumentName))
+                //{
+                //    form.Add(new StringContent(request.DocumentName), "DocumentName");
+                //}
+                var url = QueryHelpers.AddQueryString("/web-api/document/", queryParams);
+                var response = await PostFormDataWithTokenAsync<BaseResponse<int>>(
+                    url,
                     form,
                     token,
                     cancellationToken
@@ -160,7 +171,7 @@ namespace WebApp.Business
 
                 if (response == null)
                 {
-                    return new BaseResponse<DocumentDto>
+                    return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
                         Message = "Không nhận được phản hồi từ server"
@@ -172,7 +183,7 @@ namespace WebApp.Business
             catch (HttpRequestException ex)
             {
                 _logger.LogError($"HTTP error during upload document: {ex.Message}");
-                return new BaseResponse<DocumentDto>
+                return new BaseResponse<int>
                 {
                     Status = BaseResponseStatus.Error,
                     Message = "Lỗi kết nối đến dịch vụ document"
@@ -181,7 +192,7 @@ namespace WebApp.Business
             catch (Exception ex)
             {
                 _logger.LogError($"Error during upload document: {ex.Message}");
-                return new BaseResponse<DocumentDto>
+                return new BaseResponse<int>
                 {
                     Status = BaseResponseStatus.Error,
                     Message = "Đã xảy ra lỗi khi tải lên tài liệu"

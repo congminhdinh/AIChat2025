@@ -348,6 +348,58 @@
                 transform: translateY(0);
             }
         }
+
+        .search-wrapper {
+            flex: 1;
+            max-width: 400px; /* Độ rộng tối đa của ô search */
+            margin: 0 20px;
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 15px 10px 45px;
+            border-radius: 25px;
+            border: 1px solid var(--border-color);
+            background-color: #f8faff;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+            .search-input:focus {
+                border-color: var(--primary-color);
+                background-color: #fff;
+                box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+            }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            color: #999;
+            width: 18px;
+            height: 18px;
+            pointer-events: none;
+        }
+
+        /* Điều chỉnh page-header để các phần tử không bị dính vào nhau trên mobile */
+        @@media (max-width: 992px) {
+            .search-wrapper {
+                max-width: 100%;
+                margin: 10px 0;
+                order: 3; /* Đẩy search xuống dưới cùng khi màn hình nhỏ */
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
     </style>
 </head>
 <body>
@@ -368,11 +420,21 @@
 
             <div class="page-header">
                 <div class="page-title">Danh sách tài liệu</div>
+
+                <div class="search-wrapper">
+                    <div class="search-box">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" id="txtSearchDocument" class="search-input" placeholder="Nhập tên tài liệu...">
+                    </div>
+                </div>
                 <div class="action-group">
-                    <p class="instruction-link">
+@*                     <p class="instruction-link">
                         Để kết quả trả ra từ AI được tốt nhất, hãy xử lý tài liệu trước khi tải lên.
                         Hướng dẫn chi tiết <a href="#">tại đây</a>.
-                    </p>
+                    </p> *@
                     <button class="btn-upload" id="btn-upload-document">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
                         Upload tài liệu
@@ -398,7 +460,11 @@
                     </thead>
                     <tbody id="documents-table-body">
                         <tr>
-                            <td colspan="7" class="text-center">Đang tải...</td>
+                            <td colspan="7" class="text-center">
+                                <div style="padding: 40px;">
+                                    <div style="font-size: 1.2rem; color: #999;">Đang tải dữ liệu...</div>
+                                </div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -413,6 +479,10 @@
         <div id="modal-content-container" class="modal-content-container">
         </div>
     </div>
+
+    <!-- SweetAlert2 for notifications -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script src="~/Scripts/Document/document.js" asp-append-version="true"></script>
 </body>

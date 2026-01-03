@@ -42,12 +42,9 @@ namespace DocumentService.Features
             return new DocumentDto(
                 entity.Id,
                 entity.FileName,
+                entity.DocumentName,
                 entity.FilePath,
                 entity.Action,
-                entity.IsApproved,
-                entity.UploadedBy,
-                entity.ApprovedBy,
-                entity.CreatedAt,
                 entity.LastModifiedAt
             )
             {
@@ -164,13 +161,9 @@ namespace DocumentService.Features
 
             if (document == null)
                 throw new Exception($"Document with ID {input.DocumentId} not found");
-
-            document.IsApproved = input.IsApproved;
-            document.ApprovedBy = input.ApprovedBy;
-
-            if (input.Action.HasValue)
-                document.Action = input.Action.Value;
-
+            document.DocumentName = input.DocumentName;
+            document.FatherDocumentId = input.FatherDocumentId;
+            document.DocumentType = input.DocType;
             document.LastModifiedAt = DateTime.UtcNow;
             document.LastModifiedBy = _currentUserProvider.Username;
 

@@ -3,6 +3,8 @@
 
     let currentPage = 1;
     let pageSize = 10;
+    let currentKeyword = '';
+    let searchTimeout = null;
 
     document.addEventListener('DOMContentLoaded', function () {
         initializeDocument();
@@ -10,10 +12,11 @@
 
     function initializeDocument() {
         setupEventListeners();
-        loadDocuments();
+        loadDocumentList();
     }
 
     function setupEventListeners() {
+        // Upload button
         const uploadButton = document.querySelector('#btn-upload-document');
         if (uploadButton) {
             uploadButton.addEventListener('click', async function (e) {
@@ -22,153 +25,140 @@
             });
         }
 
+        // Refresh button
         const refreshButton = document.querySelector('#btn-refresh-documents');
         if (refreshButton) {
             refreshButton.addEventListener('click', function (e) {
                 e.preventDefault();
-                loadDocuments();
+                loadDocumentList(currentKeyword, 1);
             });
         }
+
+        // Search input with debounce
+        const searchInput = document.querySelector('#txtSearchDocument');
+        if (searchInput) {
+            searchInput.addEventListener('input', function (e) {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    currentKeyword = e.target.value.trim();
+                    loadDocumentList(currentKeyword, 1);
+                }, 500); // 500ms debounce
+            });
+        }
+
+        // Event delegation for dynamically loaded buttons
+        document.addEventListener('click', function (e) {
+            // Edit button
+            if (e.target.classList.contains('btn-edit-doc')) {
+                e.preventDefault();
+                const docId = e.target.getAttribute('data-doc-id');
+                openEditModal(docId);
+            }
+
+            // Vectorize button
+            if (e.target.classList.contains('btn-vectorize-doc')) {
+                e.preventDefault();
+                const docId = e.target.getAttribute('data-doc-id');
+                vectorizeDocument(docId);
+            }
+
+            // Delete button
+            if (e.target.classList.contains('btn-delete-doc')) {
+                e.preventDefault();
+                const docId = e.target.getAttribute('data-doc-id');
+                deleteDocument(docId);
+            }
+
+            // Pagination links
+            if (e.target.classList.contains('page-link') && !e.target.parentElement.classList.contains('disabled')) {
+                e.preventDefault();
+                const page = parseInt(e.target.getAttribute('data-page'));
+                if (page > 0) {
+                    loadDocumentList(currentKeyword, page);
+                }
+            }
+        });
     }
 
-    async function loadDocuments(pageIndex = 1) {
+    // ========== LOAD DOCUMENT LIST (PARTIAL VIEW) ==========
+    async function loadDocumentList(keyword = '', pageIndex = 1) {
         try {
+            showLoadingState();
             currentPage = pageIndex;
+            currentKeyword = keyword;
 
             const params = new URLSearchParams({
-                pageIndex: currentPage,
+                keyword: keyword,
+                pageIndex: pageIndex,
                 pageSize: pageSize
             });
 
             const response = await fetch(`/Document/GetDocuments?${params.toString()}`, {
                 method: 'GET',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'text/html'
                 }
             });
 
-            const result = await response.json();
-
-            if (result.success && result.data) {
-                renderDocuments(result.data);
-            } else {
-                console.error('Failed to load documents:', result.message);
-                showError(result.message || 'Không thể tải danh sách tài liệu');
+            if (!response.ok) {
+                throw new Error('Failed to load documents');
             }
+
+            const html = await response.text();
+
+            // Inject HTML into container
+            const container = document.querySelector('.content-card');
+            const pageHeader = container.querySelector('.page-header');
+
+            // Remove old table and pagination
+            const oldTable = container.querySelector('.table-container');
+            const oldPagination = container.querySelector('#pagination-container');
+            if (oldTable) oldTable.remove();
+            if (oldPagination) oldPagination.remove();
+
+            // Insert new content after page header
+            pageHeader.insertAdjacentHTML('afterend', html);
+
         } catch (error) {
             console.error('Error loading documents:', error);
-            showError('Đã xảy ra lỗi khi tải danh sách tài liệu');
+            showToast('error', 'Đã xảy ra lỗi khi tải danh sách tài liệu');
         }
     }
 
-    function renderDocuments(paginatedData) {
-        const tableBody = document.querySelector('#documents-table-body');
-        if (!tableBody) return;
+    function showLoadingState() {
+        const container = document.querySelector('.content-card');
+        const pageHeader = container.querySelector('.page-header');
 
-        tableBody.innerHTML = '';
+        const oldTable = container.querySelector('.table-container');
+        if (oldTable) oldTable.remove();
 
-        if (!paginatedData.items || paginatedData.items.length === 0) {
-            const row = document.createElement('tr');
-            row.innerHTML = '<td colspan="7" class="text-center">Không có tài liệu nào</td>';
-            tableBody.appendChild(row);
-            return;
-        }
+        const loadingHtml = `
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">ID</th>
+                            <th>Tên tài liệu</th>
+                            <th style="width: 150px;">Trạng thái</th>
+                            <th style="width: 100px;">Phê duyệt</th>
+                            <th>Người tải</th>
+                            <th style="width: 180px;">Thời gian tạo</th>
+                            <th style="width: 200px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="documents-table-body">
+                        <tr>
+                            <td colspan="7" class="text-center">Đang tải...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        `;
 
-        paginatedData.items.forEach(function (doc) {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${doc.id}</td>
-                <td>${doc.fileName}</td>
-                <td>${getActionText(doc.action)}</td>
-                <td>${doc.isApproved ? '<span class="badge bg-success">Đã duyệt</span>' : '<span class="badge bg-warning">Chưa duyệt</span>'}</td>
-                <td>${doc.uploadedBy || 'N/A'}</td>
-                <td>${formatDate(doc.createdAt)}</td>
-                <td>
-                    <button class="btn btn-sm btn-primary" onclick="window.vectorizeDocument(${doc.id})">
-                        Vectorize
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="window.deleteDocument(${doc.id})">
-                        Xóa
-                    </button>
-                </td>
-            `;
-            tableBody.appendChild(row);
-        });
-
-        renderPagination(paginatedData);
+        pageHeader.insertAdjacentHTML('afterend', loadingHtml);
     }
 
-    function renderPagination(paginatedData) {
-        const paginationContainer = document.querySelector('#pagination-container');
-        if (!paginationContainer) return;
-
-        paginationContainer.innerHTML = '';
-
-        const totalPages = paginatedData.totalPages;
-        const currentPageIndex = paginatedData.pageIndex;
-
-        if (totalPages <= 1) return;
-
-        const ul = document.createElement('ul');
-        ul.className = 'pagination';
-
-        // Previous button
-        const prevLi = document.createElement('li');
-        prevLi.className = `page-item ${currentPageIndex === 1 ? 'disabled' : ''}`;
-        prevLi.innerHTML = `<a class="page-link" href="#">Trước</a>`;
-        if (currentPageIndex > 1) {
-            prevLi.addEventListener('click', function (e) {
-                e.preventDefault();
-                loadDocuments(currentPageIndex - 1);
-            });
-        }
-        ul.appendChild(prevLi);
-
-        // Page numbers
-        for (let i = 1; i <= totalPages; i++) {
-            const li = document.createElement('li');
-            li.className = `page-item ${i === currentPageIndex ? 'active' : ''}`;
-            li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
-            li.addEventListener('click', function (e) {
-                e.preventDefault();
-                loadDocuments(i);
-            });
-            ul.appendChild(li);
-        }
-
-        // Next button
-        const nextLi = document.createElement('li');
-        nextLi.className = `page-item ${currentPageIndex === totalPages ? 'disabled' : ''}`;
-        nextLi.innerHTML = `<a class="page-link" href="#">Sau</a>`;
-        if (currentPageIndex < totalPages) {
-            nextLi.addEventListener('click', function (e) {
-                e.preventDefault();
-                loadDocuments(currentPageIndex + 1);
-            });
-        }
-        ul.appendChild(nextLi);
-
-        paginationContainer.appendChild(ul);
-    }
-
-    function getActionText(action) {
-        const actions = {
-            0: 'Upload',
-            1: 'Standardization',
-            2: 'Vectorize Start',
-            3: 'Vectorize Success',
-            4: 'Vectorize Failed',
-            5: 'Update Metadata'
-        };
-        return actions[action] || 'Unknown';
-    }
-
-    function formatDate(dateString) {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        return date.toLocaleString('vi-VN');
-    }
-
+    // ========== UPLOAD MODAL ==========
     async function openUploadModal() {
         try {
             const response = await fetch('/Document/UploadDocumentPartial', {
@@ -193,14 +183,12 @@
 
                 const inputField = document.querySelector('#documentFile');
                 if (inputField) {
-                    setTimeout(function () {
-                        inputField.focus();
-                    }, 100);
+                    setTimeout(() => inputField.focus(), 100);
                 }
             }
         } catch (error) {
             console.error('Error opening upload modal:', error);
-            showError('Không thể mở form tải lên tài liệu.');
+            showToast('error', 'Không thể mở form tải lên tài liệu.');
         }
     }
 
@@ -208,8 +196,7 @@
         const modalOverlay = document.querySelector('#modal-overlay');
         if (modalOverlay) {
             modalOverlay.classList.remove('active');
-
-            setTimeout(function () {
+            setTimeout(() => {
                 const modalContainer = document.querySelector('#modal-content-container');
                 if (modalContainer) {
                     modalContainer.innerHTML = '';
@@ -223,7 +210,7 @@
         const nameInput = document.querySelector('#documentName');
 
         if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-            alert('Vui lòng chọn tệp để tải lên');
+            showToast('warning', 'Vui lòng chọn tệp để tải lên');
             return;
         }
 
@@ -246,19 +233,129 @@
 
             if (result.success) {
                 closeUploadModal();
-                showSuccess(result.message || 'Tải lên tài liệu thành công');
-                await loadDocuments(currentPage);
+                showToast('success', result.message || 'Tải lên tài liệu thành công');
+                await loadDocumentList(currentKeyword, currentPage);
             } else {
-                alert(result.message || 'Không thể tải lên tài liệu. Vui lòng thử lại.');
+                showToast('error', result.message || 'Không thể tải lên tài liệu. Vui lòng thử lại.');
             }
         } catch (error) {
             console.error('Error uploading document:', error);
-            alert('Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
+            showToast('error', 'Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
         }
     }
 
+    // ========== EDIT MODAL ==========
+    async function openEditModal(documentId) {
+        try {
+            const response = await fetch(`/Document/GetDocumentById?id=${documentId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'text/html'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load document details');
+            }
+
+            const html = await response.text();
+
+            const modalContainer = document.querySelector('#modal-content-container');
+            const modalOverlay = document.querySelector('#modal-overlay');
+
+            if (modalContainer && modalOverlay) {
+                modalContainer.innerHTML = html;
+                modalOverlay.classList.add('active');
+
+                // Attach submit handler
+                const submitBtn = document.querySelector('#btnSubmitEditDocument');
+                if (submitBtn) {
+                    submitBtn.addEventListener('click', submitEditDocument);
+                }
+
+                const inputField = document.querySelector('#editDocumentName');
+                if (inputField) {
+                    setTimeout(() => inputField.focus(), 100);
+                }
+            }
+        } catch (error) {
+            console.error('Error opening edit modal:', error);
+            showToast('error', 'Không thể mở form chỉnh sửa tài liệu.');
+        }
+    }
+
+    function closeEditModal() {
+        const modalOverlay = document.querySelector('#modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.classList.remove('active');
+            setTimeout(() => {
+                const modalContainer = document.querySelector('#modal-content-container');
+                if (modalContainer) {
+                    modalContainer.innerHTML = '';
+                }
+            }, 200);
+        }
+    }
+
+    async function submitEditDocument() {
+        const documentIdInput = document.querySelector('#editDocumentId');
+        const documentNameInput = document.querySelector('#editDocumentName');
+
+        if (!documentIdInput || !documentNameInput) {
+            showToast('error', 'Không tìm thấy thông tin tài liệu');
+            return;
+        }
+
+        const documentId = parseInt(documentIdInput.value);
+        const documentName = documentNameInput.value.trim();
+
+        if (!documentName) {
+            showToast('warning', 'Vui lòng nhập tên tài liệu');
+            return;
+        }
+
+        try {
+            const response = await fetch('/Document/Edit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    documentId: documentId,
+                    documentName: documentName
+                    // DocType and FatherDocumentId will be hardcoded server-side
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                closeEditModal();
+                showToast('success', result.message || 'Cập nhật tài liệu thành công');
+                await loadDocumentList(currentKeyword, currentPage);
+            } else {
+                showToast('error', result.message || 'Không thể cập nhật tài liệu. Vui lòng thử lại.');
+            }
+        } catch (error) {
+            console.error('Error updating document:', error);
+            showToast('error', 'Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
+        }
+    }
+
+    // ========== VECTORIZE ==========
     async function vectorizeDocument(documentId) {
-        if (!confirm('Bạn có chắc chắn muốn vectorize tài liệu này?')) {
+        const result = await Swal.fire({
+            title: 'Xác nhận vectorize',
+            text: 'Bạn có chắc chắn muốn vectorize tài liệu này?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#0d6efd',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Xác nhận',
+            cancelButtonText: 'Hủy bỏ'
+        });
+
+        if (!result.isConfirmed) {
             return;
         }
 
@@ -270,22 +367,34 @@
                 }
             });
 
-            const result = await response.json();
+            const responseData = await response.json();
 
-            if (result.success) {
-                showSuccess(result.message || 'Đã gửi yêu cầu vectorize tài liệu');
-                await loadDocuments(currentPage);
+            if (responseData.success) {
+                showToast('success', responseData.message || 'Đã gửi yêu cầu vectorize tài liệu');
+                await loadDocumentList(currentKeyword, currentPage);
             } else {
-                alert(result.message || 'Không thể vectorize tài liệu. Vui lòng thử lại.');
+                showToast('error', responseData.message || 'Không thể vectorize tài liệu. Vui lòng thử lại.');
             }
         } catch (error) {
             console.error('Error vectorizing document:', error);
-            alert('Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
+            showToast('error', 'Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
         }
     }
 
+    // ========== DELETE ==========
     async function deleteDocument(documentId) {
-        if (!confirm('Bạn có chắc chắn muốn xóa tài liệu này?')) {
+        const result = await Swal.fire({
+            title: 'Xác nhận xóa',
+            text: 'Bạn có chắc chắn muốn xóa tài liệu này? Hành động này không thể hoàn tác.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy bỏ'
+        });
+
+        if (!result.isConfirmed) {
             return;
         }
 
@@ -297,32 +406,42 @@
                 }
             });
 
-            const result = await response.json();
+            const responseData = await response.json();
 
-            if (result.success) {
-                showSuccess(result.message || 'Xóa tài liệu thành công');
-                await loadDocuments(currentPage);
+            if (responseData.success) {
+                showToast('success', responseData.message || 'Xóa tài liệu thành công');
+                await loadDocumentList(currentKeyword, currentPage);
             } else {
-                alert(result.message || 'Không thể xóa tài liệu. Vui lòng thử lại.');
+                showToast('error', responseData.message || 'Không thể xóa tài liệu. Vui lòng thử lại.');
             }
         } catch (error) {
             console.error('Error deleting document:', error);
-            alert('Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
+            showToast('error', 'Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
         }
     }
 
-    function showError(message) {
-        console.error(message);
-        alert(message);
+    // ========== NOTIFICATION HELPERS ==========
+    function showToast(type, message) {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+
+        Toast.fire({
+            icon: type, // 'success', 'error', 'warning', 'info'
+            title: message
+        });
     }
 
-    function showSuccess(message) {
-        console.log(message);
-        alert(message);
-    }
-
+    // Expose functions to global scope for inline onclick handlers
     window.closeUploadModal = closeUploadModal;
     window.submitUpload = submitUpload;
-    window.vectorizeDocument = vectorizeDocument;
-    window.deleteDocument = deleteDocument;
+    window.closeEditModal = closeEditModal;
 })();

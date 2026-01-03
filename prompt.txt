@@ -1,37 +1,38 @@
-Objective: Integrate a multi-tenant System Prompt (Behavioral Instruction) feature into the "AIChat2025" RAG pipeline, ensuring it complements the existing vector-based retrieval.
+Role: Senior .NET Fullstack Developer Context: AIChat2025 - Multi-tenant AI Chatbot System (Vietnamese Legal Documents) Task: Refactor the Document Management Module to support AJAX-based interactions, Partial View rendering, and a dedicated Document Viewer, while maintaining existing multi-tenant upload logic.
 
-Key Tasks & Architectural Guidance:
+1. Technical Abstract
+This update focuses on transitioning the Document Management module from static page reloads to a dynamic AJAX-driven architecture. The goal is to implement a seamless CRUD and Visualization experience using ASP.NET Core Partial Views. Key features include asynchronous list filtering, modal-based editing with hardcoded business logic (DocType = Initial, FatherDocumentId = -1), and a dedicated Document Viewer. A strict constraint is to preserve the existing multi-tenant upload pipeline, enhancing it only with success/error notifications (SweetAlert2/Toastr) to ensure a smooth user experience via the Index view.
 
-Data Modeling (ChatService - .NET):
+2. Implementation Requirements
+Please refactor my code according to these technical specifications:
 
-Define a new entity SystemPrompt that inherits from our TenancyEntity.
+A. Controller Structure (DocumentController.cs)
+Index(): Return only the main layout shell.
 
-This entity should store the persona and behavioral guidelines unique to each tenant.
+GetDocuments(string keyword, int page): Return PartialView("GetListDocumentPartial") with filtered and paginated data.
 
-Determine the best way to handle "Active" prompts within the multi-tenant context (e.g., one active prompt per tenant/bot).
+GetById(int id): Return PartialView("GetDocumentDetail") for the edit modal.
 
-Service Communication (Message Contract):
+Update(int id, string name): Update the document name, but strictly set DocType = "Initial" and FatherDocumentId = -1.
 
-Modify the chat message contract sent via RabbitMQ to fetch and inject the appropriate SystemPrompt, include this SystemPrompt to the SystemInstruction.
+Delete(int id): Implement logic to remove the record and trigger the Vector DB (Qdrant) cleanup.
 
+Vectorize(int id): Trigger the AI processing pipeline.
 
-AI Inference Logic (ChatProcessor - Python):
+Upload Logic: DO NOT modify the internal storage/tenant logic. Only ensure it returns a JSON result or TempData that can be intercepted for notifications.
 
-Update the consumer to handle the new SystemInstruction.
+B. Frontend & AJAX Logic (document.js)
+Implement a loadList(keyword, page) function to fetch the partial view into the main container.
 
-Adapt the Ollama inference logic to treat this instruction as a system role message in the chat history.
+Search: Trigger loadList on search input.
 
-Ensure the model (Vistral) prioritizes this instruction alongside the retrieved RAG context.
+Vectorize/Delete: Use AJAX POST/DELETE with SweetAlert2 confirmation dialogs and success/error toasts.
 
-Integration Logic:
+Edit Modal: Fetch HTML from GetById, inject into a modal, and handle the Update submission via AJAX.
 
-Consider fallback mechanisms for tenants who haven't defined a custom prompt.
+Upload Integration: After a successful file upload, trigger a success notification and refresh the list using loadList.
 
+C. View Refactoring
+Index.cshtml: Clean up to act as a container with placeholders for the list and modals.
 
-Deliverables:
-
-Entity definition for SystemPrompt.
-
-Strategic updates for the .NET message publishing logic.
-
-Updated Python code snippet for the inference call.
+GetListDocumentPartial.cshtml: Implement the table with Bootstrap pagination. Map status Enums to Vietnamese labels. Add action icons (CPU for Vectorize, Pencil for Edit, Trash for Delete).

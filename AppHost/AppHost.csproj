@@ -8,6 +8,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UserSecretsId>42b48a16-37bc-4a1b-b6d7-e3094a77d8d9</UserSecretsId>
+	  <MSBuildDisableNodeReuse>true</MSBuildDisableNodeReuse>
+	  <MaxCpuCount>1</MaxCpuCount>
   </PropertyGroup>
 
   <ItemGroup>

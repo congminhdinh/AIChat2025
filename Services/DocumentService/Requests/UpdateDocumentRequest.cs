@@ -6,8 +6,8 @@ namespace DocumentService.Requests
     public class UpdateDocumentRequest : BaseRequest
     {
         public int DocumentId { get; set; }
-        public bool IsApproved { get; set; }
-        public string? ApprovedBy { get; set; }
-        public DocumentAction? Action { get; set; }
+        public string? DocumentName { get; set; }
+        public DocType DocType { get; set; }
+        public int FatherDocumentId { get; set; } = -1;
     }
 }

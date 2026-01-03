@@ -1,11 +1,18 @@
-using Infrastructure;
 using Microsoft.OpenApi.Models;
 using System.Text.Json.Nodes;
 using Yarp.ReverseProxy.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.ConfigureAppSettings();
+builder.Host.ConfigureAppConfiguration((ctx, config) =>
+{
+    var env = ctx.HostingEnvironment;
+
+    config.AddJsonFile(Path.Combine("Config", "appsettings.json"), optional: false, reloadOnChange: true)
+          .AddJsonFile(Path.Combine("Config", $"appsettings.{env.EnvironmentName}.json"), optional: true, reloadOnChange: true);
+
+    config.AddEnvironmentVariables();
+});
 // 1. Add YARP services and load config from appsettings.json
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
