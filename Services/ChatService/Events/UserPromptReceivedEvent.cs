@@ -9,4 +9,5 @@ public record UserPromptReceivedEvent
     public string Token { get; init; } = string.Empty;
     public DateTime Timestamp { get; init; } = DateTime.UtcNow;
     public List<PromptConfigDto> SystemInstruction { get; init; } = new();
+    public string? SystemPrompt { get; init; }
 }

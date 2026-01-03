@@ -28,8 +28,9 @@ public class ChatBusiness
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly ICurrentUserProvider _currentUserProvider;
     private readonly ILogger<ChatBusiness> _logger;
+    private readonly SystemPromptBusiness _systemPromptBusiness;
 
-    public ChatBusiness(IRepository<ChatConversation> conversationRepo, IRepository<ChatMessage> messageRepo, IRepository<PromptConfig> promptConfigRepo, IPublishEndpoint publishEndpoint, ICurrentUserProvider currentUserProvider, ILogger<ChatBusiness> logger)
+    public ChatBusiness(IRepository<ChatConversation> conversationRepo, IRepository<ChatMessage> messageRepo, IRepository<PromptConfig> promptConfigRepo, IPublishEndpoint publishEndpoint, ICurrentUserProvider currentUserProvider, ILogger<ChatBusiness> logger, SystemPromptBusiness systemPromptBusiness)
     {
         _conversationRepo = conversationRepo;
         _messageRepo = messageRepo;
@@ -37,6 +38,7 @@ public class ChatBusiness
         _publishEndpoint = publishEndpoint;
         _currentUserProvider = currentUserProvider;
         _logger = logger;
+        _systemPromptBusiness = systemPromptBusiness;
     }
 
     /// <summary>
@@ -156,13 +158,17 @@ public class ChatBusiness
             Value = pc.Value
         }).ToList();
 
+        // Fetch active SystemPrompt for tenant (fallback to null if none exists)
+        var activeSystemPrompt = await _systemPromptBusiness.GetActiveAsync(_currentUserProvider.TenantId);
+
         var userPromptEvent = new UserPromptReceivedEvent
         {
             ConversationId = request.ConversationId,
             Message = request.Message,
             Token = _currentUserProvider.Token?? string.Empty,
             Timestamp = message.Timestamp,
-            SystemInstruction = systemInstructions
+            SystemInstruction = systemInstructions,
+            SystemPrompt = activeSystemPrompt?.Content
         };
         _logger.LogInformation($"Publishing UserPromptReceivedEvent: {JsonSerializer.Serialize(userPromptEvent)}");
         await _publishEndpoint.Publish(userPromptEvent, ct);

@@ -470,19 +470,21 @@ class QdrantService:
 class ChatBusiness:
 
     @staticmethod
-    def _detect_scenario(company_rule_results: list, legal_base_results: list) -> str:
+    def _detect_scenario(company_rule_results: list, legal_base_results: list, system_prompt: Optional[str] = None) -> str:
         """
-        Detect which scenario we're in based on vector retrieval results.
+        Detect which scenario we're in based on vector retrieval results and SystemPrompt availability.
 
         Args:
             company_rule_results: List of company regulation vectors found
             legal_base_results: List of legal base (Vietnam law) vectors found
+            system_prompt: Optional SystemPrompt/Company Context for fallback
 
         Returns:
             "BOTH": Both company regulation and legal base found
             "COMPANY_ONLY": Only company regulation found
             "LEGAL_ONLY": Only legal base found
-            "NONE": No vectors found
+            "STATIC_CONTEXT": No RAG documents but SystemPrompt available
+            "NONE": No vectors found and no SystemPrompt
         """
         has_company = len(company_rule_results) > 0
         has_legal = len(legal_base_results) > 0
@@ -493,6 +495,12 @@ class ChatBusiness:
             return "COMPANY_ONLY"
         elif not has_company and has_legal:
             return "LEGAL_ONLY"
+        elif not has_company and not has_legal:
+            # NEW: Check for SystemPrompt fallback
+            if system_prompt:
+                return "STATIC_CONTEXT"
+            else:
+                return "NONE"
         else:
             return "NONE"
 
@@ -562,6 +570,38 @@ QUAN TRỌNG: Sao chép CHÍNH XÁC nhãn trong ngoặc vuông [...] từ "Thôn
             base_prompt += """\n\n⚠️ CHẾ ĐỘ FALLBACK: Hệ thống đã tự động tìm kiếm trong cơ sở dữ liệu pháp luật chung."""
 
         return base_prompt
+
+    @staticmethod
+    def _build_static_context_system_prompt() -> str:
+        """
+        Generates a system prompt for STATIC_CONTEXT mode.
+        Used when no RAG documents are found but SystemPrompt/Company Context is available.
+
+        This mode instructs the LLM to answer based solely on information in the SystemPrompt
+        without document citations, since no RAG documents were retrieved.
+
+        Returns:
+            System prompt string for static context scenario
+        """
+        prompt = """Bạn là trợ lý AI thông minh.
+
+⛔ CẤM TUYỆT ĐỐI:
+- KHÔNG in "Bước 1", "Bước 2", "Bước 3" hoặc bất kỳ quá trình suy luận nào
+- KHÔNG in các hướng dẫn như "Trích dẫn chính xác", "Trả lời câu hỏi"
+- KHÔNG in bất kỳ tiền tố nào như "Trả lời:", "Câu trả lời:", "Dựa trên"
+- KHÔNG trả lời dài dòng (chỉ tối đa 2-3 câu)
+
+✓ HƯỚNG DẪN TRẢ LỜI:
+- Trả lời dựa trên thông tin có sẵn trong phần giới thiệu về vai trò của bạn (SystemPrompt)
+- Không cần trích dẫn tài liệu vì không có documents từ hệ thống RAG
+- Chỉ sử dụng thông tin đã được cung cấp trong context, không bịa đặt
+- Trả lời ngắn gọn, rõ ràng, tối đa 2-3 câu
+- Nếu không có thông tin về câu hỏi, hãy thành thật nói "Tôi không có thông tin về vấn đề này"
+
+📌 LƯU Ý:
+Bạn đang trả lời dựa trên thông tin tĩnh (Static Context), không phải từ tài liệu được tìm kiếm."""
+
+        return prompt
 
     @staticmethod
     def _cleanup_response(response: str) -> str:
@@ -848,7 +888,7 @@ QUAN TRỌNG: Sao chép CHÍNH XÁC nhãn trong ngoặc vuông [...] từ "Thôn
         return context_string, source_ids, documents_used
 
     @staticmethod
-    async def process_chat_message(conversation_id: int, user_id: int, message: str, tenant_id: int, ollama_service: OllamaService, qdrant_service: QdrantService, system_instruction: Optional[List[Dict[str, str]]]=None) -> Dict[str, Any]:
+    async def process_chat_message(conversation_id: int, user_id: int, message: str, tenant_id: int, ollama_service: OllamaService, qdrant_service: QdrantService, system_instruction: Optional[List[Dict[str, str]]]=None, system_prompt: Optional[str]=None) -> Dict[str, Any]:
         try:
             logger.info(f"[ConversationId: {conversation_id}] Processing message from User {user_id}, Tenant {tenant_id}: '{message[:50]}...'")
 
@@ -887,8 +927,8 @@ QUAN TRỌNG: Sao chép CHÍNH XÁC nhãn trong ngoặc vuông [...] từ "Thôn
                 f'(fallback: {fallback_triggered})'
             )
 
-            # NEW: Detect scenario based on which vectors were found
-            scenario = ChatBusiness._detect_scenario(company_rule_results, legal_base_results)
+            # NEW: Detect scenario based on which vectors were found and SystemPrompt availability
+            scenario = ChatBusiness._detect_scenario(company_rule_results, legal_base_results, system_prompt)
             logger.info(f'[ConversationId: {conversation_id}] Detected scenario: {scenario}')
 
             # NEW: Handle NONE scenario - return error immediately without LLM generation
@@ -907,16 +947,27 @@ QUAN TRỌNG: Sao chép CHÍNH XÁC nhãn trong ngoặc vuông [...] từ "Thôn
                     'scenario': scenario
                 }
 
-            # Step 2: Structure context with clear delimiters
-            context_string, source_ids, documents_used = ChatBusiness._structure_context_for_compliance(
-                company_rule_results=company_rule_results,
-                legal_base_results=legal_base_results,
-                tenant_id=tenant_id,
-                scenario=scenario  # NEW: Pass scenario parameter
-            )
+            # Step 2: Structure context with clear delimiters (skip for STATIC_CONTEXT)
+            if scenario == "STATIC_CONTEXT":
+                # No RAG documents, only SystemPrompt - use simple prompt
+                context_string = ""
+                source_ids = []
+                documents_used = 0
+                logger.info(f'[ConversationId: {conversation_id}] STATIC_CONTEXT mode - skipping document structuring')
+            else:
+                context_string, source_ids, documents_used = ChatBusiness._structure_context_for_compliance(
+                    company_rule_results=company_rule_results,
+                    legal_base_results=legal_base_results,
+                    tenant_id=tenant_id,
+                    scenario=scenario  # NEW: Pass scenario parameter
+                )
 
             # Step 3: Build the enhanced prompt
-            if context_string:
+            if scenario == "STATIC_CONTEXT":
+                # STATIC_CONTEXT: No document context, just the user question
+                enhanced_prompt = f"""Câu hỏi của người dùng: {message}"""
+                logger.info(f'[ConversationId: {conversation_id}] Built STATIC_CONTEXT prompt (no documents)')
+            elif context_string:
                 enhanced_prompt = f"""Thông tin tham khảo:
 
 {context_string}
@@ -931,7 +982,13 @@ Lưu ý: Hiện không tìm thấy tài liệu tham khảo liên quan. Hãy tr�
             # Step 4: Build conversation history with system prompt
             conversation_history = []
 
-            # NEW: Select system prompt based on scenario (BOTH or ONE) and fallback status
+            # Step 4.1: Tenant-specific behavioral instruction (SystemPrompt)
+            # This comes FIRST to establish the overall persona/behavior
+            if system_prompt:
+                conversation_history.append({'role': 'system', 'content': system_prompt})
+                logger.info(f'[ConversationId: {conversation_id}] Injected tenant-specific SystemPrompt')
+
+            # Step 4.2: Select compliance system prompt based on scenario (BOTH, ONE, or STATIC_CONTEXT) and fallback status
             if scenario == "BOTH":
                 compliance_system_prompt = ChatBusiness._build_comparison_system_prompt(
                     fallback_mode=fallback_triggered
@@ -939,6 +996,12 @@ Lưu ý: Hiện không tìm thấy tài liệu tham khảo liên quan. Hãy tr�
                 logger.info(
                     f'[ConversationId: {conversation_id}] Applied COMPARISON system prompt '
                     f'(fallback: {fallback_triggered})'
+                )
+            elif scenario == "STATIC_CONTEXT":
+                compliance_system_prompt = ChatBusiness._build_static_context_system_prompt()
+                logger.info(
+                    f'[ConversationId: {conversation_id}] Applied STATIC_CONTEXT system prompt '
+                    f'(no RAG documents, using SystemPrompt only)'
                 )
             else:  # scenario in ["COMPANY_ONLY", "LEGAL_ONLY"]
                 compliance_system_prompt = ChatBusiness._build_single_source_system_prompt(

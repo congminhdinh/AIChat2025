@@ -1,67 +1,37 @@
-Subject: Full-Stack Implementation of Document Management Module for .NET 9.0 MVC
+Objective: Integrate a multi-tenant System Prompt (Behavioral Instruction) feature into the "AIChat2025" RAG pipeline, ensuring it complements the existing vector-based retrieval.
 
-Context: I am building a multi-tenant AI system called "AIChat2025". I need to implement the complete logic for the Document Management module in the Web App (MVC), which interacts with a backend DocumentService (Web API).
+Key Tasks & Architectural Guidance:
 
-Objective: Implement CRUD operations and a "Data Ingestion" feature. You need to analyze the existing architecture (specifically ChatBusiness.cs and chat.js) to ensure consistency.
+Data Modeling (ChatService - .NET):
 
-Required Steps & Technical Specifications:
+Define a new entity SystemPrompt that inherits from our TenancyEntity.
 
-Model & DTO Synchronization:
+This entity should store the persona and behavioral guidelines unique to each tenant.
 
-Clone all necessary DTOs and Requests from the DocumentService API project to the Web App's Models folder.
+Determine the best way to handle "Active" prompts within the multi-tenant context (e.g., one active prompt per tenant/bot).
 
-Specifically, implement the CreateDocumentRequest as follows:
+Service Communication (Message Contract):
 
-C#
+Modify the chat message contract sent via RabbitMQ to fetch and inject the appropriate SystemPrompt, include this SystemPrompt to the SystemInstruction.
 
-public class CreateDocumentRequest : BaseRequest 
-{
-    public IFormFile File { get; set; } = null!;
-    public DocType DocumentType { get; set; } = 0; // Set to 0 (Initial)
-    public int FatherDocumentId { get; set; } = -1; // Set to -1
-    public string? DocumentName { get; set; }
-}
-Business Logic Layer (DocumentBusiness.cs):
 
-Create a DocumentBusiness class inheriting from BaseHttpClient.
+AI Inference Logic (ChatProcessor - Python):
 
-Note: Do NOT create an interface (IDocumentBusiness); use the class directly.
+Update the consumer to handle the new SystemInstruction.
 
-Implement methods for: GetList, GetById, Create (Upload), Update (Rename), Delete, and Vectorize.
-Use DocumentEndpoint in DocumentService to understand about each endpoints.
-Use ChatBusiness.cs as a reference for how to implement API calls using the BaseHttpClient patterns.
+Adapt the Ollama inference logic to treat this instruction as a system role message in the chat history.
 
-Controller Implementation (DocumentController.cs):
+Ensure the model (Vistral) prioritizes this instruction alongside the retrieved RAG context.
 
-Implement actions for:
+Integration Logic:
 
-Index: To load the main management view.
+Consider fallback mechanisms for tenants who haven't defined a custom prompt.
 
-UploadDocumentPartial:
 
-C#
+Deliverables:
 
-public IActionResult UploadDocumentPartial() {
-    return PartialView();
-}
-Upload: Post action to handle the file and metadata.
+Entity definition for SystemPrompt.
 
-Edit, Delete, and Vectorize (Ingestion).
+Strategic updates for the .NET message publishing logic.
 
-Frontend Logic (document.js & index.cshtml):
-
-Create /Scripts/js/document.js. This file must handle the logic for both the main Index view and the UploadDocumentPartial modal (AJAX uploads, form validation, etc.).
-
-Use /Scripts/js/chat.js as a reference for the AJAX structure and handling responses.
-
-In index.cshtml, implement the document list table, pagination, and the "Data Ingestion" (Vectorize) button which calls the /web-api/document/vectorize/{documentId} endpoint.
-
-Key Requirements:
-
-Ensure the CreateDocumentRequest uses 0 for DocumentType and -1 for FatherDocumentId by default in the upload logic.
-
-The UI should provide immediate feedback (e.g., refreshing the list or showing a status update) when a document is uploaded, renamed, deleted, or sent for vectorization.
-
-Follow the existing project's error handling and logging patterns found in the Chat module.
-
-Please review the provided file structures and code samples to ensure the new implementation is seamlessly integrated into the current AIChat2025 architecture.
+Updated Python code snippet for the inference call.

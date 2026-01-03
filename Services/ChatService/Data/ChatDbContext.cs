@@ -13,6 +13,7 @@ namespace ChatService.Data
         public DbSet<ChatConversation> ChatConversations { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
         public DbSet<PromptConfig> PromptConfigs { get; set; }
+        public DbSet<SystemPrompt> SystemPrompts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -62,6 +63,25 @@ namespace ChatService.Data
                 entity.HasIndex(e => e.Key);
 
                 entity.HasQueryFilter(p => !p.IsDeleted);
+            });
+
+            // SystemPrompt configuration
+            modelBuilder.Entity<SystemPrompt>(entity =>
+            {
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.Content)
+                    .IsRequired();
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(1000);
+
+                entity.HasIndex(e => e.TenantId);
+                entity.HasIndex(e => new { e.TenantId, e.IsActive });
+
+                entity.HasQueryFilter(s => !s.IsDeleted);
             });
         }
     }

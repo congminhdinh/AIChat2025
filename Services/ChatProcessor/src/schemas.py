@@ -13,6 +13,7 @@ class UserPromptReceivedMessage(BaseModel):
     token: str
     timestamp: Optional[datetime] = Field(default_factory=datetime.utcnow)
     system_instruction: Optional[List[PromptConfigDto]] = Field(default_factory=list, alias='systemInstruction')
+    system_prompt: Optional[str] = Field(default=None, alias='systemPrompt')
 
 class BotResponseCreatedMessage(BaseModel):
     model_config = ConfigDict(populate_by_name=True, protected_namespaces=())

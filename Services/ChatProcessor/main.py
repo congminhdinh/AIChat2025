@@ -168,7 +168,8 @@ class ChatProcessor:
                 tenant_id=tenant_id,
                 ollama_service=self.ollama_service,
                 qdrant_service=self.qdrant_service,
-                system_instruction=system_instruction
+                system_instruction=system_instruction,
+                system_prompt=prompt_message.system_prompt
             )
 
             # Step 5: Construct response with the original token

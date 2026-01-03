@@ -915,5 +915,14 @@
     "user_id": 8,
     "tenant_id": 6,
     "timestamp": "2026-01-03T12:56:26.518590"
+  },
+  {
+    "question": "Doanh nghiệp này là doanh nghiệp nào",
+    "contexts": [],
+    "answer": "Công ty Cổ phần Cấp nước Sơn La là một công ty cấp nước, cung cấp dịch vụ nước sạch sinh hoạt và đóng bình cho các hộ gia đình trong tỉnh Sơn La.",
+    "conversation_id": 1008,
+    "user_id": 8,
+    "tenant_id": 6,
+    "timestamp": "2026-01-03T15:22:50.141305"
   }
 ]
