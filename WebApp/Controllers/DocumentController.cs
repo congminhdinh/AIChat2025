@@ -25,6 +25,9 @@ namespace WebApp.Controllers
             return View();
         }
 
-        
+        public IActionResult UploadDocumentPartial()
+        {
+            return PartialView();
+        }
     }
 }

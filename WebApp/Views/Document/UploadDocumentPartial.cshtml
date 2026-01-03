@@ -1,0 +1,104 @@
+﻿<div class="modal-header border-0 pb-0">
+    <h5 class="modal-title fw-bold" id="uploadModalLabel">Upload tài liệu</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+    <p class="text-muted small mb-4">
+        Để kết quả trả ra từ AI được tốt nhất, người dùng nên xử lý tài liệu trước khi tải liệu lên hệ thống.
+    </p>
+
+    <form id="uploadForm" enctype="multipart/form-data">
+        <div class="mb-4">
+            <label for="documentTitle" class="form-label fw-semibold text-secondary">Tiêu đề văn bản</label>
+            <input type="text" class="form-control bg-light border-0 py-2" id="documentTitle"
+                   name="title" placeholder="Nhập tiêu đề (không bắt buộc)">
+        </div>
+
+        <div class="upload-zone-container">
+            <div class="upload-zone processed-zone w-100" id="dropZoneProcessed">
+                <input type="file" id="fileProcessed" name="fileProcessed" hidden accept=".pdf,.docx">
+                <div class="text-center py-5">
+                    <div class="upload-icon mb-3">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 16V8M12 8L9 11M12 8L15 11" stroke="#198754" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M3 15C3 17.8284 3 19.2426 3.87868 20.1213C4.75736 21 6.17157 21 9 21H15C17.8284 21 19.2426 21 20.1213 20.1213C21 19.2426 21 17.8284 21 15" stroke="#198754" stroke-width="2" stroke-linecap="round" />
+                            <path d="M3 10C3 7.17157 3 5.75736 3.87868 4.87868C4.75736 4 6.17157 4 9 4H15C17.8284 4 19.2426 4 20.1213 4.87868C21 5.75736 21 7.17157 21 10" stroke="#198754" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <button type="button" class="btn btn-success-light rounded-pill px-4 mb-2" onclick="document.getElementById('fileProcessed').click()">
+                        <i class="bi bi-upload me-2"></i> Chọn file đã xử lý
+                    </button>
+                    <p class="text-muted small mb-0">hoặc kéo thả tệp vào đây</p>
+                    <div id="fileNameDisplay" class="mt-2 fw-bold text-success small"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <p class="text-danger small italic">* Chỉ chấp nhận định dạng .docx</p>
+        </div>
+    </form>
+</div>
+<div class="modal-footer border-0 justify-content-center">
+    <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">Hủy bỏ</button>
+    <button type="button" class="btn btn-primary px-4 rounded-pill" id="btnSubmitUpload">Tải lên hệ thống</button>
+</div>
+
+<style>
+    .btn-success-light {
+        background-color: #d1e7dd;
+        color: #198754;
+        border: none;
+    }
+
+        .btn-success-light:hover {
+            background-color: #badbcc;
+        }
+
+    .upload-zone {
+        border: 2px dashed;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .processed-zone {
+        border-color: #198754;
+        background-color: #f8fff9;
+    }
+
+        .processed-zone:hover {
+            background-color: #e9f7ef;
+        }
+
+    .upload-icon svg {
+        opacity: 0.8;
+    }
+
+    .italic {
+        font-style: italic;
+    }
+</style>
+
+<script>
+    // Logic hiển thị tên file khi chọn
+    document.getElementById('fileProcessed').addEventListener('change', function() {
+        if (this.files.length > 0) {
+            document.getElementById('fileNameDisplay').innerText = "Đã chọn: " + this.files[0].name;
+        }
+    });
+
+    // Logic kéo thả (Drag & Drop)
+    let dropZone = document.getElementById('dropZoneProcessed');
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.backgroundColor = "#e9f7ef"; });
+    dropZone.addEventListener('dragleave', () => { dropZone.style.backgroundColor = "#f8fff9"; });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.backgroundColor = "#f8fff9";
+        let files = e.dataTransfer.files;
+        if (files.length > 0) {
+            document.getElementById('fileProcessed').files = files;
+            document.getElementById('fileNameDisplay').innerText = "Đã chọn: " + files[0].name;
+        }
+    });
+</script>
