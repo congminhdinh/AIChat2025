@@ -54,6 +54,11 @@ builder.Services.AddHttpClient<DocumentBusiness>(httpClient =>
 {
     httpClient.BaseAddress = new Uri(appSettings.ApiGatewayUrl);
 });
+builder.Services.AddScoped<AccountBusiness>();
+builder.Services.AddHttpClient<AccountBusiness>(httpClient =>
+{
+    httpClient.BaseAddress = new Uri(appSettings.ApiGatewayUrl);
+});
 var app = builder.Build();
 
 app.UseExceptionHandler("/Home/Error");

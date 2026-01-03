@@ -53,19 +53,18 @@ Icons: Use Bootstrap Icons exclusively (e.g., bi-pencil-square, bi-shield-lock, 
 
 Integrate SweetAlert2 for deletion confirmation and Toastr for action feedback.
 
-
 Ensure a loading spinner is visible during all AJAX Partial View injections.
 
 Source Files for Refactoring:
 
 Account/Index.cshtml
 
-Account/_EditAccountPartial.cshtml
+Account/GetAccountDetail.cshtml
 
-Account/_ChangePasswordPartial.cshtml
+Account/ChangePasswordPartial.cshtml
 
 AccountController.cs
-
+Scripts/Account/account.js
 AccountBusiness.cs
 
 AppSettings.cs

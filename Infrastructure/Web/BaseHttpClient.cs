@@ -232,6 +232,39 @@ namespace Infrastructure.Web
             return responseString.FromJson<TResult>();
         }
 
+        // Post with token
+        public async Task<TResult?> PutWithTokenAsync<TRequest, TResult>(string uri, TRequest data, string token, CancellationToken cancellationToken = default)
+        {
+            Dictionary<string, string> headers = new Dictionary<string, string>();
+            headers.Add("Bearer", token);
+            return await PutWithHeadersAsync<TRequest, TResult>(uri, data, headers, cancellationToken);
+        }
+
+        // Post with customize headers
+        public async Task<TResult?> PutWithHeadersAsync<TRequest, TResult>(string uri, TRequest data, Dictionary<string, string> headers, CancellationToken cancellationToken = default)
+        {
+            var dataString = data.ToJson();
+            return await PutStringWithHeadersAsync<TResult>(uri, dataString, headers, cancellationToken);
+        }
+
+        public async Task<TResult?> PutStringWithHeadersAsync<TResult>(string uri, string dataString, Dictionary<string, string> headers, CancellationToken cancellationToken = default)
+        {
+            if (headers != null)
+            {
+                foreach (var header in headers)
+                {
+                    if (header.Key == "Bearer")
+                    {
+                        _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers
+                            .AuthenticationHeaderValue(header.Key, header.Value);
+                        continue;
+                    }
+                    _httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+                }
+            }
+            return await PutStringAsync<TResult>(uri, dataString, cancellationToken);
+        }
+
         public async Task<TResult?> PutAsync<TRequest, TResult>(string uri, TRequest data, CancellationToken cancellationToken = default)
         {
             var dataString = data.ToJson();

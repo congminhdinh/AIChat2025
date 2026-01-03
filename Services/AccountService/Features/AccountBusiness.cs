@@ -46,7 +46,7 @@ namespace AccountService.Features
             {
                 throw new Exception("Account not found");
             }
-            var accountDto = new AccountDto(account.Id, account.Email, account.Name, account.Avatar, account.IsAdmin, account.IsActive, account.Permissions);
+            var accountDto = new AccountDto(account.Id, account.Name, account.Email, account.Avatar, account.IsActive, account.Permissions);
             return new BaseResponse<AccountDto>(accountDto, input.CorrelationId());
         }
 
@@ -61,7 +61,7 @@ namespace AccountService.Features
             var accounts = await _repository.ListAsync(spec);
             var count = await _repository.CountAsync(new AccountListSpec(tenantId, input.Name, input.Email));
 
-            var accountDtos = accounts.Select(account => new AccountDto(account.Id, account.Email, account.Name, account.Avatar, account.IsAdmin, account.IsActive, account.Permissions)).ToList();
+            var accountDtos = accounts.Select(account => new AccountDto(account.Id, account.Name, account.Email, account.Avatar, account.IsActive, account.Permissions)).ToList();
             return new BaseResponse<PaginatedList<AccountDto>>(new PaginatedList<AccountDto>(accountDtos, count, input.PageIndex, input.PageSize), input.CorrelationId());
         }
 
