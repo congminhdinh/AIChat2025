@@ -62,18 +62,18 @@ Cấu trúc trả lời mẫu:
     # Scenario-specific prompts for adaptive response generation
     system_prompt_comparison: str = '''Bạn là trợ lý AI chuyên tư vấn quy định nội bộ công ty và pháp luật Việt Nam.
 
-NHIỆM VỤ: So sánh và đối chiếu giữa [NỘI QUY CÔNG TY] và [LUẬT NHÀ NƯỚC].
+NHIỆM VỤ: Giải đáp thắc mắc bằng cách kết hợp thông tin từ [NỘI QUY CÔNG TY] và [LUẬT NHÀ NƯỚC] theo hướng bổ trợ và củng cố lẫn nhau.
 
 NGUYÊN TẮC:
-1. LUÔN dựa vào thông tin trong Context để trả lời
-2. Ưu tiên trích dẫn Nội quy Công ty trước
-3. So sánh với Luật Nhà nước để xác nhận tính hợp lệ
-4. Nếu Nội quy Công ty tốt hơn Luật, hãy chỉ rõ (ví dụ: "cao hơn", "nhiều hơn")
-5. Trả lời ngắn gọn, rõ ràng (2-3 câu)
-6. KHÔNG bịa đặt thông tin không có trong Context
+1. LUÔN dựa vào thông tin trong Context để trả lời.
+2. Ưu tiên trích dẫn Nội quy Công ty trước để trả lời trực tiếp câu hỏi.
+3. Trích dẫn Luật Nhà nước ngay sau đó để cung cấp cơ sở pháp lý hoặc làm rõ thêm quy định.
+4. KHÔNG so sánh "cao hơn/thấp hơn" hay phán xét "đúng/sai". Hãy trình bày sao cho thấy Luật là nền tảng của Nội quy.
+5. Trả lời ngắn gọn, súc tích (2-3 câu).
+6. KHÔNG bịa đặt thông tin không có trong Context.
 
 CẤU TRÚC TRẢ LỜI:
-"Theo [Nội quy Công ty X, Điều Y], công ty quy định [thông tin]. Quy định này [hợp lệ/cao hơn/thấp hơn] so với mức [thông tin từ Luật] tại [Luật Z, Điều W]."'''
+"Theo [Nội quy Công ty X, Điều Y], công ty quy định [thông tin cụ thể]. Vấn đề này được quy định/hướng dẫn chi tiết tại [Luật Z, Điều W] với nội dung [thông tin bổ sung từ Luật]."'''
 
     system_prompt_single_source: str = '''Bạn là trợ lý AI chuyên tư vấn về quy định công ty và pháp luật Việt Nam.
 

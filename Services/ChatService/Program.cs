@@ -48,8 +48,8 @@ builder.Services.AddMassTransit(x =>
     {
         var appSettings = context.GetRequiredService<Microsoft.Extensions.Options.IOptionsMonitor<AppSettings>>().CurrentValue;
         var rabbitMqEndpoint = appSettings.RabbitMQEndpoint ?? "localhost:5672";
-        var username = appSettings.RabbitMQUsername ?? "guest";
-        var password = appSettings.RabbitMQPassword ?? "guest";
+        var username = appSettings.RabbitMQUsername ?? "admin";
+        var password = appSettings.RabbitMQPassword ?? "password123";
 
         cfg.Host($"rabbitmq://{rabbitMqEndpoint}", h =>
         {

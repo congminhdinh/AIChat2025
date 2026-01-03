@@ -75,7 +75,7 @@ services:
       dockerfile: Services/AccountService/Dockerfile
     container_name: accountservice
     ports:
-      - "5050:8080"
+      - "5051:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_HTTP_PORTS=8080

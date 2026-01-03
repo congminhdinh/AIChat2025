@@ -3,8 +3,8 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     rabbitmq_host: str = 'localhost'
     rabbitmq_port: int = 5672
-    rabbitmq_username: str = 'guest'
-    rabbitmq_password: str = 'guest'
+    rabbitmq_username: str = 'admin'
+    rabbitmq_password: str = 'password123'
     rabbitmq_queue_input: str = 'UserPromptReceived'
     rabbitmq_queue_output: str = 'BotResponseCreated'
     ollama_base_url: str = 'http://localhost:11434'
