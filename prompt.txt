@@ -1,27 +1,25 @@
-@workspace Please perform the following steps to update the outline for Chapter 4, Section 4.2.2:
+Act as a Senior Software Architect and Technical Writer. Your task is to refine Section 2.3 (Functional Specification) of the file "chapter_2_revised_outline.md" based on the actual logic implemented in this repository.
 
-1. **CONTEXT:** I am writing a graduation thesis following HUST standards. Section 4.2.2 (Class Design) requires a length of 3-4 pages, focusing on the detailed description (Attributes/Methods) of 2-4 most important classes and illustrating message flows via Sequence Diagrams.
+### MANDATORY STEPS:
+1. SCANNING: Thoroughly scan the C# (.NET 9) and Python (FastAPI) code to identify:
+   - The exact metadata schema used in the RAG pipeline (e.g., hierarchy, tenant_id, source mapping).
+   - The actual processing flow: How RabbitMQ events, Hangfire jobs, and SignalR streams interact.
+   - The specific class names and service responsibilities.
 
-2. **TASK:** Scan the current project logic, then rewrite/update the file `chapter_4_outline.md`, specifically section **4.2.2. Class Design**.
+2. UPDATING USE CASES: Rewrite the Use Cases in Section 2.3 to match the code logic:
+   - UC: Hierarchical Knowledge Enrichment (Update with actual chunking and metadata logic found in the Python/C# code).
+   - UC: Enriched RAG Chat (Update with the real multi-source retrieval and query expansion flow).
+   - UC: Tenant-level Access Control (Update with the actual EF Core Global Query Filter and Qdrant collection isolation implementation).
 
-3. **SPECIFIC LOGIC REQUIREMENTS FOR 4.2.2:**
-   Focus ONLY on the following 2 business flows (Use Cases) to extract the class design:
+3. REORDERING & SIMPLIFYING "BUSINESS DICTIONARY":
+   - Move the "Business Dictionary & System Prompt Configuration" Use Case to the VERY END of Section 2.3.
+   - Re-define it as "Internal Entity & Key-Value Mapping." 
+   - Simplify its scope: It should focus on storing simple key-value pairs for organizational context (e.g., mapping titles like "Mr. A = General Director" or specific jargon to simple definitions).
 
-   - **Use Case 1: Document Processing (Chunking & Embedding):**
-     * Logic: From the moment `DocumentService` receives the file -> Execute `HierarchicalChunking` -> Push job via Hangfire -> `EmbeddingService` vectorizes -> Save to `Qdrant`.
-     * **Classes to design in detail:**
-       - `DocumentService` (.NET): File processing methods, chunking logic, and job creation.
-       - `EmbeddingHandler` (or equivalent in Python Worker): Batch vectorization handling.
+### OUTPUT REQUIREMENTS:
+- Format: Keep the Markdown structure of the file.
+- Accuracy: Use the real metadata keys (e.g., "hierarchy_level", "parent_id", etc.) discovered in the code.
+- Tone: Academic, professional, and technical.
+- Language: Vietnamese.
 
-   - **Use Case 2: Legal Q&A (Chat RAG Flow):**
-     * Logic: User sends message via `ChatService` (SignalR) -> Push to RabbitMQ -> `ChatProcessor` (Python) receives message -> Execute Hybrid Search & RRF -> Call LLM -> Return result.
-     * **Classes to design in detail:**
-       - `ChatService` (.NET): Realtime connection handling and event dispatching.
-       - `ChatProcessor` (Python): The most critical class containing `hybrid_search`, `detect_scenario`, and `generate_response` logic.
-
-4. **OUTPUT FORMAT (Outline for 4.2.2):**
-   Return the updated outline content for this section, including:
-   - **A. Detailed Class Specification (Key Classes):** List only the 3-4 key classes mentioned above. For each class, list the most important **Attributes** and **Methods** matching the actual code.
-   - **B. Message Flow Design (Sequence Diagrams):** Describe the scenarios for the 2 Use Cases above (e.g., Object A calls Object B method X, returns Y).
-
-   *Note: Do not verbosely describe minor classes (DTOs, simple Entities); focus strictly on Logic Classes (Business/Service Classes).*
+Refine the file now.
