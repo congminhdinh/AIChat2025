@@ -1,276 +1,224 @@
-﻿@{
-    Layout = null;
-}
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý Account</title>
+    <title>Quản lý Tài khoản - AIChat2025</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         :root {
-            --primary-color: #0d6efd; /* Xanh dương đậm */
-            --bg-color: #f3f6f9;      /* Màu nền tổng thể */
-            --table-head-bg: #e8f0fe; /* Màu nền header bảng */
-            --text-color: #333;
+            --primary: #0d6efd;
+            --bg: #f3f6f9;
+            --text: #2c3e50;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            background-color: var(--bg);
+            color: var(--text);
         }
 
-        /* --- HEADER (Giữ 4 tab của bạn) --- */
+        /* HEADER & TABS */
         .header {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 0 20px;
-            height: 60px;
+            background: white;
+            padding: 0 40px;
+            height: 70px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
         .logo {
-            font-weight: bold;
-            font-size: 1.2rem;
-            margin-right: 40px;
+            font-weight: 800;
+            font-size: 1.3rem;
+            color: var(--primary);
         }
 
         .nav-tabs {
             display: flex;
-            gap: 10px;
-            flex-grow: 1;
+            gap: 8px;
         }
 
-        .nav-item {
-            padding: 8px 16px;
+        .nav-link {
+            padding: 10px 18px;
             text-decoration: none;
-            color: white;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            transition: background 0.2s;
+            color: #6c757d;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .nav-item:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
+            .nav-link.active {
+                background: #e7f1ff;
+                color: var(--primary);
+                font-weight: 700;
+            }
 
-        /* Tab đang active (ví dụ Tab 3 là Account) */
-        .nav-item.active {
-            background-color: white;
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-
-        .user-profile {
-            font-size: 1.5rem; /* Icon user giả lập */
-        }
-
-        /* --- MAIN CONTENT --- */
+        /* CONTAINER */
         .container {
-            padding: 20px 40px;
-            background-color: white;
-            margin: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            min-height: 80vh;
+            width: 95%;
+            max-width: 1400px;
+            margin: 30px auto;
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.02);
         }
 
-        /* Top Bar: Title + Button */
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
-        .page-title {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-
-        .btn-create {
-            background-color: var(--primary-color);
+        .btn-add {
+            background: var(--primary);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 50px; /* Bo tròn kiểu pill */
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
             cursor: pointer;
-            font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
         }
 
-        /* --- TABLE --- */
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
+        /* TABLE */
+        .table-wrapper {
+            border: 1px solid #eee;
+            border-radius: 12px;
+            overflow: hidden;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.95rem;
         }
 
         th {
-            background-color: var(--table-head-bg);
-            text-align: left;
+            background: #f8f9fa;
             padding: 15px;
-            color: #555;
-            font-weight: 600;
+            text-align: left;
+            font-size: 0.85rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            border-bottom: 2px solid #f0f0f0;
         }
 
         td {
             padding: 15px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #f0f0f0;
             vertical-align: middle;
         }
 
-        tr:hover {
-            background-color: #f9f9f9;
+        .avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* Actions Icons */
-        .action-btn {
+        .badge {
+            padding: 6px 12px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            margin-right: 5px;
-            cursor: pointer;
-            border: none;
-            text-decoration: none;
+            gap: 4px;
         }
 
-        .btn-edit { background-color: #e3f2fd; color: #0d6efd; } /* Xanh nhạt */
-        .btn-key { background-color: #e3f2fd; color: #0d6efd; }
-        .btn-delete { background-color: #fce8e6; color: #dc3545; } /* Đỏ nhạt */
-
-        /* --- PAGINATION --- */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            margin-top: 30px;
-            gap: 5px;
+        .badge-active {
+            background: #e6fffa;
+            color: #00a389;
         }
 
-        .page-link {
-            width: 35px;
-            height: 35px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+        .badge-locked {
+            background: #fff5f5;
+            color: #e53e3e;
+        }
+
+        .btn-action {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            border: 1px solid #eee;
             background: white;
             cursor: pointer;
             color: #555;
-            text-decoration: none;
         }
 
-        .page-link.active {
-            background-color: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
+            .btn-action:hover {
+                background: var(--primary);
+                color: white;
+                border-color: var(--primary);
+            }
     </style>
 </head>
 <body>
-
     <header class="header">
-        <div class="logo">AI CHAT 2025</div>
+        <div class="logo">AIChat 2025</div>
         <nav class="nav-tabs">
-            <a href="#" class="nav-item">Chat</a>
-            <a href="#" class="nav-item">Tài liệu</a>
-            <a href="#" class="nav-item active">Quản lý Account</a> <a href="#" class="nav-item">Cấu hình</a>
+            <a href="#" class="nav-link"><i class="bi bi-chat-dots"></i> Chat</a>
+            <a href="#" class="nav-link"><i class="bi bi-file-earmark-text"></i> Tài liệu</a>
+            <a href="#" class="nav-link active"><i class="bi bi-people"></i> Tài khoản</a>
+            <a href="#" class="nav-link"><i class="bi bi-gear"></i> Cấu hình</a>
+            <a href="#" class="nav-link"><i class="bi bi-journal-text"></i> Thuật ngữ</a>
+            <a href="#" class="nav-link"><i class="bi bi-bar-chart"></i> Thống kê</a>
         </nav>
-        <div class="user-profile">👤</div>
+        <div><i class="bi bi-person-circle" style="font-size: 1.5rem; color: #888;"></i></div>
     </header>
 
     <div class="container">
         <div class="page-header">
-            <div class="page-title">Danh sách user</div>
-            <button class="btn-create">
-                <span>+</span> Tạo user mới
-            </button>
+            <h2 style="font-weight: 700;">Quản lý người dùng</h2>
+            <button class="btn-add"><i class="bi bi-plus-circle"></i> Tạo tài khoản mới</button>
         </div>
 
-        <div class="table-container">
+        <div class="table-wrapper">
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 50px;">STT</th>
-                        <th>Tên user</th>
-                        <th>Tên tài khoản</th>
+                        <th style="width: 60px; text-align: center;">STT</th>
+                        <th>Tên người dùng</th>
                         <th>Email</th>
-                        <th>Thời gian tạo</th>
-                        <th style="width: 150px;">Thao tác</th>
+                        <th style="text-align: center;">Ảnh nền</th>
+                        <th>Trạng thái</th>
+                        <th style="width: 160px; text-align: center;">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>1</td>
-                        <td>Dương Thế Lương</td>
-                        <td>luongdt</td>
+                        <td style="text-align: center;">1</td>
+                        <td><strong>Dương Thế Lương</strong></td>
                         <td>luong.duong@vtc.vn</td>
-                        <td>09/11/2023 12:00</td>
-                        <td>
-                            <a href="#" class="action-btn btn-edit">✏️</a>
-                            <a href="#" class="action-btn btn-key">🔑</a>
-                            <a href="#" class="action-btn btn-delete">🗑️</a>
+                        <td style="text-align: center;">
+                            <img src="https://ui-avatars.com/api/?name=L&background=0D8ABC&color=fff" class="avatar">
                         </td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>Hung Pham</td>
-                        <td>hungpham13</td>
-                        <td>hungpham@vtc.vn</td>
-                        <td>09/11/2023 12:00</td>
-                        <td>
-                            <a href="#" class="action-btn btn-edit">✏️</a>
-                            <a href="#" class="action-btn btn-key">🔑</a>
-                            <a href="#" class="action-btn btn-delete">🗑️</a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>Administrator</td>
-                        <td>admin</td>
-                        <td>admin@gmail.com</td>
-                        <td>09/11/2023 12:00</td>
-                        <td>
-                            <a href="#" class="action-btn btn-edit">✏️</a>
-                            <a href="#" class="action-btn btn-key">🔑</a>
-                            <a href="#" class="action-btn btn-delete">🗑️</a>
+                        <td><span class="badge badge-active"><i class="bi bi-check-circle-fill"></i> Mở</span></td>
+                        <td style="text-align: center;">
+                            <button class="btn-action"><i class="bi bi-pencil-square"></i></button>
+                            <button class="btn-action"><i class="bi bi-shield-lock"></i></button>
+                            <button class="btn-action" style="color:red;"><i class="bi bi-trash3"></i></button>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
-
-        <div class="pagination">
-            <a href="#" class="page-link">&laquo;</a>
-            <a href="#" class="page-link active">1</a>
-            <a href="#" class="page-link">2</a>
-            <a href="#" class="page-link">3</a>
-            <a href="#" class="page-link">...</a>
-            <a href="#" class="page-link">10</a>
-            <a href="#" class="page-link">&raquo;</a>
-        </div>
     </div>
-
 </body>
 </html>

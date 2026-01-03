@@ -46,6 +46,11 @@ namespace StorageService.Endpoints
                 }
                 return Results.File(stream, contentType: "application/octet-stream");
             });
+
+            //group.MapGet("/policy", async (StorageBusiness storageBusiness) =>
+            //{
+            //    return storageBusiness.SetPolicy("ai-chat-2025");
+            //}).AllowAnonymous();
         }
     }
 }

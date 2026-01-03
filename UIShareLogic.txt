@@ -1,0 +1,49 @@
+# Abstract View Orchestration & AJAX Workflow Logic
+
+## 1. Architectural Pattern: Partial Injection
+To optimize performance and maintainability, the system strictly separates the **Static Layout** (Frame) from the **Dynamic Content** (Data).
+
+* **Main View (Index):** Acting as the "Shell." It contains the Header, Search Bar, Action Buttons, and a target `DIV` container (e.g., `#data-list-container`). It should NOT contain data-rendering logic.
+* **List Partial (`_List`):** Responsible only for rendering the data table and pagination links. It is purely server-side rendered and returned as HTML via AJAX.
+* **Detail/Edit Partial (`_Detail`):** A modular form loaded into a shared Modal container on demand.
+
+## 2. Initialization & State Management
+* **On Page Load:** The Main View must execute a `loadList()` function via JavaScript.
+* **Search/Filter:** Any change in search criteria must reset the Page Index to `1` and trigger `loadList(criteria, 1)`.
+* **Stateless Navigation:** The URL should remain clean, while the AJAX request carries the state (Keyword, PageNumber, SortOrder).
+
+## 3. Communication Flow (The AJAX Loop)
+All data-fetching operations must follow this abstract cycle:
+1.  **Trigger:** User interacts (Search, Page Click, Refresh).
+2.  **Request:** JS gathers all active filters and sends a `GET` request to the Controller.
+3.  **Processing:** The Controller queries the database using `Skip()` and `Take()` (Backend Pagination).
+4.  **Delivery:** The Controller returns a `PartialView` containing only the relevant HTML fragment.
+5.  **Injection:** JS replaces the content of the target container with the received HTML.
+
+
+
+## 4. Generic Table Rules
+For every data-list rendered in a Partial View:
+* **Row Index (STT):** Must be calculated based on the current page to ensure continuity across pages:
+    `STT = (CurrentPage - 1) * PageSize + CurrentRowIndex + 1`
+* **Data Formatting:** All timestamps must be formatted to a human-readable string (e.g., `dd/MM/yyyy HH:mm:ss`) before being sent to the View.
+* **Status Indicators:** Categorize statuses into logical states (Pending, Processing, Success, Error) and map them to consistent UI elements (Badges/Icons).
+
+## 5. Generic Action Logic (CRUD)
+
+### A. View/Edit Action (Modal-Based)
+1.  Fetch the `_Detail` Partial View using the Entity ID.
+2.  Inject the HTML into a **Shared Modal Container**.
+3.  On **Update**, send a `POST` request. On success, hide the Modal and trigger a List Refresh.
+
+### B. Destructive Actions (Delete)
+1.  **Intercept:** All delete clicks must be intercepted by a Confirmation Dialog (e.g., SweetAlert2).
+2.  **Verify:** The user must explicitly confirm the action.
+3.  **Execute:** If confirmed, send the `DELETE` request.
+4.  **Sync:** Upon success, gỡ (remove) the data from both the Primary DB and any Secondary Systems (e.g., Vector DB/Qdrant).
+5.  **Refresh:** Always reload the List Partial to reflect the change.
+
+## 6. Feedback & UX Guardrails
+* **Loading States:** Always show a visual indicator (Spinner/Overlay) while a Partial View is being fetched.
+* **Action Feedback:** Every AJAX Post/Put/Delete must return a JSON response indicating success or failure.
+* **Global Error Handling:** All AJAX calls must have a `.fail()` or `.catch()` block to alert the user if the server is unreachable or an exception occurs.

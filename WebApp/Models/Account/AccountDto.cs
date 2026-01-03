@@ -1,4 +1,4 @@
-﻿namespace WebApp.Models
+﻿namespace WebApp.Models.Account
 {
     public class AccountDto
     {
@@ -8,6 +8,5 @@
         public string? AvatarUrl { get; set; }
         public List<int> PermissionList { get; set; } = new List<int>();
         public bool IsActive { get; set; }
-        public bool IsDisable { get; set; }
     }
 }

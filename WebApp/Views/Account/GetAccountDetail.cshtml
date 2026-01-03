@@ -1,0 +1,191 @@
+﻿
+
+<div class="edit-modal-container">
+    <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" id="editAccountLabel">
+            <i class="bi bi-person-vcard-fill text-primary me-2"></i>Chỉnh sửa tài khoản
+        </h5>
+        <button type="button" class="btn-close-modal" onclick="closeEditModal()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <div class="modal-body">
+        <p class="text-muted small mb-4">
+            Thiết lập thông tin định danh và trạng thái hoạt động cho người dùng hệ thống AI.
+        </p>
+
+        <form id="editAccountForm" enctype="multipart/form-data">
+            <input type="hidden" id="editAccountId" name="Id" value="@Model.Id" />
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-8">
+                    <label for="editAccountName" class="form-label fw-semibold text-secondary small">
+                        <i class="bi bi-person-fill me-1"></i>Họ và tên
+                    </label>
+                    <input type="text" class="form-control bg-light border-0 py-2"
+                           id="editAccountName" name="Name" value="@Model.Name"
+                           placeholder="Nhập tên người dùng..." required>
+                </div>
+                <div class="col-md-4">
+                    <label for="editIsActive" class="form-label fw-semibold text-secondary small">
+                        <i class="bi bi-shield-lock-fill me-1"></i>Trạng thái
+                    </label>
+                    <select class="form-select bg-light border-0 py-2" id="editIsActive" name="IsActive">
+                        <option value="true" selected="@(Model.IsActive == true)">🟢 Hoạt động</option>
+                        <option value="false" selected="@(Model.IsActive == false)">🔴 Đang khóa</option>
+                    </select>
+                </div>
+            </div>
+
+            <label class="form-label fw-semibold text-secondary small">
+                <i class="bi bi-image-fill me-1"></i>Ảnh đại diện
+            </label>
+            <div class="upload-section border rounded-3 p-3 bg-light">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="position-relative">
+                        <img id="previewAvatar"
+                             src="@(!string.IsNullOrEmpty(Model.AvatarUrl) ? Model.AvatarUrl : "/images/default-avatar.png")"
+                             class="rounded-circle border shadow-sm"
+                             style="width: 70px; height: 70px; object-fit: cover;" />
+                        <div class="avatar-badge">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                        </div>
+                    </div>
+
+                    <div class="flex-grow-1">
+                        <div class="drop-zone-mini border-2 border-dashed rounded-3 text-center p-3" onclick="document.getElementById('fileInput').click()">
+                            <i class="bi bi-cloud-arrow-up-fill text-primary fs-4"></i>
+                            <div class="small fw-bold mt-1">Thay đổi ảnh mới</div>
+                            <input type="file" id="fileInput" name="AvatarFile" accept=".png, .jpg, .jpeg" hidden onchange="handleFileSelect(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="file-rules d-flex gap-3 bg-white p-2 rounded-2 border shadow-sm">
+                    <div class="small text-muted">
+                        <i class="bi bi-filetype-jpg text-primary"></i> PNG, JPG, JPEG
+                    </div>
+                    <div class="vr"></div>
+                    <div class="small text-muted">
+                        <i class="bi bi-hdd-fill text-primary"></i> Tối đa 5MB
+                    </div>
+                </div>
+            </div>
+
+            <div id="upload-error" class="alert alert-danger d-flex align-items-center mt-3 d-none py-2" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <div id="error-message" class="small"></div>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal-footer border-0 justify-content-center pt-0">
+        <button type="button" class="btn btn-light px-4 rounded-pill border" onclick="closeEditModal()">
+            Hủy bỏ
+        </button>
+        <button type="button" class="btn btn-primary px-4 rounded-pill shadow" id="btnSubmitEditAccount">
+            <i class="bi bi-check-lg me-1"></i> Lưu thay đổi
+        </button>
+    </div>
+</div>
+
+<style>
+    .edit-modal-container {
+        padding: 5px;
+    }
+
+    /* Header & Close button */
+    .btn-close-modal {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        color: #adb5bd;
+        transition: 0.2s;
+    }
+
+        .btn-close-modal:hover {
+            color: #495057;
+            transform: rotate(90deg);
+        }
+
+    /* Forms */
+    .form-control:focus, .form-select:focus {
+        background-color: #fff !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        border: 1px solid #0d6efd !important;
+    }
+
+    /* Upload Area */
+    .drop-zone-mini {
+        border-style: dashed !important;
+        background-color: #fff;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+        .drop-zone-mini:hover {
+            background-color: #eef2ff;
+            border-color: #0d6efd !important;
+        }
+
+    /* Avatar Badge */
+    .avatar-badge {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+
+    .file-rules {
+        font-size: 0.8rem;
+    }
+
+    .rounded-pill {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .shadow-sm {
+        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;
+    }
+</style>
+
+<script>
+    function handleFileSelect(input) {
+        const file = input.files[0];
+        const errorDiv = document.getElementById('upload-error');
+        const preview = document.getElementById('previewAvatar');
+
+        if (!file) return;
+        errorDiv.classList.add('d-none');
+
+        // Validation logic
+        if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+            showError("Định dạng file không hỗ trợ.");
+            input.value = ""; return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            showError("Dung lượng file vượt quá 5MB.");
+            input.value = ""; return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = e => preview.src = e.target.result;
+        reader.readAsDataURL(file);
+    }
+
+    function showError(msg) {
+        const errorDiv = document.getElementById('upload-error');
+        document.getElementById('error-message').textContent = msg;
+        errorDiv.classList.remove('d-none');
+    }
+</script>

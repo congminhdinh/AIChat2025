@@ -10,5 +10,5 @@ namespace DocumentService.Requests
         public DocType DocumentType { get; set; } = DocType.Initial;
         public int FatherDocumentId { get; set; } = -1;
         public string? DocumentName { get; set; }
-        }
+    }
 }

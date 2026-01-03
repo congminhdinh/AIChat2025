@@ -48,6 +48,10 @@ namespace AccountService.Endpoints
                 return await accountBusiness.UpdateAccount(input);
             });
 
+            group.MapDelete("/{id}", async (AccountBusiness accountBusiness, int id) =>
+            {
+                return await accountBusiness.DeleteAccountById(new DeleteAccountByIdRequest { AccountId = id });
+            });
             ///chỉ cho super admin
             group.MapPost("/tenancy-deactivate", async (AccountBusiness accountBusiness, int tenantId) =>
             {

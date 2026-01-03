@@ -23,6 +23,8 @@ namespace AccountService.Features
 
         public async Task<BaseResponse<CurrentUserDto>> GetCurrentUser()
         {
+            var userId = _currentUserProvider.UserId;
+            
             var currentUserDto = new CurrentUserDto(
                 _currentUserProvider.UserId,
                 _currentUserProvider.TenantId,
@@ -117,6 +119,21 @@ namespace AccountService.Features
             return new BaseResponse<int>(account.Id, input.CorrelationId());
         }
 
+        public async Task<BaseResponse<int>> DeleteAccountById (DeleteAccountByIdRequest input)
+        {
+            if (!CheckIsAdmin())
+            {
+                throw new Exception("Unauthorized access");
+            }
+            var tenantId = _currentUserProvider.TenantId;
+            var account = await _repository.FirstOrDefaultAsync(new AccountSpecificationById(input.AccountId, tenantId));
+            if (account == null)
+            {
+                throw new Exception("Account not found");
+            }
+            await _repository.DeleteAsync(account);
+            return new BaseResponse<int>(account.Id, input.CorrelationId());
+        }
         public async Task<BaseResponse<int>> CreateAdminAccount(CreateAdminAccountRequest input)
         {
             if (!CheckIsSuperAdmin())

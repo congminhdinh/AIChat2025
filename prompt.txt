@@ -1,73 +1,73 @@
-Role: Expert .NET Fullstack Developer Task: System-wide UI Refactoring with Dynamic WebAppUrl Configuration & RBAC. Update the WebApp project:
+Role: Expert .NET Fullstack Developer Task: Account Module Implementation with Dynamic UI, Image Processing, and Layout Integration
 
-1. Technical Abstract Unify the UI architecture of the AIChat2025 system using a centralized _Layout.cshtml. The system must move away from relative paths (~/) for assets and navigation. Instead, it must use a Strongly Typed Configuration approach by injecting the AppSettings class (from the Infrastructure layer) to prepend a global WebAppUrl to all static files and routing paths.
+1. Context & Reference Materials
 
-2. Strongly Typed Configuration Integration
+Framework: ASP.NET Core MVC (.NET 9).
 
-Infrastructure Access: In _Layout.cshtml, inject the AppSettings using: @inject Microsoft.Extensions.Options.IOptions<Infrastructure.AppSettings> AppSettingsOptions
 
-Global Variable: Define a local variable @{ var webAppUrl = AppSettingsOptions.Value.WebAppUrl; } at the top of the layout.
+UI Pattern: Follow the Abstract View Orchestration & AJAX Workflow defined in the file: UIShareLogic.txt, and the old logic with Document UI
 
-Asset Path Refactoring: All <script>, <link>, and <img> tags must use this prefix.
+System Settings: Use the AppSettings class (Infrastructure) to retrieve WebAppUrl and ImageBaseUrl from appsettings.json and appsettings.Development.json.
 
-Example: <script src="@(webAppUrl)/Scripts/Document/document.js" asp-append-version="true"></script>
+2. Layout & Global Configuration Integration
 
-Link Refactoring: Apply the same logic to the href attributes in the navigation bar.
+Refactor the Account Index View to inherit from _Layout.cshtml.
 
-3. Header & Routing Definition Update the Header with the following mapping (all prefixed with webAppUrl):
+Ensure all assets (JS/CSS) and navigation links in the Layout use the WebAppUrl prefix injected via @inject IOptions<AppSettings>.
 
-Chat: /Chat
+In the UI, whenever an AvatarUrl is received from the API (which is a relative path), prepend it with _appSettings.ImageBaseUrl to form the absolute path for rendering.
 
-Tài liệu: /Document
+3. Account Module Logic (Controller & Business Layer)
 
-Tài khoản: /Account (Renamed from Quản lý Account)
+DTO Sync: Clone the AccountDto and necessary Request objects from the AccountService (Web API) into the WebApp project.
 
-Cấu hình: /SystemPrompt
 
-Thuật ngữ: /PromptConfig (New Tab)
+List Loading: Implement the loadList() AJAX loop in Account/Index.cshtml to fetch the _AccountList partial view.
 
-Thống kê: /Stat (New Tab)
 
-4. Layout & Assets Refactoring
+Update Request Logic: Implement the following logic in AccountBusiness.cs and AccountController.cs using a custom request class:
 
-Unified Header: Integrate a responsive Bootstrap header with the navigation mapping above.
+Class: UpdateWebAppAccountRequest
 
-Assets: Include CSS/JS libraries from the Document/Index view (SweetAlert2, Toastr, Bootstrap). Ensure no duplication between Layout and Child views.
+Properties: AccountId, Name, IsActive, IsChanged (bool), Avatar (string?), NewAvatar (IFormFile?).
 
-Dynamic Active State: Implement logic to add the active class to the current navigation item based on the Request path.
+Processing Workflow: 1. If IsChanged == false: Retain the existing Avatar path. 2. If IsChanged == true: * Upload NewAvatar to the Storage API (/web-api/storage/upload-minio-file) using the directory path: avatar/{AccountId}. * Capture the returned Value (new path) and update the Avatar property before calling the AccountService update endpoint.
 
-View Integration:
+4. UI Components & Requirements
 
-Remove Layout = null; from Chat/Index.cshtml and Document/Index.cshtml.
+Index View: Remove all fake data. Implement the table with columns: STT (calculated ), Name, Email, Avatar (Ảnh nền), Status (Trạng thái), and Actions.
 
-Utilize @RenderBody() and @RenderSection("Scripts", required: false).
+Edit Partial View:
 
-5. Permission Helper (RBAC) Implementation Use the IdentityHelper class to control visibility:
+Include fields for Name and a Status dropdown (true = Active, false = Locked).
 
-If IdentityHelper.IsAdmin == true: Show all 6 tabs (Chat, Tài liệu, Tài khoản, Cấu hình, Thuật ngữ, Thống kê).
+Implement the Avatar Upload section with a preview.
 
-If IdentityHelper.IsAdmin == false: Show ONLY the "Chat" tab.
+Use a hidden field for the IsChanged flag; set it to true via JavaScript only when a new file is selected.
 
-Logic: Wrap <li> elements in @if (IdentityHelper.IsAdmin) { ... }.
+Security & RBAC: Wrap admin-only features (Account Management, System Config, etc.) with @if (IdentityHelper.IsAdmin). Regular users should only see the "Chat" tab.
 
-6. Detailed Quality Requirements:
+Icons: Use Bootstrap Icons exclusively (e.g., bi-pencil-square, bi-shield-lock, bi-trash3).
 
-Date Formatting: In the Document list, format LastModifiedAt as dd/MM/yyyy HH:mm. Hide the field if the value is null.
+5. Assets & Feedback
 
-Environment Badge: Add a small badge in the footer indicating if the app is running in "Development" vs "Production" (via IConfiguration).
+Integrate SweetAlert2 for deletion confirmation and Toastr for action feedback.
 
-Global JS Variables: In the <head>, initialize a global JS variable const WEB_APP_URL = '@webAppUrl'; so external JS files can also use the base path for AJAX calls.
 
-Source Files for Modification:
+Ensure a loading spinner is visible during all AJAX Partial View injections.
 
-_Layout.cshtml
+Source Files for Refactoring:
 
-Document/Index.cshtml
+Account/Index.cshtml
 
-Chat/Index.cshtml
+Account/_EditAccountPartial.cshtml
 
-IdentityHelper.cs
+Account/_ChangePasswordPartial.cshtml
 
-Infrastructure/AppSettings.cs (The class containing the WebAppUrl property)
+AccountController.cs
 
-appsettings.Development.json
+AccountBusiness.cs
+
+AppSettings.cs
+
+UIShareLogic.txt (For architecture guidance)

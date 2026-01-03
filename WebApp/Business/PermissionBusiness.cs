@@ -2,7 +2,7 @@
 using Infrastructure.Enums;
 using Infrastructure.Logging;
 using Infrastructure.Web;
-using WebApp.Models;
+using WebApp.Models.Account;
 
 namespace WebApp.Business
 {

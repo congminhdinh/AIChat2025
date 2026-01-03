@@ -30,5 +30,6 @@
 
         //webapp url
         public string WebAppUrl { get; set; }
+        public string ImageBaseUrl { get; set; }
     }
 }
