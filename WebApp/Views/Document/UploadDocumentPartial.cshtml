@@ -1,104 +1,155 @@
-﻿<div class="modal-header border-0 pb-0">
-    <h5 class="modal-title fw-bold" id="uploadModalLabel">Upload tài liệu</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-</div>
-<div class="modal-body">
-    <p class="text-muted small mb-4">
-        Để kết quả trả ra từ AI được tốt nhất, người dùng nên xử lý tài liệu trước khi tải liệu lên hệ thống.
-    </p>
+﻿@* Partial View: UploadDocumentPartial.cshtml
+    Mô tả: Nội dung của Modal tải lên tài liệu
+*@
 
-    <form id="uploadForm" enctype="multipart/form-data">
-        <div class="mb-4">
-            <label for="documentTitle" class="form-label fw-semibold text-secondary">Tiêu đề văn bản</label>
-            <input type="text" class="form-control bg-light border-0 py-2" id="documentTitle"
-                   name="title" placeholder="Nhập tiêu đề (không bắt buộc)">
+<div class="upload-modal-container">
+    <h3 class="modal-header-title">Tải lên tài liệu</h3>
+
+    <div class="modal-body-content">
+        <p class="text-muted small mb-4">
+            Để kết quả trả ra từ AI được tốt nhất, người dùng nên xử lý tài liệu trước khi tải lên hệ thống.
+        </p>
+
+        <div class="form-group mb-3">
+            <label for="documentFile" class="input-label">Chọn tệp</label>
+            <input type="file" id="documentFile" class="form-control" accept=".pdf,.doc,.docx,.txt" />
+            <p class="hint-text">Hỗ trợ: PDF, DOC, DOCX, TXT</p>
         </div>
 
-        <div class="upload-zone-container">
-            <div class="upload-zone processed-zone w-100" id="dropZoneProcessed">
-                <input type="file" id="fileProcessed" name="fileProcessed" hidden accept=".pdf,.docx">
-                <div class="text-center py-5">
-                    <div class="upload-icon mb-3">
-                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 16V8M12 8L9 11M12 8L15 11" stroke="#198754" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                            <path d="M3 15C3 17.8284 3 19.2426 3.87868 20.1213C4.75736 21 6.17157 21 9 21H15C17.8284 21 19.2426 21 20.1213 20.1213C21 19.2426 21 17.8284 21 15" stroke="#198754" stroke-width="2" stroke-linecap="round" />
-                            <path d="M3 10C3 7.17157 3 5.75736 3.87868 4.87868C4.75736 4 6.17157 4 9 4H15C17.8284 4 19.2426 4 20.1213 4.87868C21 5.75736 21 7.17157 21 10" stroke="#198754" stroke-width="2" stroke-linecap="round" />
-                        </svg>
-                    </div>
-                    <button type="button" class="btn btn-success-light rounded-pill px-4 mb-2" onclick="document.getElementById('fileProcessed').click()">
-                        <i class="bi bi-upload me-2"></i> Chọn file đã xử lý
-                    </button>
-                    <p class="text-muted small mb-0">hoặc kéo thả tệp vào đây</p>
-                    <div id="fileNameDisplay" class="mt-2 fw-bold text-success small"></div>
-                </div>
+        <div class="form-group mb-3">
+            <label for="documentName" class="input-label">Tên tài liệu (tùy chọn)</label>
+            <div class="custom-input-wrapper">
+                <input type="text" id="documentName" class="custom-input" placeholder="Nhập tên tài liệu..." autocomplete="off" />
             </div>
+            <p class="hint-text">Nếu để trống, hệ thống sẽ sử dụng tên file.</p>
         </div>
+    </div>
 
-        <div class="mt-3">
-            <p class="text-danger small italic">* Chỉ chấp nhận định dạng .docx</p>
-        </div>
-    </form>
-</div>
-<div class="modal-footer border-0 justify-content-center">
-    <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">Hủy bỏ</button>
-    <button type="button" class="btn btn-primary px-4 rounded-pill" id="btnSubmitUpload">Tải lên hệ thống</button>
+    <div class="modal-footer-actions">
+        <button type="button" class="btn-modal btn-cancel" onclick="closeUploadModal()">Hủy</button>
+        <button type="button" class="btn-modal btn-upload" onclick="submitUpload()">
+            Tải lên
+        </button>
+    </div>
 </div>
 
 <style>
-    .btn-success-light {
-        background-color: #d1e7dd;
-        color: #198754;
+    .upload-modal-container {
+        padding: 10px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+    }
+
+    .modal-header-title {
+        margin-bottom: 20px;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-color, #0d6efd);
+        text-align: center;
+    }
+
+    .modal-body-content {
+        margin-bottom: 25px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .input-label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+        color: #555;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color, #0d6efd);
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+    }
+
+    .custom-input-wrapper {
+        width: 100%;
+        background-color: #f0f4f9;
+        border-radius: 8px;
+        padding: 5px;
+        transition: background 0.2s, box-shadow 0.2s;
+        border: 1px solid transparent;
+    }
+
+    .custom-input-wrapper:focus-within {
+        background-color: #fff;
+        border-color: #cce5ff;
+        box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+    }
+
+    .custom-input {
+        width: 100%;
+        padding: 10px 15px;
         border: none;
+        background: transparent;
+        outline: none;
+        font-size: 1rem;
+        color: #333;
     }
 
-        .btn-success-light:hover {
-            background-color: #badbcc;
-        }
+    .hint-text {
+        font-size: 0.8rem;
+        color: #999;
+        margin-top: 5px;
+        margin-left: 5px;
+    }
 
-    .upload-zone {
-        border: 2px dashed;
-        border-radius: 12px;
-        transition: all 0.3s ease;
+    .modal-footer-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .btn-modal {
+        padding: 10px 24px;
+        border-radius: 20px;
+        font-weight: 600;
         cursor: pointer;
+        border: none;
+        font-size: 0.95rem;
+        transition: all 0.2s;
     }
 
-    .processed-zone {
-        border-color: #198754;
-        background-color: #f8fff9;
+    .btn-cancel {
+        background-color: transparent;
+        color: #666;
     }
 
-        .processed-zone:hover {
-            background-color: #e9f7ef;
-        }
-
-    .upload-icon svg {
-        opacity: 0.8;
+    .btn-cancel:hover {
+        background-color: #f1f3f4;
+        color: #333;
     }
 
-    .italic {
-        font-style: italic;
+    .btn-upload {
+        background-color: var(--primary-color, #0d6efd);
+        color: white;
+        box-shadow: 0 2px 5px rgba(13, 110, 253, 0.3);
+    }
+
+    .btn-upload:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(13, 110, 253, 0.4);
+    }
+
+    .btn-upload:active {
+        transform: translateY(0);
     }
 </style>
-
-<script>
-    // Logic hiển thị tên file khi chọn
-    document.getElementById('fileProcessed').addEventListener('change', function() {
-        if (this.files.length > 0) {
-            document.getElementById('fileNameDisplay').innerText = "Đã chọn: " + this.files[0].name;
-        }
-    });
-
-    // Logic kéo thả (Drag & Drop)
-    let dropZone = document.getElementById('dropZoneProcessed');
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.backgroundColor = "#e9f7ef"; });
-    dropZone.addEventListener('dragleave', () => { dropZone.style.backgroundColor = "#f8fff9"; });
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.style.backgroundColor = "#f8fff9";
-        let files = e.dataTransfer.files;
-        if (files.length > 0) {
-            document.getElementById('fileProcessed').files = files;
-            document.getElementById('fileNameDisplay').innerText = "Đã chọn: " + files[0].name;
-        }
-    });
-</script>

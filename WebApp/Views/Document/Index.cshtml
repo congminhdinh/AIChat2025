@@ -302,6 +302,52 @@
             width: 16px;
             height: 16px;
         }
+
+        /* --- MODAL OVERLAY --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content-container {
+            background-color: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            animation: slideUp 0.3s ease;
+        }
+
+        @@keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @@keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 <body>
@@ -327,9 +373,12 @@
                         Để kết quả trả ra từ AI được tốt nhất, hãy xử lý tài liệu trước khi tải lên.
                         Hướng dẫn chi tiết <a href="#">tại đây</a>.
                     </p>
-                    <button class="btn-upload">
+                    <button class="btn-upload" id="btn-upload-document">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
                         Upload tài liệu
+                    </button>
+                    <button class="btn-upload" id="btn-refresh-documents" style="background-color: #6c757d; margin-left: 10px;">
+                        🔄 Làm mới
                     </button>
                 </div>
             </div>
@@ -338,85 +387,33 @@
                 <table>
                     <thead>
                         <tr>
-                            <th style="width: 50px;">STT</th>
+                            <th style="width: 50px;">ID</th>
                             <th>Tên tài liệu</th>
                             <th style="width: 150px;">Trạng thái</th>
-                            <th>Liên kết</th>
+                            <th style="width: 100px;">Phê duyệt</th>
+                            <th>Người tải</th>
                             <th style="width: 180px;">Thời gian tạo</th>
-                            <th style="width: 160px;">Thao tác</th>
+                            <th style="width: 200px;">Thao tác</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="documents-table-body">
                         <tr>
-                            <td>1</td>
-                            <td><a href="#" class="doc-name">HuongDanKhaiThacNoiDung.docx</a></td>
-                            <td><span class="badge badge-processing">🔄 Đang xử lý</span></td>
-                            <td></td>
-                            <td>09/11/2023 12:00</td>
-                            <td class="actions">
-                                <button class="btn-icon edit" title="Sửa">✏️</button>
-                                <button class="btn-icon view" title="Xem">👁️</button>
-                                <button class="btn-icon download" title="Tải xuống">📥</button>
-                                <button class="btn-icon delete" title="Xóa">🗑️</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td><a href="#" class="doc-name">IUU Khanh Hoa.docx</a></td>
-                            <td><span class="badge badge-new">✨ Mới tạo</span></td>
-                            <td></td>
-                            <td>17/10/2023 08:41</td>
-                            <td class="actions">
-                                <button class="btn-icon edit">✏️</button>
-                                <button class="btn-icon view">👁️</button>
-                                <button class="btn-icon download">📥</button>
-                                <button class="btn-icon delete">🗑️</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>4</td>
-                            <td><a href="#" class="doc-name">Vụ cháy chung cư mini tại Hà Nội.docx</a></td>
-                            <td><span class="badge badge-success">✅ Đã xử lý</span></td>
-                            <td></td>
-                            <td>06/10/2023 10:13</td>
-                            <td class="actions">
-                                <button class="btn-icon edit">✏️</button>
-                                <button class="btn-icon view">👁️</button>
-                                <button class="btn-icon download">📥</button>
-                                <button class="btn-icon delete">🗑️</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>7</td>
-                            <td><a href="#" class="doc-name">Thang_10-2023_go_the_vang.docx</a></td>
-                            <td><span class="badge badge-error">❌ Tải lỗi</span></td>
-                            <td></td>
-                            <td>05/10/2023 15:00</td>
-                            <td class="actions">
-                                <button class="btn-icon edit">✏️</button>
-                                <button class="btn-icon view">👁️</button>
-                                <button class="btn-icon download">📥</button>
-                                <button class="btn-icon delete">🗑️</button>
-                            </td>
+                            <td colspan="7" class="text-center">Đang tải...</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <div class="pagination">
-                <a href="#" class="page-link">«</a>
-                <a href="#" class="page-link">‹</a>
-                <a href="#" class="page-link active">1</a>
-                <a href="#" class="page-link">2</a>
-                <a href="#" class="page-link">3</a>
-                <span>...</span>
-                <a href="#" class="page-link">10</a>
-                <a href="#" class="page-link">›</a>
-                <a href="#" class="page-link">»</a>
-            </div>
+            <div id="pagination-container" class="pagination"></div>
 
         </div>
     </div>
 
+    <div id="modal-overlay" class="modal-overlay">
+        <div id="modal-content-container" class="modal-content-container">
+        </div>
+    </div>
+
+    <script src="~/Scripts/Document/document.js" asp-append-version="true"></script>
 </body>
 </html>

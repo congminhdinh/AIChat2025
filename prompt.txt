@@ -1,0 +1,67 @@
+Subject: Full-Stack Implementation of Document Management Module for .NET 9.0 MVC
+
+Context: I am building a multi-tenant AI system called "AIChat2025". I need to implement the complete logic for the Document Management module in the Web App (MVC), which interacts with a backend DocumentService (Web API).
+
+Objective: Implement CRUD operations and a "Data Ingestion" feature. You need to analyze the existing architecture (specifically ChatBusiness.cs and chat.js) to ensure consistency.
+
+Required Steps & Technical Specifications:
+
+Model & DTO Synchronization:
+
+Clone all necessary DTOs and Requests from the DocumentService API project to the Web App's Models folder.
+
+Specifically, implement the CreateDocumentRequest as follows:
+
+C#
+
+public class CreateDocumentRequest : BaseRequest 
+{
+    public IFormFile File { get; set; } = null!;
+    public DocType DocumentType { get; set; } = 0; // Set to 0 (Initial)
+    public int FatherDocumentId { get; set; } = -1; // Set to -1
+    public string? DocumentName { get; set; }
+}
+Business Logic Layer (DocumentBusiness.cs):
+
+Create a DocumentBusiness class inheriting from BaseHttpClient.
+
+Note: Do NOT create an interface (IDocumentBusiness); use the class directly.
+
+Implement methods for: GetList, GetById, Create (Upload), Update (Rename), Delete, and Vectorize.
+Use DocumentEndpoint in DocumentService to understand about each endpoints.
+Use ChatBusiness.cs as a reference for how to implement API calls using the BaseHttpClient patterns.
+
+Controller Implementation (DocumentController.cs):
+
+Implement actions for:
+
+Index: To load the main management view.
+
+UploadDocumentPartial:
+
+C#
+
+public IActionResult UploadDocumentPartial() {
+    return PartialView();
+}
+Upload: Post action to handle the file and metadata.
+
+Edit, Delete, and Vectorize (Ingestion).
+
+Frontend Logic (document.js & index.cshtml):
+
+Create /Scripts/js/document.js. This file must handle the logic for both the main Index view and the UploadDocumentPartial modal (AJAX uploads, form validation, etc.).
+
+Use /Scripts/js/chat.js as a reference for the AJAX structure and handling responses.
+
+In index.cshtml, implement the document list table, pagination, and the "Data Ingestion" (Vectorize) button which calls the /web-api/document/vectorize/{documentId} endpoint.
+
+Key Requirements:
+
+Ensure the CreateDocumentRequest uses 0 for DocumentType and -1 for FatherDocumentId by default in the upload logic.
+
+The UI should provide immediate feedback (e.g., refreshing the list or showing a status update) when a document is uploaded, renamed, deleted, or sent for vectorization.
+
+Follow the existing project's error handling and logging patterns found in the Chat module.
+
+Please review the provided file structures and code samples to ensure the new implementation is seamlessly integrated into the current AIChat2025 architecture.
