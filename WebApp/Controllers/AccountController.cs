@@ -54,7 +54,7 @@ namespace WebApp.Controllers
 
             // Pass ImageBaseUrl to ViewBag for avatar rendering
             ViewBag.ImageBaseUrl = _appSettings.ImageBaseUrl;
-
+            ViewBag.DefaultImageUrl = $"{_appSettings.ImageBaseUrl}avatar/default-avatar.jpg";
             return PartialView("_AccountList", response.Data);
         }
 

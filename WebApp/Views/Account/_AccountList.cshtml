@@ -2,6 +2,7 @@
 
 @{
     var imageBaseUrl = ViewBag.ImageBaseUrl as string ?? "";
+    var defaultImageUrl = ViewBag.DefaultImageUrl as string ?? "";
 }
 
 <div class="table-wrapper">
@@ -39,9 +40,7 @@
                             }
                             else
                             {
-                                <div class="avatar-placeholder">
-                                    <i class="bi bi-person-circle"></i>
-                                </div>
+                                <img src="@(defaultImageUrl)" alt="Avatar" class="avatar-thumbnail" />
                             }
                         </td>
                         <td>
