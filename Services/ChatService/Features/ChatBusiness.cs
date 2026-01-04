@@ -168,7 +168,7 @@ public class ChatBusiness
             Token = _currentUserProvider.Token?? string.Empty,
             Timestamp = message.Timestamp,
             SystemInstruction = systemInstructions,
-            SystemPrompt = activeSystemPrompt?.Content
+            SystemPrompt = activeSystemPrompt
         };
         _logger.LogInformation($"Publishing UserPromptReceivedEvent: {JsonSerializer.Serialize(userPromptEvent)}");
         await _publishEndpoint.Publish(userPromptEvent, ct);

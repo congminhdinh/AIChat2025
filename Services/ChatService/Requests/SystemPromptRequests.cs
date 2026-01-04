@@ -6,9 +6,13 @@ namespace ChatService.Requests
     public class GetListSystemPromptRequest : PaginatedRequest
     {
         public string? Name { get; set; }
-        public bool? IsActive { get; set; }
+        public int IsActive { get; set; } // -1: initialized, 0: inactive, 1: active
     }
 
+    public class GetSystemPromptByIdRequest : BaseRequest
+    {
+        public int Id { get; set; }
+    }
     public class CreateSystemPromptRequest : BaseRequest
     {
         public string Name { get; set; } = string.Empty;

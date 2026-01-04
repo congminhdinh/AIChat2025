@@ -21,6 +21,11 @@ namespace ChatService.Endpoints
                 return await business.GetListAsync(request);
             });
 
+            group.MapGet("/system-prompt/{id}", async (SystemPromptBusiness business, int id) =>
+            {
+                return await business.GetByIdAsync(new GetSystemPromptByIdRequest { Id = id});
+            });
+
             group.MapPost("/system-prompt/", async (SystemPromptBusiness business, [FromBody] CreateSystemPromptRequest request) =>
             {
                 return await business.CreateAsync(request);

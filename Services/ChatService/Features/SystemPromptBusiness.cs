@@ -4,6 +4,7 @@ using ChatService.Entities;
 using ChatService.Requests;
 using ChatService.Specifications;
 using Infrastructure;
+using Infrastructure.Paging;
 using Infrastructure.Web;
 
 namespace ChatService.Features
@@ -27,10 +28,10 @@ namespace ChatService.Features
             var tenantId = _currentUserProvider.TenantId;
 
             // If creating as active, deactivate all existing prompts
-            if (request.IsActive)
-            {
-                await DeactivateAllPromptsAsync(tenantId);
-            }
+            //if (request.IsActive)
+            //{
+            //    await DeactivateAllPromptsAsync(tenantId);
+            //}
 
             // Create new entity
             var entity = new SystemPrompt
@@ -69,10 +70,10 @@ namespace ChatService.Features
             }
 
             // If setting as active, deactivate all other prompts
-            if (request.IsActive && !entity.IsActive)
-            {
-                await DeactivateAllPromptsAsync(tenantId, request.Id);
-            }
+            //if (request.IsActive && !entity.IsActive)
+            //{
+            //    await DeactivateAllPromptsAsync(tenantId, request.Id);
+            //}
 
             // Update entity
             entity.Name = request.Name;
@@ -129,7 +130,7 @@ namespace ChatService.Features
             }
 
             // Deactivate all other prompts
-            await DeactivateAllPromptsAsync(tenantId, request.Id);
+            //await DeactivateAllPromptsAsync(tenantId, request.Id);
 
             // Activate this prompt
             entity.IsActive = true;
@@ -144,11 +145,11 @@ namespace ChatService.Features
         /// <summary>
         /// Gets a list of SystemPrompts with optional filtering.
         /// </summary>
-        public async Task<BaseResponse<List<SystemPromptDto>>> GetListAsync(GetListSystemPromptRequest request)
+        public async Task<BaseResponse<PaginatedList<SystemPromptDto>>> GetListAsync(GetListSystemPromptRequest request)
         {
             var tenantId = _currentUserProvider.TenantId;
 
-            var spec = new SystemPromptFilterSpec(request.Name, request.IsActive, tenantId);
+            var spec = new SystemPromptFilterSpec(request.Name, request.IsActive, tenantId, request.PageIndex, request.PageSize);
             var entities = await _repository.ListAsync(spec);
 
             var dtos = entities.Select(e => new SystemPromptDto
@@ -159,25 +160,23 @@ namespace ChatService.Features
                 Description = e.Description,
                 IsActive = e.IsActive
             }).ToList();
-
-            return new BaseResponse<List<SystemPromptDto>>(dtos, request.CorrelationId());
+            var count = await _repository.CountAsync(new SystemPromptFilterSpec(request.Name, request.IsActive, tenantId));
+            return new BaseResponse<PaginatedList<SystemPromptDto>>(new PaginatedList<SystemPromptDto>(dtos, count, request.PageIndex, request.PageSize), request.CorrelationId());
         }
 
         /// <summary>
-        /// Gets the active SystemPrompt for the specified tenant.
-        /// Returns null if no active prompt exists (fallback mechanism).
+        /// Gets a list of SystemPrompts with optional filtering.
         /// </summary>
-        public async Task<SystemPromptDto?> GetActiveAsync(int tenantId)
+        public async Task<BaseResponse<SystemPromptDto>> GetByIdAsync(GetSystemPromptByIdRequest request)
         {
-            var spec = new SystemPromptActiveSpec(tenantId);
-            var entity = await _repository.FirstOrDefaultAsync(spec);
+            var tenantId = _currentUserProvider.TenantId;
 
-            if (entity == null)
+            var entity = await _repository.GetByIdAsync(request.Id);
+            if(entity == null)
             {
-                return null;
+                throw new Exception("System prompt doesn't exist");
             }
-
-            return new SystemPromptDto
+            var dto = new SystemPromptDto
             {
                 Id = entity.Id,
                 Name = entity.Name,
@@ -185,6 +184,26 @@ namespace ChatService.Features
                 Description = entity.Description,
                 IsActive = entity.IsActive
             };
+
+            return new BaseResponse<SystemPromptDto>(dto, request.CorrelationId());
+        }
+
+        /// <summary>
+        /// Gets the active SystemPrompt for the specified tenant.
+        /// Returns null if no active prompt exists (fallback mechanism).
+        /// </summary>
+        public async Task<string> GetActiveAsync(int tenantId)
+        {
+            var spec = new SystemPromptActiveSpec(tenantId);
+            var list = await _repository.ListAsync(spec);
+
+            if (!list.Any())
+            {
+                return string.Empty;
+            }
+            var listContent = list.Select(m => m.Content).ToList();
+            return string.Join(". ", listContent);
+            
         }
 
         /// <summary>

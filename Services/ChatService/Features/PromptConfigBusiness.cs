@@ -141,5 +141,6 @@ namespace ChatService.Features
 
             return new BaseResponse<List<PromptConfigDto>>(dtos, request.CorrelationId());
         }
+
     }
 }
