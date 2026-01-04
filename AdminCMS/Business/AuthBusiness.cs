@@ -1,0 +1,56 @@
+﻿using AdminCMS.Models;
+using AdminCMS.Requests;
+using Infrastructure;
+using Infrastructure.Logging;
+using Infrastructure.Web;
+
+namespace AdminCMS.Business
+{
+    public class AuthBusiness: BaseHttpClient
+    {
+        public AuthBusiness(HttpClient httpClient, IAppLogger<BaseHttpClient> appLogger) : base(httpClient, appLogger)
+        {
+        }
+
+        public async Task<BaseResponse<TokenDto>> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var response = await PostAsync<LoginRequest, BaseResponse<TokenDto>>(
+                    $"/web-api/account/auth/login?tenantId={request.TenantId}",
+                    request,
+                    cancellationToken
+                );
+
+                if (response == null)
+                {
+                    return new BaseResponse<TokenDto>
+                    {
+                        Status = BaseResponseStatus.Error,
+                        Message = "Không nhận được phản hồi từ server"
+                    };
+                }
+
+                return response;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError($"HTTP error during login: {ex.Message}");
+                return new BaseResponse<TokenDto>
+                {
+                    Status = BaseResponseStatus.Error,
+                    Message = "Lỗi kết nối đến dịch vụ xác thực"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error during login: {ex.Message}");
+                return new BaseResponse<TokenDto>
+                {
+                    Status = BaseResponseStatus.Error,
+                    Message = "Đã xảy ra lỗi trong quá trình đăng nhập"
+                };
+            }
+        }
+    }
+}

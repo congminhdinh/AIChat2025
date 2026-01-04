@@ -1,0 +1,155 @@
+﻿@* Partial View: UploadDocumentPartial.cshtml
+    Mô tả: Nội dung của Modal tải lên tài liệu
+*@
+
+<div class="upload-modal-container">
+    <h3 class="modal-header-title">Tải lên tài liệu</h3>
+
+    <div class="modal-body-content">
+        <p class="text-muted small mb-4">
+            Để kết quả trả ra từ AI được tốt nhất, người dùng nên xử lý tài liệu trước khi tải lên hệ thống.
+        </p>
+
+        <div class="form-group mb-3">
+            <label for="documentFile" class="input-label">Chọn tệp</label>
+            <input type="file" id="documentFile" class="form-control" accept=".pdf,.doc,.docx,.txt" />
+            <p class="hint-text">Hỗ trợ: PDF, DOC, DOCX, TXT</p>
+        </div>
+
+        <div class="form-group mb-3">
+            <label for="documentName" class="input-label">Tên tài liệu (tùy chọn)</label>
+            <div class="custom-input-wrapper">
+                <input type="text" id="documentName" class="custom-input" placeholder="Nhập tên tài liệu..." autocomplete="off" />
+            </div>
+            <p class="hint-text">Nếu để trống, hệ thống sẽ sử dụng tên file.</p>
+        </div>
+    </div>
+
+    <div class="modal-footer-actions">
+        <button type="button" class="btn-modal btn-cancel" onclick="closeUploadModal()">Hủy</button>
+        <button type="button" class="btn-modal btn-upload" onclick="submitUpload()">
+            Tải lên
+        </button>
+    </div>
+</div>
+
+<style>
+    .upload-modal-container {
+        padding: 10px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+    }
+
+    .modal-header-title {
+        margin-bottom: 20px;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-color, #0d6efd);
+        text-align: center;
+    }
+
+    .modal-body-content {
+        margin-bottom: 25px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .input-label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+        color: #555;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color, #0d6efd);
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+    }
+
+    .custom-input-wrapper {
+        width: 100%;
+        background-color: #f0f4f9;
+        border-radius: 8px;
+        padding: 5px;
+        transition: background 0.2s, box-shadow 0.2s;
+        border: 1px solid transparent;
+    }
+
+    .custom-input-wrapper:focus-within {
+        background-color: #fff;
+        border-color: #cce5ff;
+        box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+    }
+
+    .custom-input {
+        width: 100%;
+        padding: 10px 15px;
+        border: none;
+        background: transparent;
+        outline: none;
+        font-size: 1rem;
+        color: #333;
+    }
+
+    .hint-text {
+        font-size: 0.8rem;
+        color: #999;
+        margin-top: 5px;
+        margin-left: 5px;
+    }
+
+    .modal-footer-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .btn-modal {
+        padding: 10px 24px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+    }
+
+    .btn-cancel {
+        background-color: transparent;
+        color: #666;
+    }
+
+    .btn-cancel:hover {
+        background-color: #f1f3f4;
+        color: #333;
+    }
+
+    .btn-upload {
+        background-color: var(--primary-color, #0d6efd);
+        color: white;
+        box-shadow: 0 2px 5px rgba(13, 110, 253, 0.3);
+    }
+
+    .btn-upload:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(13, 110, 253, 0.4);
+    }
+
+    .btn-upload:active {
+        transform: translateY(0);
+    }
+</style>

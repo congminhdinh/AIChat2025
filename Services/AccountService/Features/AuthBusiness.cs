@@ -45,7 +45,7 @@ namespace AccountService.Features
             _currentTenantProvider.SetTenantId(tenantId);
 
             var account = await _repository.FirstOrDefaultAsync(new AccountSpecification(input.Email, tenantId));
-            if (account == null || !PasswordHasher.VerifyPassword(input.Password, account.Password))
+            if (account == null || !PasswordHasher.VerifyPassword(input.Password, account.Password) || account.TenantId != tenantId)
             {
                 throw new Exception("Invalid email or password");
             }

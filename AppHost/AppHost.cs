@@ -5,33 +5,33 @@ var builder = DistributedApplication.CreateBuilder(args);
 builder.Services.Configure<DistributedApplicationOptions>(options => {
    
 });
-// 1. Kh?i t?o c·c Service c? s? (Back-end Services)
+// 1. Kh?i t?o c√°c Service c? s? (Back-end Services)
 var accountService = builder.AddProject<AccountService>("accountservice");
 var tenantService = builder.AddProject<TenantService>("tenantservice");
 var storageService = builder.AddProject<StorageService>("storageservice");
 
-// 2. C·c Service nghi?p v? cao h?n nÍn ??i Service c? s?
+// 2. C√°c Service nghi?p v? cao h?n n√™n ??i Service c? s?
 var documentService = builder.AddProject<DocumentService>("documentservice")
-    .WaitFor(storageService); // VÌ d?: C?n storage ?? l?u t‡i li?u
+    .WaitFor(storageService); // V√≠ d?: C?n storage ?? l?u t√†i li?u
 
 var chatService = builder.AddProject<Projects.ChatService>("chatservice")
-    .WaitFor(accountService); // C?n account ?? x·c th?c
+    .WaitFor(accountService); // C?n account ?? x√°c th?c
 
-// 3. ApiGateway CH? kh?i ??ng khi c·c service phÌa sau ?„ s?n s‡ng
+// 3. ApiGateway CH? kh?i ??ng khi c√°c service ph√≠a sau ?√£ s?n s√†ng
 var apiGateway = builder.AddProject<ApiGateway>("apigateway")
        .WithReference(accountService)
        .WithReference(tenantService)
        .WithReference(documentService)
        .WithReference(storageService)
        .WithReference(chatService)
-       // ThÍm c? ch? ??i ?? tr·nh xung ??t Port v‡ File Lock khi build
+       // Th√™m c? ch? ??i ?? tr√°nh xung ??t Port v√† File Lock khi build
        .WaitFor(accountService)
        .WaitFor(tenantService)
        .WaitFor(documentService)
        .WaitFor(storageService)
        .WaitFor(chatService);
 
-// 4. WebApp ch? ch?y khi Gateway ?„ lÍn (?? cÛ th? g?i API)
+// 4. WebApp ch? ch?y khi Gateway ?√£ l√™n (?? c√≥ th? g?i API)
 builder.AddProject<Projects.WebApp>("webapp")
        .WaitFor(apiGateway);
 

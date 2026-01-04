@@ -1,31 +1,34 @@
-@model WebApp.Models.PaginatedListDto<WebApp.Models.Document.DocumentDto>
+@using AdminCMS.Models
+@using AdminCMS.Models.Document
+@using AdminCMS.Models.Document.Enums
+@model PaginatedListDto<DocumentDto>
 
 @{
     // Vietnamese label mappings
-    string GetActionLabel(WebApp.Models.Document.Enums.DocumentAction action)
+    string GetActionLabel(DocumentAction action)
     {
         return action switch
         {
-            WebApp.Models.Document.Enums.DocumentAction.Upload => "Tải lên",
-            WebApp.Models.Document.Enums.DocumentAction.Standardization => "Chuẩn hóa",
-            WebApp.Models.Document.Enums.DocumentAction.Vectorize_Start => "Bắt đầu vector hóa",
-            WebApp.Models.Document.Enums.DocumentAction.Vectorize_Success => "Vector hóa thành công",
-            WebApp.Models.Document.Enums.DocumentAction.Vectorize_Failed => "Vector hóa thất bại",
-            WebApp.Models.Document.Enums.DocumentAction.Update_Metadata => "Cập nhật metadata",
+            DocumentAction.Upload => "Tải lên",
+            DocumentAction.Standardization => "Chuẩn hóa",
+            DocumentAction.Vectorize_Start => "Bắt đầu vector hóa",
+            DocumentAction.Vectorize_Success => "Vector hóa thành công",
+            DocumentAction.Vectorize_Failed => "Vector hóa thất bại",
+            DocumentAction.Update_Metadata => "Cập nhật metadata",
             _ => "Không xác định"
         };
     }
 
-    string GetActionBadgeClass(WebApp.Models.Document.Enums.DocumentAction action)
+    string GetActionBadgeClass(DocumentAction action)
     {
         return action switch
         {
-            WebApp.Models.Document.Enums.DocumentAction.Upload => "badge-new",
-            WebApp.Models.Document.Enums.DocumentAction.Standardization => "badge-processing",
-            WebApp.Models.Document.Enums.DocumentAction.Vectorize_Start => "badge-processing",
-            WebApp.Models.Document.Enums.DocumentAction.Vectorize_Success => "badge-success",
-            WebApp.Models.Document.Enums.DocumentAction.Vectorize_Failed => "badge-error",
-            WebApp.Models.Document.Enums.DocumentAction.Update_Metadata => "badge-processing",
+            DocumentAction.Upload => "badge-new",
+            DocumentAction.Standardization => "badge-processing",
+            DocumentAction.Vectorize_Start => "badge-processing",
+            DocumentAction.Vectorize_Success => "badge-success",
+            DocumentAction.Vectorize_Failed => "badge-error",
+            DocumentAction.Update_Metadata => "badge-processing",
             _ => "badge-new"
         };
     }
