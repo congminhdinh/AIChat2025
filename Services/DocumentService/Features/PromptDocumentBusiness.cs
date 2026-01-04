@@ -84,7 +84,23 @@ namespace DocumentService.Features
 
             return new BaseResponse<PaginatedList<DocumentDto>>(paginatedList, input.CorrelationId());
         }
-
+        public async Task<List<DocumentDto>> GetDocumentsByIdsAsync(List<int> ids)
+        {
+            var tenantId = _currentUserProvider.TenantId;
+            var documents = await _documentRepository.ListAsync(new DocumentsByIdsSpec(ids, tenantId));
+            var dtos = documents.Select(d => new DocumentDto(
+                d.Id,
+                d.FileName,
+                d.DocumentName,
+                d.FilePath,
+                d.Action,
+                d.LastModifiedAt
+            )
+            {
+                TenantId = d.TenantId
+            }).ToList();
+            return new List<DocumentDto>(dtos);
+        }
         public async Task<BaseResponse<int>> CreateDocument(CreateDocumentRequest input)
         {
             var tenantId = _currentUserProvider.TenantId;

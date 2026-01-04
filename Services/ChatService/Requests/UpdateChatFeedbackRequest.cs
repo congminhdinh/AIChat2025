@@ -2,9 +2,9 @@
 
 namespace ChatService.Requests
 {
-    public class CreateChatFeedbackRequest: BaseRequest
+    public class UpdateChatFeedbackRequest: BaseRequest
     {
-        public int MessageId { get; set; }
+        public int Id { get; set; }
         public string Content { get; set; }
         public string Category { get; set; }
     }

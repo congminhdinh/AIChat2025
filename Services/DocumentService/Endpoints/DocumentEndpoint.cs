@@ -20,17 +20,11 @@ namespace DocumentService.Endpoints
             // Health check
             group.MapGet("/ok", () => Results.Ok("Document service is running"))
                 .AllowAnonymous();
-
-            // CRUD Endpoints
-
-            // GET /document/{id}
             group.MapGet("/{id}", async (PromptDocumentBusiness documentBusiness, int id) =>
             {
                 return await documentBusiness.GetDocumentById(
                     new GetDocumentByIdRequest { DocumentId = id });
             });
-
-            // GET /document/list
             group.MapGet("/list", async (
                 PromptDocumentBusiness documentBusiness,
                 [AsParameters] GetDocumentListRequest input) =>
@@ -38,7 +32,12 @@ namespace DocumentService.Endpoints
                 return await documentBusiness.GetDocumentList(input);
             });
 
-            // POST /document/
+            group.MapPost("/list-ids", async (
+                PromptDocumentBusiness documentBusiness,
+                [FromBody] List<int> ids) =>
+            {
+                return await documentBusiness.GetDocumentsByIdsAsync(ids);
+            });
             group.MapPost("/", async (
                 PromptDocumentBusiness documentBusiness,
                 IFormFile file, DocType doctype, int fatherDocumentId, string? documentName) =>
@@ -46,16 +45,12 @@ namespace DocumentService.Endpoints
                 var request = new CreateDocumentRequest { File = file, DocumentType = doctype, FatherDocumentId = fatherDocumentId, DocumentName = documentName};
                 return await documentBusiness.CreateDocument(request);
             }).DisableAntiforgery();
-
-            // PUT /document/
             group.MapPut("/", async (
                 PromptDocumentBusiness documentBusiness,
                 [FromBody] UpdateDocumentRequest input) =>
             {
                 return await documentBusiness.UpdateDocument(input);
             });
-
-            // DELETE /document/{id}
             group.MapDelete("/{id}", async (
                 PromptDocumentBusiness documentBusiness,
                 int id) =>
@@ -63,8 +58,6 @@ namespace DocumentService.Endpoints
                 return await documentBusiness.DeleteDocument(
                     new DeleteDocumentRequest { DocumentId = id });
             });
-
-            // POST /document/vectorize/{documentId}
             group.MapPost("/vectorize/{documentId}", async (
                 PromptDocumentBusiness documentBusiness,
                 int documentId) =>
@@ -72,15 +65,6 @@ namespace DocumentService.Endpoints
                 return await documentBusiness.VectorizeDocument(
                     new VectorizeDocumentRequest { DocumentId = documentId });
             });
-
-            //group.MapPost("/upload", async (
-            //    PromptDocumentBusiness documentBusiness,
-            //    IFormFile file) =>
-            //{
-            //    var request = new CreateDocumentRequest { File = file };
-            //    var result = await documentBusiness.CreateDocument(request);
-            //    return Results.Ok(result.Data);
-            //}).DisableAntiforgery();
         }
     }
 }
