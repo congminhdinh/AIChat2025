@@ -15,6 +15,14 @@
     }
 
     async function setupSignalR() {
+        debugger;
+        // Check if signalR is loaded
+        if (typeof signalR === 'undefined') {
+            console.error('SignalR library is not loaded. Retrying in 500ms...');
+            setTimeout(() => setupSignalR(), 500);
+            return;
+        }
+
         const apiGatewayUrl = window.location.origin.replace(/:\d+/, ':7235');
 
         hubConnection = new signalR.HubConnectionBuilder()
@@ -220,6 +228,30 @@
         const bubbleDiv = document.createElement('div');
         bubbleDiv.className = 'msg-bubble';
         bubbleDiv.textContent = content;
+
+        // Add action buttons for bot messages
+        if (type !== 0) {
+            const footerDiv = document.createElement('div');
+            footerDiv.className = 'msg-footer';
+            footerDiv.innerHTML = `
+                <button class="action-btn" title="Like" onclick="handleLike(this)">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                    </svg>
+                </button>
+                <button class="action-btn" title="Dislike" onclick="handleDislike(this)">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path>
+                    </svg>
+                </button>
+                <button class="action-btn" title="Comment" onclick="handleComment(this)">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </button>
+            `;
+            bubbleDiv.appendChild(footerDiv);
+        }
 
         messageDiv.appendChild(avatarDiv);
         messageDiv.appendChild(bubbleDiv);
@@ -431,6 +463,25 @@
         }
     }
 
+    // Placeholder functions for action buttons
+    function handleLike(button) {
+        console.log('Like button clicked');
+        // TODO: Implement like functionality
+    }
+
+    function handleDislike(button) {
+        console.log('Dislike button clicked');
+        // TODO: Implement dislike functionality
+    }
+
+    function handleComment(button) {
+        console.log('Comment button clicked');
+        // TODO: Implement comment functionality
+    }
+
     window.closeCreateModal = closeCreateModal;
     window.submitCreateConversation = submitCreateConversation;
+    window.handleLike = handleLike;
+    window.handleDislike = handleDislike;
+    window.handleComment = handleComment;
 })();

@@ -247,6 +247,38 @@
             display: none; /* Ẩn thời gian cho gọn giống style chat hiện đại, hover mới hiện nếu cần */
         }
 
+        /* Bot Message Action Buttons */
+        .msg-footer {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            align-items: center;
+        }
+
+        .action-btn {
+            border: none;
+            background: transparent;
+            color: #888;
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+            .action-btn:hover {
+                background-color: #f0f0f0;
+                color: var(--primary-color);
+            }
+
+            .action-btn svg {
+                width: 16px;
+                height: 16px;
+            }
+
         /* Ref Box */
         .ref-box {
             margin-top: 15px;
