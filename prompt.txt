@@ -1,44 +1,49 @@
-Prompt for Claude
-Role: Senior .NET Fullstack Developer
+Role: Senior .NET Fullstack Developer Task: Update the Feedback Statistics Dashboard (Stat/Index.cshtml) for WebApp.
 
-Task: Integrate FeedbackId from messageDto into the Chat UI and implement Conditional Feedback Logic (Create vs. Update), from Chat view WebApp.
+1. Initialization & Core Data Flow
 
-1. Context & Data Update
+Initial Load: On DOMContentLoaded, execute three parallel tasks:
 
-DTO Sync: The messageDto now contains a FeedbackId (int).
+Summary Stats: Call ChatBusiness.CountMessage() (ensure there is an endpoint like GET /chat/count) to display the Total Message Count.
 
-State Management: * If FeedbackId == 0: No feedback exists. Subsequent actions should trigger the Create flow.
+Chart Data: Call an endpoint to get the total count of Likes (Ratings=1) and Dislikes (Ratings=2). Update the Pie Chart/Visuals with these numbers.
 
-If FeedbackId != 0: Feedback exists. Subsequent actions should trigger the Update flow.
+Feedback List: Call GET /chat/chat-feedback/ with default Ratings = 0 (Initial state) and PageIndex = 1.
 
-2. Initialization & Data Fetching
+2. List Rendering & Pagination (Follow UIShareLogic.txt)
 
-Initial Load: When rendering messages (via SignalR BotResponse or loadMessageHistory), store the FeedbackId in the DOM (e.g., data-feedback-id).
+Partial View Pattern: The feedback list must be rendered via a Partial View to support AJAX-based pagination without reloading the whole page.
 
-Detail Fetching: For each bot message, the client should be ready to call GET /chat/chat-feedback/{id} using the FeedbackId to retrieve the current category and content.
+Pagination Logic: Use event delegation on .page-link. When a page is clicked:
 
-3. Detailed Feedback Logic (Comment Modal) Modify the "Comment" icon click handler in chat.js:
+Trigger an AJAX call to the controller.
 
-State Detection:
+Update only the #feedback-table-container.
 
-If FeedbackId == 0: Open the modal in Create State. Upon submission, call POST /chat/chat-feedback/. After success, update the local FeedbackId with the ID returned by the server.
+Ensure the scroll position is maintained or smoothly moved to the top of the table.
 
-If FeedbackId != 0: Call GET /chat/chat-feedback/{id} first to populate the modal. Open the modal in Update State. Upon submission, call PUT /chat/chat-feedback/{id}.
+3. UI/UX & Layout Requirements
 
-Modal UI: Ensure the Partial View _ChatFeedbackModal.cshtml correctly binds to the ChatFeedbackDetailDto.
+Dashboard Structure: 2-column grid. Left (300px): Statistics cards and Pie Chart. Right (Flexible): Feedback Table.
 
-4. Scripting Requirements (chat.js)
+Scrolling & Responsiveness: * The main container must be scrollable (overflow-y: auto).
 
-Persistence: Ensure that once a feedback record is created (via rate or comment), the FeedbackId in the browser's memory/DOM is updated immediately so that the next click on that message becomes an "Update" action.
+Avoid overflow: hidden that cuts off content.
 
-UI Feedback: * Use Toastr to notify the user of successful creation or update.
+Table Column Logic: * The Bot Response column must be the widest.
 
-Follow the AJAX Loop pattern from UIShareLogic.txt: Trigger → Request (Spinner) → Success Response → Update UI/Close Modal.
+Use white-space: normal and word-wrap: break-word to ensure long AI responses wrap and fill the available space.
 
-5. Technical Standards
+Do not truncate the Bot Response in this view; let it expand the row height naturally.
 
-Maintain PascalCase for all JSON property mappings to match the .NET Backend.
+Filtering: Use the dropdown in the header (Thích, Không thích, Mặc định) to re-trigger the list fetch with the selected Ratings filter.
 
-Ensure proper error handling: if GetDetailChatFeedback fails, show a descriptive error message via Toastr.
+4. Technical Guardrails
 
-Follow the UIShareLogic.txt guardrails for modal focus (100ms delay) and loading indicators.
+Tenant Security: Ensure all requests pass the TenantId (handle this via the ICurrentUserProvider on the backend).
+
+Naming Convention: All JSON interactions must use PascalCase to match the .NET Backend DTOs.
+
+Visual Consistency: Use the color scheme from the previous designs (Primary Blue: #0d6efd, Success Green: #198754, Danger Red: #dc3545).
+
+Loading States: Show a spinner within the table container during AJAX calls as per UIShareLogic.txt.

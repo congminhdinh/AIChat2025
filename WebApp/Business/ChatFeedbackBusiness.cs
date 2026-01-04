@@ -2,6 +2,7 @@ using Infrastructure;
 using Infrastructure.Logging;
 using Infrastructure.Web;
 using WebApp.Helpers;
+using WebApp.Models;
 using WebApp.Models.Chat;
 
 namespace WebApp.Business
@@ -219,6 +220,68 @@ namespace WebApp.Business
                 {
                     Status = BaseResponseStatus.Error,
                     Message = "Đã xảy ra lỗi khi cập nhật phản hồi"
+                };
+            }
+        }
+
+        public async Task<BaseResponse<PaginatedListDto<ChatFeedbackDto>>> GetChatFeedbackListAsync(
+            short? ratings = null,
+            int pageIndex = 1,
+            int pageSize = 10,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var token = await _identityHelper.GetAccessTokenAsync();
+                if (string.IsNullOrEmpty(token))
+                {
+                    return new BaseResponse<PaginatedListDto<ChatFeedbackDto>>
+                    {
+                        Status = BaseResponseStatus.Error,
+                        Message = "Không tìm thấy token xác thực"
+                    };
+                }
+
+                // Build query string
+                var queryParams = $"?PageIndex={pageIndex}&PageSize={pageSize}";
+                if (ratings.HasValue)
+                {
+                    queryParams += $"&Ratings={ratings.Value}";
+                }
+
+                var response = await GetWithTokenAsync<BaseResponse<PaginatedListDto<ChatFeedbackDto>>>(
+                    $"/web-api/chat/chat-feedback/{queryParams}",
+                    token,
+                    cancellationToken
+                );
+
+                if (response == null)
+                {
+                    return new BaseResponse<PaginatedListDto<ChatFeedbackDto>>
+                    {
+                        Status = BaseResponseStatus.Error,
+                        Message = "Không nhận được phản hồi từ server"
+                    };
+                }
+
+                return response;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError($"HTTP error during get chat feedback list: {ex.Message}");
+                return new BaseResponse<PaginatedListDto<ChatFeedbackDto>>
+                {
+                    Status = BaseResponseStatus.Error,
+                    Message = "Lỗi kết nối đến dịch vụ chat"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error during get chat feedback list: {ex.Message}");
+                return new BaseResponse<PaginatedListDto<ChatFeedbackDto>>
+                {
+                    Status = BaseResponseStatus.Error,
+                    Message = "Đã xảy ra lỗi khi tải danh sách phản hồi"
                 };
             }
         }

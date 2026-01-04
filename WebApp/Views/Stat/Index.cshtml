@@ -47,6 +47,12 @@
                 letter-spacing: 1px;
             }
 
+        /* SCROLLABLE MAIN CONTAINER - Required per prompt.txt */
+        .dashboard-container {
+            overflow-y: auto;
+            max-height: calc(100vh - 100px); /* Adjust based on header height */
+        }
+
         .pie-chart-fake {
             width: 140px;
             height: 140px;
@@ -57,7 +63,7 @@
         }
 
             .pie-chart-fake::after {
-                content: "82%";
+                content: attr(data-percentage);
                 position: absolute;
                 top: 50%;
                 left: 50%;
@@ -139,6 +145,33 @@
             cursor: pointer;
             font-weight: bold;
             font-size: 0.8rem;
+        }
+
+        /* FULL TEXT DISPLAY - NO truncation, allow word wrapping */
+        .table-wrapper {
+            overflow-x: auto; /* Horizontal scroll if table too wide */
+        }
+
+        .table-wrapper table {
+            width: 100%;
+            table-layout: auto; /* Allow columns to size based on content */
+            border-collapse: collapse;
+        }
+
+        .table-wrapper td {
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            vertical-align: top;
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        /* Bot Response column - WIDEST column with full text */
+        .table-wrapper td:nth-child(3) {
+            min-width: 300px; /* Ensure Bot Response column is widest */
         }
 
         table {
@@ -245,6 +278,17 @@
                 color: white;
                 border-color: var(--primary);
             }
+
+        /* Loading spinner */
+        .loading-spinner {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .loading-spinner i {
+            font-size: 3rem;
+        }
     </style>
 </head>
 <body>
@@ -256,7 +300,7 @@
         <div class="stats-sidebar">
             <div class="card">
                 <h4>Tỉ lệ hài lòng</h4>
-                <div class="pie-chart-fake"></div>
+                <div class="pie-chart-fake" id="pie-chart" data-percentage="50%"></div>
                 <div style="display: flex; justify-content: center; gap: 15px; font-size: 0.75rem;">
                     <span><span style="color:var(--success)">●</span> Tích cực</span>
                     <span><span style="color:var(--danger)">●</span> Tiêu cực</span>
@@ -266,11 +310,11 @@
             <div class="card">
                 <div class="stat-item">
                     <span class="stat-label">Tổng tin nhắn</span>
-                    <span class="stat-value">2,540</span>
+                    <span class="stat-value" id="total-messages-value">...</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-label">Lượt đánh giá</span>
-                    <span class="stat-value">186</span>
+                    <span class="stat-value" id="total-ratings-value">...</span>
                 </div>
             </div>
         </div>
@@ -280,77 +324,30 @@
                 <h3 style="margin: 0; font-size: 1.1rem;">Chi tiết phản hồi gần đây</h3>
 
                 <div class="header-actions">
-                    <select class="filter-select">
+                    <select class="filter-select" id="filter-rating">
                         <option value="">-- Tất cả đánh giá --</option>
                         <option value="1">Thích (Like)</option>
                         <option value="2">Không thích (Dislike)</option>
-                        <option value="0">Mặc định (Initial)</option>
+                        <option value="0" selected>Mặc định (Initial)</option>
                     </select>
 
                     <button class="btn-excel">Xuất Excel</button>
                 </div>
             </div>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th class="col-stt">STT</th>
-                        <th class="col-q">Câu hỏi</th>
-                        <th class="col-a">Câu trả lời (Bot)</th>
-                        <th class="col-rate">Đánh giá</th>
-                        <th class="col-cat">Phân loại</th>
-                        <th>Góp ý chi tiết</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td><span class="text-truncate" title="Thủ tục thai sản?">Thủ tục thai sản?</span></td>
-                        <td>
-                            <div class="text-wrap">
-                                Hồ sơ hưởng chế độ thai sản bao gồm giấy khai sinh hoặc giấy chứng sinh của con...
-                                (Nội dung tự động xuống dòng để hiển thị đầy đủ nhất cho người dùng xem).
-                            </div>
-                        </td>
-                        <td><span class="badge badge-success">Thích</span></td>
-                        <td><span class="badge badge-info">Chính xác</span></td>
-                        <td><i>Rất đầy đủ.</i></td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td><span class="text-truncate" title="Lương tối thiểu?">Lương tối thiểu?</span></td>
-                        <td>
-                            <div class="text-wrap">
-                                Mức lương tối thiểu vùng I hiện tại là 4.960.000 đồng/tháng theo Nghị định 74/2024.
-                            </div>
-                        </td>
-                        <td><span class="badge badge-danger">Không thích</span></td>
-                        <td><span class="badge badge-danger">Thông tin cũ</span></td>
-                        <td><i>Cần cập nhật thêm.</i></td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td><span class="text-truncate" title="Chào bạn!">Chào bạn!</span></td>
-                        <td>
-                            <div class="text-wrap">
-                                Chào bạn, tôi là trợ lý AI về pháp luật. Tôi có thể giúp gì cho bạn?
-                            </div>
-                        </td>
-                        <td><span class="badge badge-secondary">Mặc định</span></td>
-                        <td>-</td>
-                        <td>-</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <ul class="pagination">
-                <li class="page-item">Trước</li>
-                <li class="page-item active">1</li>
-                <li class="page-item">Sau</li>
-            </ul>
+            <div id="feedback-table-container">
+                <div class="loading-spinner">
+                    <div style="font-size: 3rem; color: #0d6efd;">⏳</div>
+                    <p style="margin-top: 15px;">Đang tải dữ liệu...</p>
+                </div>
+            </div>
         </div>
 
     </div>
+
+    @section Scripts {
+        <script src="~/Scripts/Stat/stat.js" asp-append-version="true"></script>
+    }
 
 </body>
 </html>

@@ -1,0 +1,107 @@
+@using WebApp.Models.Chat
+@model WebApp.Models.PaginatedListDto<ChatFeedbackDto>
+
+<div class="table-wrapper">
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 50px;">STT</th>
+                <th style="width: 20%;">Câu hỏi</th>
+                <th style="width: 35%;">Câu trả lời (Bot)</th>
+                <th style="width: 100px;">Đánh giá</th>
+                <th style="width: 140px;">Phân loại</th>
+                <th>Góp ý chi tiết</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Items == null || !Model.Items.Any())
+            {
+                <tr>
+                    <td colspan="6" class="text-center" style="padding: 40px;">Không có phản hồi nào</td>
+                </tr>
+            }
+            else
+            {
+                int stt = (Model.PageIndex - 1) * Model.PageSize + 1;
+                foreach (var feedback in Model.Items)
+                {
+                    <tr>
+                        <td>@stt</td>
+                        <td>
+                            <div style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
+                                @feedback.Message
+                            </div>
+                        </td>
+                        <td>
+                            <div style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
+                                @feedback.Response
+                            </div>
+                        </td>
+                        <td>
+                            @if (feedback.Ratings == 1)
+                            {
+                                <span class="badge badge-success">Thích</span>
+                            }
+                            else if (feedback.Ratings == 2)
+                            {
+                                <span class="badge badge-danger">Không thích</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary">Mặc định</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge badge-info">@((int)feedback.Category)</span>
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(feedback.Content))
+                            {
+                                <div style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
+                                    @feedback.Content
+                                </div>
+                            }
+                            else
+                            {
+                                <span style="color: #999;">-</span>
+                            }
+                        </td>
+                    </tr>
+                    stt++;
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (Model.TotalPages > 1)
+{
+    <div class="pagination-container" style="display: flex; justify-content: center; margin-top: 20px;">
+        <ul class="pagination" style="list-style: none; display: flex; gap: 5px; padding: 0;">
+            <li class="page-item @(Model.PageIndex == 1 ? "disabled" : "")" style="display: inline-block;">
+                <a class="page-link" href="#" data-page="@(Model.PageIndex - 1)"
+                   style="padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 4px; text-decoration: none; color: #0d6efd;">
+                    Trước
+                </a>
+            </li>
+
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.PageIndex ? "active" : "")" style="display: inline-block;">
+                    <a class="page-link" href="#" data-page="@i"
+                       style="padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 4px; text-decoration: none;
+                              @(i == Model.PageIndex ? "background-color: #0d6efd; color: white;" : "color: #0d6efd;")">
+                        @i
+                    </a>
+                </li>
+            }
+
+            <li class="page-item @(Model.PageIndex == Model.TotalPages ? "disabled" : "")" style="display: inline-block;">
+                <a class="page-link" href="#" data-page="@(Model.PageIndex + 1)"
+                   style="padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 4px; text-decoration: none; color: #0d6efd;">
+                    Sau
+                </a>
+            </li>
+        </ul>
+    </div>
+}
