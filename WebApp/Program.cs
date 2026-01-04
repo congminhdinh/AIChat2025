@@ -49,6 +49,11 @@ builder.Services.AddHttpClient<ChatBusiness>(httpClient =>
 {
     httpClient.BaseAddress = new Uri(appSettings.ApiGatewayUrl);
 });
+builder.Services.AddScoped<ChatFeedbackBusiness>();
+builder.Services.AddHttpClient<ChatFeedbackBusiness>(httpClient =>
+{
+    httpClient.BaseAddress = new Uri(appSettings.ApiGatewayUrl);
+});
 builder.Services.AddScoped<DocumentBusiness>();
 builder.Services.AddHttpClient<DocumentBusiness>(httpClient =>
 {

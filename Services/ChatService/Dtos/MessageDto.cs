@@ -12,5 +12,6 @@ public class MessageDto
     public DateTime Timestamp { get; init; }
     public bool IsBot { get; init; }
     public int UserId { get; init; }
+    public int FeedbackId { get; init; } = 0;
     public ChatType Type { get; init; }
 }

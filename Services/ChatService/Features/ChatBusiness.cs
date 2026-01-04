@@ -26,12 +26,13 @@ public class ChatBusiness: BaseHttpClient
     private readonly IRepository<ChatConversation> _conversationRepo;
     private readonly IRepository<ChatMessage> _messageRepo;
     private readonly IRepository<PromptConfig> _promptConfigRepo;
+    private readonly IRepository<ChatFeedback> _feedbackRepo;
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly ICurrentUserProvider _currentUserProvider;
     private readonly ILogger<ChatBusiness> _chatLogger;
     private readonly SystemPromptBusiness _systemPromptBusiness;
 
-    public ChatBusiness(IRepository<ChatConversation> conversationRepo, IRepository<ChatMessage> messageRepo, IRepository<PromptConfig> promptConfigRepo, IPublishEndpoint publishEndpoint, ICurrentUserProvider currentUserProvider, ILogger<ChatBusiness> logger, SystemPromptBusiness systemPromptBusiness, HttpClient httpClient, IAppLogger<BaseHttpClient> appLogger): base(httpClient, appLogger)
+    public ChatBusiness(IRepository<ChatConversation> conversationRepo, IRepository<ChatMessage> messageRepo, IRepository<PromptConfig> promptConfigRepo, IPublishEndpoint publishEndpoint, ICurrentUserProvider currentUserProvider, ILogger<ChatBusiness> logger, SystemPromptBusiness systemPromptBusiness, HttpClient httpClient, IAppLogger<BaseHttpClient> appLogger, IRepository<ChatFeedback> feedbackRepo) : base(httpClient, appLogger)
     {
         _conversationRepo = conversationRepo;
         _messageRepo = messageRepo;
@@ -40,6 +41,7 @@ public class ChatBusiness: BaseHttpClient
         _currentUserProvider = currentUserProvider;
         _chatLogger = logger;
         _systemPromptBusiness = systemPromptBusiness;
+        _feedbackRepo = feedbackRepo;
     }
 
     /// <summary>
@@ -99,11 +101,13 @@ public class ChatBusiness: BaseHttpClient
         };
         var spec = new GetConversationWithMessagesSpec(conversationId, _currentUserProvider.TenantId);
         var conversation = await _conversationRepo.FirstOrDefaultAsync(spec);
-
+        
         if (conversation == null)
         {
             return new BaseResponse<ConversationDto>("Conversation not found", BaseResponseStatus.Error, request.CorrelationId());
         }
+        var listFeedbacksIds = conversation.Messages.Select(c => c.Id).ToList();
+        var listFeedbacks = await _feedbackRepo.ListAsync(new ChatFeedbacksByResponseIdsSpec(listFeedbacksIds, _currentUserProvider.TenantId));
         return new BaseResponse<ConversationDto>(new ConversationDto
         {
             Id = conversation.Id,
@@ -117,11 +121,12 @@ public class ChatBusiness: BaseHttpClient
                 {
                     Id = m.Id,
                     ConversationId = m.ConversationId,
-                    ReferenceDocIdList = !string.IsNullOrEmpty(m.ReferenceDocIds)? m.ReferenceDocIds.Split(",").Select(int.Parse).ToList(): new List<int>(),
+                    ReferenceDocIdList = !string.IsNullOrEmpty(m.ReferenceDocIds) ? m.ReferenceDocIds.Split(",").Select(int.Parse).ToList() : new List<int>(),
                     RequestId = m.RequestId,
                     Content = m.Message,
                     Timestamp = m.Timestamp,
                     UserId = m.UserId,
+                    FeedbackId = listFeedbacks.Where(t => t.ResponseId == m.Id).Select(n =>n.Id).FirstOrDefault(),
                     Type = m.Type
                 }).ToList()
         }, request.CorrelationId());

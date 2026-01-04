@@ -54,7 +54,7 @@
             }
 
             removeLoadingIndicator();
-            appendMessage(messageDto.content, messageDto.type, true);
+            appendMessage(messageDto.content, messageDto.type, true, messageDto.id);
         });
 
         hubConnection.onreconnecting(function (error) {
@@ -219,18 +219,23 @@
         chatContent.innerHTML = '';
 
         messages.forEach(function (message) {
-            appendMessage(message.content, message.type, false);
+            appendMessage(message.content, message.type, false, message.id);
         });
 
         scrollToBottom();
     }
 
-    function appendMessage(content, type, animate = true) {
+    function appendMessage(content, type, animate = true, messageId = null) {
         const chatContent = document.querySelector('.chat-content');
         if (!chatContent) return;
 
         const messageDiv = document.createElement('div');
         messageDiv.className = type === 0 ? 'message user' : 'message bot';
+
+        // Store messageId in bot messages for feedback
+        if (type !== 0 && messageId) {
+            messageDiv.dataset.messageId = messageId;
+        }
 
         const avatarDiv = document.createElement('div');
         avatarDiv.className = type === 0 ? 'avatar user' : 'avatar bot';
@@ -245,17 +250,17 @@
             const footerDiv = document.createElement('div');
             footerDiv.className = 'msg-footer';
             footerDiv.innerHTML = `
-                <button class="action-btn" title="Like" onclick="handleLike(this)">
+                <button class="action-btn btn-like" title="Like" onclick="handleLike(this)">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
                     </svg>
                 </button>
-                <button class="action-btn" title="Dislike" onclick="handleDislike(this)">
+                <button class="action-btn btn-dislike" title="Dislike" onclick="handleDislike(this)">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path>
                     </svg>
                 </button>
-                <button class="action-btn" title="Comment" onclick="handleComment(this)">
+                <button class="action-btn btn-comment" title="Comment" onclick="handleComment(this)">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
@@ -474,20 +479,227 @@
         }
     }
 
-    // Placeholder functions for action buttons
-    function handleLike(button) {
-        console.log('Like button clicked');
-        // TODO: Implement like functionality
+    // Feedback action handlers
+    async function handleLike(button) {
+        const messageDiv = button.closest('.message.bot');
+        if (!messageDiv) return;
+
+        const messageId = messageDiv.dataset.messageId;
+        if (!messageId) {
+            console.error('Message ID not found');
+            return;
+        }
+
+        try {
+            const response = await fetch('/Chat/RateChatFeedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    MessageId: parseInt(messageId),
+                    Ratings: 1
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Toggle active state
+                const likeBtn = messageDiv.querySelector('.btn-like');
+                const dislikeBtn = messageDiv.querySelector('.btn-dislike');
+
+                if (likeBtn.classList.contains('active')) {
+                    likeBtn.classList.remove('active');
+                } else {
+                    likeBtn.classList.add('active');
+                    dislikeBtn.classList.remove('active');
+                }
+            } else {
+                console.error('Failed to rate:', result.message);
+            }
+        } catch (error) {
+            console.error('Error rating message:', error);
+        }
     }
 
-    function handleDislike(button) {
-        console.log('Dislike button clicked');
-        // TODO: Implement dislike functionality
+    async function handleDislike(button) {
+        const messageDiv = button.closest('.message.bot');
+        if (!messageDiv) return;
+
+        const messageId = messageDiv.dataset.messageId;
+        if (!messageId) {
+            console.error('Message ID not found');
+            return;
+        }
+
+        try {
+            const response = await fetch('/Chat/RateChatFeedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    MessageId: parseInt(messageId),
+                    Ratings: 2
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Toggle active state
+                const likeBtn = messageDiv.querySelector('.btn-like');
+                const dislikeBtn = messageDiv.querySelector('.btn-dislike');
+
+                if (dislikeBtn.classList.contains('active')) {
+                    dislikeBtn.classList.remove('active');
+                } else {
+                    dislikeBtn.classList.add('active');
+                    likeBtn.classList.remove('active');
+                }
+            } else {
+                console.error('Failed to rate:', result.message);
+            }
+        } catch (error) {
+            console.error('Error rating message:', error);
+        }
     }
 
-    function handleComment(button) {
-        console.log('Comment button clicked');
-        // TODO: Implement comment functionality
+    async function handleComment(button) {
+        const messageDiv = button.closest('.message.bot');
+        if (!messageDiv) return;
+
+        const messageId = messageDiv.dataset.messageId;
+        if (!messageId) {
+            console.error('Message ID not found');
+            return;
+        }
+
+        try {
+            // Load modal partial
+            const modalResponse = await fetch('/Chat/ChatFeedbackPartial', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'text/html'
+                }
+            });
+
+            if (!modalResponse.ok) {
+                throw new Error('Failed to load modal content');
+            }
+
+            const html = await modalResponse.text();
+
+            const modalContainer = document.querySelector('#modal-content-container');
+            const modalOverlay = document.querySelector('#modal-overlay');
+
+            if (modalContainer && modalOverlay) {
+                modalContainer.innerHTML = html;
+                modalOverlay.classList.add('active');
+
+                // Set messageId
+                document.querySelector('#feedbackMessageId').value = messageId;
+
+                // Fetch existing feedback data
+                const feedbackResponse = await fetch(`/Chat/GetChatFeedback?messageId=${messageId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const feedbackResult = await feedbackResponse.json();
+
+                if (feedbackResult.success && feedbackResult.data) {
+                    const feedback = feedbackResult.data;
+                    document.querySelector('#feedbackId').value = feedback.id || '';
+                    document.querySelector('#feedbackCategory').value = feedback.category || '1';
+                    document.querySelector('#feedbackContent').value = feedback.content || '';
+                }
+
+                // Auto-focus textarea
+                setTimeout(function () {
+                    const textarea = document.querySelector('#feedbackContent');
+                    if (textarea) {
+                        textarea.focus();
+                    }
+                }, 100);
+            }
+        } catch (error) {
+            console.error('Error opening feedback modal:', error);
+            showError('Không thể mở form phản hồi.');
+        }
+    }
+
+    function closeFeedbackModal() {
+        const modalOverlay = document.querySelector('#modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.classList.remove('active');
+
+            setTimeout(function () {
+                const modalContainer = document.querySelector('#modal-content-container');
+                if (modalContainer) {
+                    modalContainer.innerHTML = '';
+                }
+            }, 200);
+        }
+    }
+
+    async function submitFeedback() {
+        const messageId = document.querySelector('#feedbackMessageId').value;
+        const feedbackId = document.querySelector('#feedbackId').value;
+        const category = parseInt(document.querySelector('#feedbackCategory').value);
+        const content = document.querySelector('#feedbackContent').value.trim();
+
+        if (!content) {
+            alert('Vui lòng nhập nội dung phản hồi');
+            return;
+        }
+
+        try {
+            let response;
+
+            // If feedbackId exists and category is not Initialized, update. Otherwise create.
+            if (feedbackId && category !== 0) {
+                response = await fetch('/Chat/UpdateChatFeedback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        Id: parseInt(feedbackId),
+                        Content: content,
+                        Category: category
+                    })
+                });
+            } else {
+                response = await fetch('/Chat/CreateChatFeedback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        MessageId: parseInt(messageId),
+                        Content: content,
+                        Category: category
+                    })
+                });
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                closeFeedbackModal();
+                // Show success message (you can use toastr if available)
+                console.log('Feedback submitted successfully');
+            } else {
+                alert(result.message || 'Không thể gửi phản hồi. Vui lòng thử lại.');
+            }
+        } catch (error) {
+            console.error('Error submitting feedback:', error);
+            alert('Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
+        }
     }
 
     window.closeCreateModal = closeCreateModal;
@@ -495,4 +707,6 @@
     window.handleLike = handleLike;
     window.handleDislike = handleDislike;
     window.handleComment = handleComment;
+    window.closeFeedbackModal = closeFeedbackModal;
+    window.submitFeedback = submitFeedback;
 })();

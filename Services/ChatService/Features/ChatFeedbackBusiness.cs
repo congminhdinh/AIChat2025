@@ -113,7 +113,7 @@ namespace ChatService.Features
 
         public async Task<BaseResponse<int>> UpdateChatFeedback(UpdateChatFeedbackRequest input)
         {
-            var feedback = await _feedbackRepo.FirstOrDefaultAsync(new ChatFeedbackByMessageSpec(_currentUserProvider.TenantId, input.Id));
+            var feedback = await _feedbackRepo.GetByIdAsync(input.Id);
             if (feedback == null)
             {
                 throw new Exception("Feedback is null");

@@ -12,11 +12,13 @@ namespace WebApp.Controllers
     public class ChatController : Controller
     {
         private readonly ChatBusiness _chatBusiness;
+        private readonly ChatFeedbackBusiness _chatFeedbackBusiness;
         private readonly IdentityHelper _identityHelper;
 
-        public ChatController(ChatBusiness chatBusiness, IdentityHelper identityHelper)
+        public ChatController(ChatBusiness chatBusiness, ChatFeedbackBusiness chatFeedbackBusiness, IdentityHelper identityHelper)
         {
             _chatBusiness = chatBusiness;
+            _chatFeedbackBusiness = chatFeedbackBusiness;
             _identityHelper = identityHelper;
         }
 
@@ -124,6 +126,64 @@ namespace WebApp.Controllers
             }
 
             return Json(new { success = true, message = "OK" });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetChatFeedback(int messageId)
+        {
+            var response = await _chatFeedbackBusiness.GetChatFeedbackDetailAsync(messageId);
+
+            if (response.Status == BaseResponseStatus.Error)
+            {
+                return Json(new { success = false, message = response.Message });
+            }
+
+            return Json(new { success = true, data = response.Data });
+        }
+
+        [HttpGet]
+        public IActionResult ChatFeedbackPartial()
+        {
+            return PartialView("_ChatFeedbackModal");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RateChatFeedback([FromBody] RateChatFeedbackRequest request)
+        {
+            var response = await _chatFeedbackBusiness.RateChatFeedbackAsync(request);
+
+            if (response.Status == BaseResponseStatus.Error)
+            {
+                return Json(new { success = false, message = response.Message });
+            }
+
+            return Json(new { success = true, data = response.Data });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateChatFeedback([FromBody] CreateChatFeedbackRequest request)
+        {
+            var response = await _chatFeedbackBusiness.CreateChatFeedbackAsync(request);
+
+            if (response.Status == BaseResponseStatus.Error)
+            {
+                return Json(new { success = false, message = response.Message });
+            }
+
+            return Json(new { success = true, data = response.Data });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateChatFeedback([FromBody] UpdateChatFeedbackRequest request)
+        {
+            var response = await _chatFeedbackBusiness.UpdateChatFeedbackAsync(request);
+
+            if (response.Status == BaseResponseStatus.Error)
+            {
+                return Json(new { success = false, message = response.Message });
+            }
+
+            return Json(new { success = true, data = response.Data });
         }
     }
 }

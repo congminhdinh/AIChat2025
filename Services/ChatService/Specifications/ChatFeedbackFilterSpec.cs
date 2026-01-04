@@ -21,7 +21,7 @@ namespace ChatService.Specifications
     {
         public ChatFeedbackByMessageSpec(int tenantId, int messageId): base(tenantId)
         {
-            Query.Where(m => m.MessageId == messageId);
+            Query.Where(m => m.ResponseId == messageId);
         }
     }
 }
