@@ -43,6 +43,48 @@ namespace TenantService.Features
             var tenant = new Tenant(input.Name, input.Description, input.IsActive);
             await _repository.AddAsync(tenant);
             await _repository.SaveChangesAsync();
+            //var adminAccountRequest = new
+            //{
+
+            //}
+            return new BaseResponse<int>(tenant.Id, input.CorrelationId());
+        }
+
+        public async Task<BaseResponse<int>> UpdateTenant(UpdateTenantRequest input)
+        {
+            if (!CheckIsSuperAdmin())
+            {
+                throw new Exception("Only super admin can access this resource");
+            }
+            var tenant = await _repository.GetByIdAsync(input.Id);
+            if (tenant == null)
+            {
+                throw new Exception("Tenant doesnt exist");
+            }
+            tenant.Name = input.Name;
+            tenant.Description = input.Description;
+
+            await _repository.UpdateAsync(tenant);
+            await _repository.SaveChangesAsync();
+            return new BaseResponse<int>(tenant.Id, input.CorrelationId());
+        }
+
+        public async Task<BaseResponse<int>> DeactivateTenant(DeactivateTenantRequest input)
+        {
+            if (!CheckIsSuperAdmin())
+            {
+                throw new Exception("Only super admin can access this resource");
+            }
+            var tenant = await _repository.GetByIdAsync(input.Id);
+            if (tenant == null)
+            {
+                throw new Exception("Tenant doesnt exist");
+            }
+            tenant.IsActive = false;
+
+            await _repository.UpdateAsync(tenant);
+            await _repository.SaveChangesAsync();
+            await PostWithTokenAsync<int, BaseResponse<int>>($"/web-api/account/tenancy-deactivate?tenantId={input.Id}", input.Id, _currentUserProvider.Token);
             return new BaseResponse<int>(tenant.Id, input.CorrelationId());
         }
         private bool CheckIsSuperAdmin()

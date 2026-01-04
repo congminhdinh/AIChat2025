@@ -16,6 +16,15 @@
     }
 
     function setupEventListeners() {
+        // Create button
+        const createButton = document.querySelector('#btn-create-account');
+        if (createButton) {
+            createButton.addEventListener('click', function (e) {
+                e.preventDefault();
+                openCreateModal();
+            });
+        }
+
         // Refresh button
         const refreshButton = document.querySelector('#btn-refresh-accounts');
         if (refreshButton) {
@@ -255,6 +264,111 @@
         }
     }
 
+    // ========== CREATE MODAL ==========
+    async function openCreateModal() {
+        try {
+            const response = await fetch(`${WEB_APP_URL}/Account/GetCreateAccountModal`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'text/html'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load create account modal');
+            }
+
+            const html = await response.text();
+
+            const modalContainer = document.querySelector('#modal-content-container');
+            const modalOverlay = document.querySelector('#modal-overlay');
+
+            if (modalContainer && modalOverlay) {
+                modalContainer.innerHTML = html;
+                modalOverlay.classList.add('active');
+
+                const submitBtn = document.querySelector('#btnSubmitCreateAccount');
+                if (submitBtn) {
+                    submitBtn.addEventListener('click', submitCreateAccount);
+                }
+
+                const nameInput = document.querySelector('#createAccountName');
+                if (nameInput) {
+                    setTimeout(() => nameInput.focus(), 100);
+                }
+            }
+        } catch (error) {
+            console.error('Error opening create modal:', error);
+            showToast('error', 'Không thể mở form tạo tài khoản.');
+        }
+    }
+
+    function closeCreateModal() {
+        const modalOverlay = document.querySelector('#modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.classList.remove('active');
+            setTimeout(() => {
+                const modalContainer = document.querySelector('#modal-content-container');
+                if (modalContainer) {
+                    modalContainer.innerHTML = '';
+                }
+            }, 200);
+        }
+    }
+
+    async function submitCreateAccount() {
+        const form = document.querySelector('#createAccountForm');
+        if (!form) {
+            showToast('error', 'Không tìm thấy form');
+            return;
+        }
+
+        const formData = new FormData(form);
+
+        const accountName = formData.get('Name');
+        if (!accountName || accountName.trim() === '') {
+            showToast('warning', 'Vui lòng nhập tên tài khoản');
+            return;
+        }
+
+        const email = formData.get('Email');
+        if (!email || email.trim() === '') {
+            showToast('warning', 'Vui lòng nhập email');
+            return;
+        }
+
+        const password = formData.get('Password');
+        if (!password || password.trim() === '') {
+            showToast('warning', 'Vui lòng nhập mật khẩu');
+            return;
+        }
+
+        if (password.length < 6) {
+            showToast('warning', 'Mật khẩu phải có ít nhất 6 ký tự');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${WEB_APP_URL}/Account/Create`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                closeCreateModal();
+                showToast('success', result.message || 'Tạo tài khoản thành công');
+                await loadAccountList(currentKeyword, currentPage);
+            } else {
+                showToast('error', result.message || 'Không thể tạo tài khoản. Vui lòng thử lại.');
+            }
+        } catch (error) {
+            console.error('Error creating account:', error);
+            showToast('error', 'Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
+        }
+    }
+
     // ========== NOTIFICATION HELPERS ==========
     function showToast(type, message) {
         const Toast = Swal.mixin({
@@ -316,8 +430,106 @@
     }
 
     async function openChangePasswordModalForAccount(accountId) {
-        // For now, show a message that this feature is only for current user
-        showToast('info', 'Chức năng đổi mật khẩu chỉ dành cho tài khoản của bạn. Vui lòng sử dụng menu người dùng ở góc trên bên phải.');
+        try {
+            const response = await fetch(`${WEB_APP_URL}/Account/GetAdminChangePasswordModal?accountId=${accountId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'text/html'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load admin change password modal');
+            }
+
+            const html = await response.text();
+
+            const modalContainer = document.querySelector('#modal-content-container');
+            const modalOverlay = document.querySelector('#modal-overlay');
+
+            if (modalContainer && modalOverlay) {
+                modalContainer.innerHTML = html;
+                modalOverlay.classList.add('active');
+
+                const submitBtn = document.querySelector('#btnSubmitAdminChangePassword');
+                if (submitBtn) {
+                    submitBtn.addEventListener('click', submitAdminChangePassword);
+                }
+
+                const newPasswordInput = document.querySelector('#adminNewPassword');
+                if (newPasswordInput) {
+                    setTimeout(() => newPasswordInput.focus(), 100);
+                }
+            }
+        } catch (error) {
+            console.error('Error opening admin change password modal:', error);
+            showToast('error', 'Không thể mở form đổi mật khẩu.');
+        }
+    }
+
+    function closeAdminChangePasswordModal() {
+        const modalOverlay = document.querySelector('#modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.classList.remove('active');
+            setTimeout(() => {
+                const modalContainer = document.querySelector('#modal-content-container');
+                if (modalContainer) {
+                    modalContainer.innerHTML = '';
+                }
+            }, 200);
+        }
+    }
+
+    async function submitAdminChangePassword() {
+        const accountId = document.querySelector('#adminPasswordAccountId')?.value;
+        const newPassword = document.querySelector('#adminNewPassword')?.value;
+        const confirmPassword = document.querySelector('#adminConfirmPassword')?.value;
+
+        if (!newPassword || newPassword.trim() === '') {
+            showToast('warning', 'Vui lòng nhập mật khẩu mới');
+            return;
+        }
+
+        if (!confirmPassword || confirmPassword.trim() === '') {
+            showToast('warning', 'Vui lòng xác nhận mật khẩu mới');
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            showToast('warning', 'Mật khẩu xác nhận không khớp');
+            return;
+        }
+
+        if (newPassword.length < 6) {
+            showToast('warning', 'Mật khẩu phải có ít nhất 6 ký tự');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${WEB_APP_URL}/Account/AdminChangePassword`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    AccountId: parseInt(accountId),
+                    NewPassword: newPassword,
+                    ConfirmPassword: confirmPassword
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                closeAdminChangePasswordModal();
+                showToast('success', result.message || 'Đặt lại mật khẩu thành công');
+            } else {
+                showToast('error', result.message || 'Không thể đặt lại mật khẩu. Vui lòng thử lại.');
+            }
+        } catch (error) {
+            console.error('Error changing password:', error);
+            showToast('error', 'Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
+        }
     }
 
     function closeChangePasswordModal() {
@@ -393,6 +605,8 @@
 
     // Expose functions to global scope for inline onclick handlers
     window.closeEditModal = closeEditModal;
+    window.closeCreateModal = closeCreateModal;
+    window.closeAdminChangePasswordModal = closeAdminChangePasswordModal;
     window.closeChangePasswordModal = closeChangePasswordModal;
     window.openChangePasswordModal = openChangePasswordModal;
 })();

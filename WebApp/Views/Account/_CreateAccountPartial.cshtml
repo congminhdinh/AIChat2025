@@ -1,0 +1,308 @@
+<div class="create-modal-container">
+    <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" id="createAccountLabel">
+            <i class="bi bi-person-plus-fill text-primary me-2"></i>Tạo tài khoản mới
+        </h5>
+        <button type="button" class="btn-close-modal" onclick="closeCreateModal()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <div class="modal-body">
+        <p class="text-muted small mb-4">
+            Thiết lập thông tin định danh và mật khẩu cho người dùng mới trong hệ thống AI.
+        </p>
+
+        <form id="createAccountForm" enctype="multipart/form-data">
+            <input type="hidden" id="createIsChanged" name="IsChanged" value="false" />
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-12">
+                    <label for="createAccountName" class="form-label fw-semibold text-secondary small">
+                        <i class="bi bi-person-fill me-1"></i>Họ và tên <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control bg-light border-0 py-2"
+                           id="createAccountName" name="Name"
+                           placeholder="Nhập tên người dùng..." required>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-12">
+                    <label for="createAccountEmail" class="form-label fw-semibold text-secondary small">
+                        <i class="bi bi-envelope-fill me-1"></i>Email <span class="text-danger">*</span>
+                    </label>
+                    <input type="email" class="form-control bg-light border-0 py-2"
+                           id="createAccountEmail" name="Email"
+                           placeholder="Nhập địa chỉ email..." required>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-12">
+                    <label for="createAccountPassword" class="form-label fw-semibold text-secondary small">
+                        <i class="bi bi-key-fill me-1"></i>Mật khẩu <span class="text-danger">*</span>
+                    </label>
+                    <div class="password-input-group">
+                        <input type="password" class="form-control bg-light border-0 py-2"
+                               id="createAccountPassword" name="Password"
+                               placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)..." required>
+                        <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('createAccountPassword', this)">
+                            <i class="bi bi-eye-fill"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-12">
+                    <label for="createIsActive" class="form-label fw-semibold text-secondary small">
+                        <i class="bi bi-shield-lock-fill me-1"></i>Trạng thái
+                    </label>
+                    <select class="form-select bg-light border-0 py-2" id="createIsActive" name="IsActive">
+                        <option value="true" selected>🟢 Hoạt động</option>
+                        <option value="false">🔴 Đang khóa</option>
+                    </select>
+                </div>
+            </div>
+
+            <label class="form-label fw-semibold text-secondary small">
+                <i class="bi bi-image-fill me-1"></i>Ảnh đại diện (Tùy chọn)
+            </label>
+            <div class="upload-section border rounded-3 p-3 bg-light">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="position-relative">
+                        <img id="previewCreateAvatar"
+                             src="/images/default-avatar.png"
+                             class="rounded-circle border shadow-sm"
+                             style="width: 70px; height: 70px; object-fit: cover;"
+                             onerror="this.src='/images/default-avatar.png'" />
+                        <div class="avatar-badge">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                        </div>
+                    </div>
+
+                    <div class="flex-grow-1">
+                        <div class="drop-zone-mini border-2 border-dashed rounded-3 text-center p-3" onclick="document.getElementById('createFileInput').click()">
+                            <i class="bi bi-cloud-arrow-up-fill text-primary fs-4"></i>
+                            <div class="small fw-bold mt-1">Chọn ảnh đại diện</div>
+                            <input type="file" id="createFileInput" name="NewAvatar" accept=".png, .jpg, .jpeg" hidden onchange="handleCreateFileSelect(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="file-rules d-flex gap-3 bg-white p-2 rounded-2 border shadow-sm">
+                    <div class="small text-muted">
+                        <i class="bi bi-filetype-jpg text-primary"></i> PNG, JPG, JPEG
+                    </div>
+                    <div class="vr"></div>
+                    <div class="small text-muted">
+                        <i class="bi bi-hdd-fill text-primary"></i> Tối đa 5MB
+                    </div>
+                </div>
+            </div>
+
+            <div id="create-upload-error" class="alert alert-danger d-flex align-items-center mt-3 d-none py-2" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <div id="create-error-message" class="small"></div>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal-footer border-0 justify-content-center pt-0">
+        <button type="button" class="btn btn-light px-4 rounded-pill border" onclick="closeCreateModal()">
+            Hủy bỏ
+        </button>
+        <button type="button" class="btn btn-primary px-4 rounded-pill shadow" id="btnSubmitCreateAccount">
+            <i class="bi bi-check-lg me-1"></i> Tạo tài khoản
+        </button>
+    </div>
+</div>
+
+<style>
+    .create-modal-container {
+        padding: 5px;
+    }
+
+    /* Header & Close button */
+    .btn-close-modal {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        color: #adb5bd;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+
+    .btn-close-modal:hover {
+        color: #495057;
+        transform: rotate(90deg);
+    }
+
+    /* Forms */
+    .form-control:focus, .form-select:focus {
+        background-color: #fff !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        border: 1px solid #0d6efd !important;
+    }
+
+    /* Password Input Group */
+    .password-input-group {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .password-input-group .form-control {
+        padding-right: 45px;
+    }
+
+    .btn-toggle-password {
+        position: absolute;
+        right: 10px;
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 5px 10px;
+        transition: color 0.2s;
+    }
+
+    .btn-toggle-password:hover {
+        color: #0d6efd;
+    }
+
+    .btn-toggle-password i {
+        font-size: 1.1rem;
+    }
+
+    /* Upload Area */
+    .drop-zone-mini {
+        border-style: dashed !important;
+        background-color: #fff;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .drop-zone-mini:hover {
+        background-color: #eef2ff;
+        border-color: #0d6efd !important;
+    }
+
+    /* Avatar Badge */
+    .avatar-badge {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+
+    .file-rules {
+        font-size: 0.8rem;
+    }
+
+    .rounded-pill {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .shadow-sm {
+        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;
+    }
+
+    .text-danger {
+        color: #dc3545;
+    }
+</style>
+
+<script>
+    // Toggle password visibility
+    window.togglePasswordVisibility = function(inputId, button) {
+        const input = document.getElementById(inputId);
+        const icon = button.querySelector('i');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('bi-eye-fill');
+            icon.classList.add('bi-eye-slash-fill');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('bi-eye-slash-fill');
+            icon.classList.add('bi-eye-fill');
+        }
+    };
+
+    // Handle file selection
+    window.handleCreateFileSelect = function(input) {
+        console.log('handleCreateFileSelect called', input);
+
+        const file = input.files && input.files[0];
+        const errorDiv = document.getElementById('create-upload-error');
+        const preview = document.getElementById('previewCreateAvatar');
+        const isChangedField = document.getElementById('createIsChanged');
+
+        console.log('File selected:', file);
+
+        if (!file) {
+            console.log('No file selected');
+            return;
+        }
+
+        // Hide any previous errors
+        if (errorDiv) {
+            errorDiv.classList.add('d-none');
+        }
+
+        // Validation logic
+        if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+            console.log('Invalid file type:', file.type);
+            showCreateError("Định dạng file không hỗ trợ.");
+            input.value = "";
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            console.log('File too large:', file.size);
+            showCreateError("Dung lượng file vượt quá 5MB.");
+            input.value = "";
+            return;
+        }
+
+        // Set IsChanged to true
+        if (isChangedField) {
+            isChangedField.value = 'true';
+            console.log('IsChanged set to:', isChangedField.value);
+        }
+
+        // Show preview
+        if (preview) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                console.log('FileReader onload triggered');
+                preview.src = e.target.result;
+            };
+            reader.onerror = function(e) {
+                console.error('FileReader error:', e);
+                showCreateError("Không thể đọc file. Vui lòng thử lại.");
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    window.showCreateError = function(msg) {
+        console.log('showCreateError called:', msg);
+        const errorDiv = document.getElementById('create-upload-error');
+        const errorMessage = document.getElementById('create-error-message');
+        if (errorDiv && errorMessage) {
+            errorMessage.textContent = msg;
+            errorDiv.classList.remove('d-none');
+        }
+    };
+</script>

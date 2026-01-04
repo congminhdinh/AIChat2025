@@ -125,9 +125,88 @@ namespace AdminCMS.Controllers
         }
 
         [HttpGet]
+        public IActionResult GetCreateAccountModal()
+        {
+            return PartialView("_CreateAccountPartial");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create([FromForm] CreateWebAppAccountRequest request)
+        {
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                return Json(new { success = false, message = "Vui lòng nhập tên tài khoản" });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Email))
+            {
+                return Json(new { success = false, message = "Vui lòng nhập email" });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Password))
+            {
+                return Json(new { success = false, message = "Vui lòng nhập mật khẩu" });
+            }
+
+            if (request.Password.Length < 6)
+            {
+                return Json(new { success = false, message = "Mật khẩu phải có ít nhất 6 ký tự" });
+            }
+
+            var response = await _accountBusiness.CreateAsync(request);
+
+            if (response.Status == BaseResponseStatus.Error)
+            {
+                return Json(new { success = false, message = response.Message });
+            }
+
+            return Json(new { success = true, data = response.Data, message = "Tạo tài khoản thành công" });
+        }
+
+        [HttpGet]
         public IActionResult GetChangePasswordModal()
         {
             return PartialView("ChangePasswordPartial");
+        }
+
+        [HttpGet]
+        public IActionResult GetAdminChangePasswordModal(int accountId)
+        {
+            if (accountId <= 0)
+            {
+                return BadRequest("Invalid account ID");
+            }
+            return PartialView("_AdminChangePasswordPartial", accountId);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AdminChangePassword([FromBody] AdminChangePasswordRequest request)
+        {
+            // Validate passwords match
+            if (string.IsNullOrEmpty(request.NewPassword))
+            {
+                return Json(new { success = false, message = "Vui lòng nhập mật khẩu mới" });
+            }
+
+            if (request.NewPassword != request.ConfirmPassword)
+            {
+                return Json(new { success = false, message = "Mật khẩu xác nhận không khớp" });
+            }
+
+            if (request.NewPassword.Length < 6)
+            {
+                return Json(new { success = false, message = "Mật khẩu phải có ít nhất 6 ký tự" });
+            }
+
+            var response = await _accountBusiness.AdminChangePasswordAsync(request.AccountId, request.NewPassword);
+
+            if (response.Status == BaseResponseStatus.Error)
+            {
+                return Json(new { success = false, message = response.Message });
+            }
+
+            return Json(new { success = true, message = "Đặt lại mật khẩu thành công" });
         }
 
         [HttpPost]

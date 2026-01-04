@@ -255,6 +255,144 @@ namespace AdminCMS.Business
             }
         }
 
+        public async Task<BaseResponse<int>> CreateAsync(CreateWebAppAccountRequest request, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var token = await _identityHelper.GetAccessTokenAsync();
+                if (string.IsNullOrEmpty(token))
+                {
+                    return new BaseResponse<int>
+                    {
+                        Status = BaseResponseStatus.Error,
+                        Message = "Không tìm thấy token xác thực"
+                    };
+                }
+
+                string? avatarPath = null;
+
+                // Handle avatar upload if provided
+                if (request.IsChanged && request.NewAvatar != null)
+                {
+                    var uploadResult = await UploadAvatarAsync(0, request.NewAvatar, token, cancellationToken);
+                    if (uploadResult.Status == BaseResponseStatus.Error)
+                    {
+                        return new BaseResponse<int>
+                        {
+                            Status = BaseResponseStatus.Error,
+                            Message = uploadResult.Message
+                        };
+                    }
+                    avatarPath = uploadResult.Data;
+                }
+
+                // Prepare create request for AccountService
+                var createRequest = new
+                {
+                    Name = request.Name,
+                    Email = request.Email,
+                    Password = request.Password,
+                    IsActive = request.IsActive,
+                    Avatar = avatarPath
+                };
+
+                var response = await PostWithTokenAsync<object, BaseResponse<int>>(
+                    "/web-api/account/",
+                    createRequest,
+                    token,
+                    cancellationToken
+                );
+
+                if (response == null)
+                {
+                    return new BaseResponse<int>
+                    {
+                        Status = BaseResponseStatus.Error,
+                        Message = "Không nhận được phản hồi từ server"
+                    };
+                }
+
+                return response;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError($"HTTP error during create account: {ex.Message}");
+                return new BaseResponse<int>
+                {
+                    Status = BaseResponseStatus.Error,
+                    Message = "Lỗi kết nối đến dịch vụ account"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error during create account: {ex.Message}");
+                return new BaseResponse<int>
+                {
+                    Status = BaseResponseStatus.Error,
+                    Message = "Đã xảy ra lỗi khi tạo tài khoản"
+                };
+            }
+        }
+
+        public async Task<BaseResponse<bool>> AdminChangePasswordAsync(int accountId, string newPassword, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var token = await _identityHelper.GetAccessTokenAsync();
+                if (string.IsNullOrEmpty(token))
+                {
+                    return new BaseResponse<bool>
+                    {
+                        Status = BaseResponseStatus.Error,
+                        Message = "Không tìm thấy token xác thực"
+                    };
+                }
+
+                // Prepare request for admin password change
+                var apiRequest = new
+                {
+                    AccountId = accountId,
+                    NewPassword = newPassword
+                };
+
+                var response = await PostWithTokenAsync<object, BaseResponse<bool>>(
+                    "/web-api/account/admin-change-password",
+                    apiRequest,
+                    token,
+                    cancellationToken
+                );
+
+                if (response == null)
+                {
+                    return new BaseResponse<bool>
+                    {
+                        Status = BaseResponseStatus.Error,
+                        Message = "Không nhận được phản hồi từ server"
+                    };
+                }
+
+                return response;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError($"HTTP error during admin change password: {ex.Message}");
+                return new BaseResponse<bool>
+                {
+                    Status = BaseResponseStatus.Error,
+                    Message = "Lỗi kết nối đến dịch vụ account"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error during admin change password: {ex.Message}");
+                return new BaseResponse<bool>
+                {
+                    Status = BaseResponseStatus.Error,
+                    Message = "Đã xảy ra lỗi khi đổi mật khẩu"
+                };
+            }
+        }
+
         public async Task<BaseResponse<bool>> ChangePasswordAsync(string newPassword, CancellationToken cancellationToken = default)
         {
             try

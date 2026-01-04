@@ -234,11 +234,12 @@
 
             @if (IdentityHelper.IsAdmin())
             {
+                <a href="@(webAppUrl)/SystemPrompt" class="nav-item @(currentPath.StartsWith("/Tenant") ? "active" : "")">Tenant</a>
                 <a href="@(webAppUrl)/Document" class="nav-item @(currentPath.StartsWith("/Document") ? "active" : "")">Tài liệu</a>
                 <a href="@(webAppUrl)/Account" class="nav-item @(currentPath.StartsWith("/Account") ? "active" : "")">Tài khoản</a>
-                <a href="@(webAppUrl)/SystemPrompt" class="nav-item @(currentPath.StartsWith("/SystemPrompt") ? "active" : "")">Cấu hình</a>
+@*                 
                 <a href="@(webAppUrl)/PromptConfig" class="nav-item @(currentPath.StartsWith("/PromptConfig") ? "active" : "")">Thuật ngữ</a>
-                <a href="@(webAppUrl)/Stat" class="nav-item @(currentPath.StartsWith("/Stat") ? "active" : "")">Thống kê</a>
+                <a href="@(webAppUrl)/Stat" class="nav-item @(currentPath.StartsWith("/Stat") ? "active" : "")">Thống kê</a> *@
             }
         </nav>
         <div class="user-profile" id="userProfileBtn" title="@IdentityHelper.GetUsername()">
