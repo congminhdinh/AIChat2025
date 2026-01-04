@@ -43,5 +43,6 @@ namespace ChatService.Endpoints
                 return await business.DeleteAsync(deleteRequest);
             });
         }
+        }
     }
-}
+    
