@@ -8,12 +8,12 @@ namespace ChatService.Specifications
     {
         public ChatFeedbackFilterSpec(int tenantId, short rating, int pageIndex, int pageSize): base(tenantId)
         {
-            Query.Where(m => m.Ratings == rating).OrderByDescending(m => m.LastModifiedAt).Skip(pageSize * (pageIndex - 1)).Take(pageSize);
+            Query.Where(m => rating == 0 || m.Ratings == rating).OrderByDescending(m => m.LastModifiedAt).Skip(pageSize * (pageIndex - 1)).Take(pageSize);
         }
 
         public ChatFeedbackFilterSpec(int tenantId, short rating) : base(tenantId)
         {
-            Query.Where(m => m.Ratings == rating);
+            Query.Where(m => rating == 0 || m.Ratings == rating);
         }
     }
 

@@ -35,6 +35,11 @@ namespace ChatService.Endpoints
             {
                 return await chatBusiness.SaveUserMessageAndPublishAsync(input);
             });
+
+            group.MapGet("/messages/count", async (ChatBusiness chatBusiness) =>
+            {
+                return await chatBusiness.CountMessage();
+            });
         }
     }
 }

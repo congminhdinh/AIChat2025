@@ -230,4 +230,11 @@ public class ChatBusiness: BaseHttpClient
             Type = message.Type
         };
     }
+
+    public async Task<BaseResponse<int>> CountMessage()
+    {
+        var request = new BaseRequest();
+        var count = await _messageRepo.CountAsync(new ChatMessageSpec(_currentUserProvider.TenantId));
+        return new BaseResponse<int>(count, request.CorrelationId());
+    }
 }

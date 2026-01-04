@@ -225,5 +225,11 @@ namespace WebApp.Business
                 };
             }
         }
+
+        public async Task<BaseResponse<int>> CountMessage()
+        {
+            var token = await _identityHelper.GetAccessTokenAsync();
+            return await GetWithTokenAsync<BaseResponse<int>>("/web-api/chat/messages/count", token);
+        }
     }
 }
