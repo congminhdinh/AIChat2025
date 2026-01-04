@@ -84,8 +84,8 @@ async def process_batch_in_background(entities: List[TestEntity]):
 
             # Wait 3 seconds before processing next entity
             if idx < len(entities) - 1:  # Don't wait after the last entity
-                logger.info(f'Waiting 3 seconds before next entity...')
-                await asyncio.sleep(3)
+                logger.info(f'Waiting 0.5 seconds before next entity...')
+                await asyncio.sleep(0.5)
 
         except Exception as e:
             logger.error(f'Error processing entity TC_id={entity.TC_id}: {e}', exc_info=True)

@@ -27,14 +27,23 @@ class LegalTermExtractor:
     CIRCULAR_PATTERN = re.compile(r'thông tư\s+\d+/\d+/[a-z\-]+', re.IGNORECASE)
     YEAR_PATTERN = re.compile(r'năm\s+\d{4}', re.IGNORECASE)
 
-    # Common Vietnamese legal abbreviations
-    COMMON_ABBREVIATIONS = {
-        'BHXH', 'BHYT', 'BHTN',  # Insurance types
-        'NLĐ', 'NSDLĐ',  # Labor relations
-        'CBNV', 'CNVC',  # Employee types
-        'PCCC', 'ATVSLĐ',  # Safety
-        'HĐLĐ',  # Labor contract
+    # Common Vietnamese legal abbreviations with their full forms
+    # This mapping enables expansion for better keyword matching
+    ABBREVIATION_EXPANSIONS = {
+        'BHXH': 'Bảo hiểm xã hội',
+        'BHYT': 'Bảo hiểm y tế',
+        'BHTN': 'Bảo hiểm thất nghiệp',
+        'NLĐ': 'Người lao động',
+        'NSDLĐ': 'Người sử dụng lao động',
+        'CBNV': 'Cán bộ nhân viên',
+        'CNVC': 'Công nhân viên chức',
+        'PCCC': 'Phòng cháy chữa cháy',
+        'ATVSLĐ': 'An toàn vệ sinh lao động',
+        'HĐLĐ': 'Hợp đồng lao động',
     }
+
+    # Keep the set for quick lookup
+    COMMON_ABBREVIATIONS = set(ABBREVIATION_EXPANSIONS.keys())
 
     @classmethod
     def extract_keywords(
@@ -74,11 +83,17 @@ class LegalTermExtractor:
         year_matches = cls.YEAR_PATTERN.findall(query)
         keywords.extend([m.lower() for m in year_matches])
 
-        # 6. Extract common abbreviations from query
+        # 6. Extract common abbreviations from query and expand them
         query_upper = query.upper()
         for abbr in cls.COMMON_ABBREVIATIONS:
             if abbr in query_upper:
+                # Add the abbreviation itself
                 keywords.append(abbr)
+                # Also add the expanded full form for better matching
+                if abbr in cls.ABBREVIATION_EXPANSIONS:
+                    expanded_form = cls.ABBREVIATION_EXPANSIONS[abbr].lower()
+                    keywords.append(expanded_form)
+                    logger.debug(f'Expanded abbreviation "{abbr}" to "{expanded_form}"')
 
         # 7. Extract tenant-specific terms from system_instruction
         if system_instruction:

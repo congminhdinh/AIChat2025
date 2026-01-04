@@ -123,8 +123,9 @@ class QdrantService:
                 limit=limit
             )
 
-            # Filter by similarity score threshold
-            SIMILARITY_THRESHOLD = 0.5
+            # Adaptive similarity threshold: Lower threshold to reduce false negatives
+            # Old threshold (0.5) was too aggressive and filtered out valid abbreviation matches
+            SIMILARITY_THRESHOLD = 0.3
             filtered_results = [r for r in results if r.score >= SIMILARITY_THRESHOLD]
 
             # Log filtering activity
@@ -164,8 +165,9 @@ class QdrantService:
                 limit=limit
             )
 
-            # Filter by similarity score threshold
-            SIMILARITY_THRESHOLD = 0.5
+            # Adaptive similarity threshold: Lower threshold to reduce false negatives
+            # Old threshold (0.5) was too aggressive and filtered out valid abbreviation matches
+            SIMILARITY_THRESHOLD = 0.3
             filtered_results = [r for r in results if r.score >= SIMILARITY_THRESHOLD]
 
             # Log filtering activity
@@ -286,7 +288,8 @@ class QdrantService:
             )
 
             # Execute search with lower threshold for keyword matches
-            KEYWORD_THRESHOLD = 0.6
+            # Reduced from 0.6 to 0.4 to improve recall for abbreviation queries
+            KEYWORD_THRESHOLD = 0.4
             results = await self.client.search(
                 collection_name=self.collection_name,
                 query_vector=query_vector,
@@ -517,25 +520,35 @@ class ChatBusiness:
         Returns:
             System prompt string
         """
-        base_prompt = """Bạn là trợ lý pháp lý AI chuyên về so sánh quy định.
+        base_prompt = '''Bạn là trợ lý pháp lý AI chuyên về so sánh quy định.
 
 ⛔ CẤM TUYỆT ĐỐI (VI PHẠM SẼ BỊ TỪ CHỐI):
 - KHÔNG in "Bước 1", "Bước 2", "Bước 3", "Step 1", "Step 2" hay bất kỳ mô tả quy trình nào
 - KHÔNG in các hướng dẫn như "Trích dẫn chính xác", "Trả lời câu hỏi", "Dựa trên ngữ cảnh"
 - KHÔNG in tiền tố như "Trả lời:", "Câu trả lời:", "Kết luận:", "Dựa trên"
 - KHÔNG giải thích quá trình tư duy hoặc phân tích
-- KHÔNG trả lời dài dòng (chỉ tối đa 2-3 câu)
+- KHÔNG liệt kê tất cả thông tin từ tài liệu - chỉ tổng hợp những gì liên quan
 - KHÔNG nhầm lẫn số liệu (nếu hỏi ca ngày thì lấy ca ngày, hỏi ca đêm thì lấy ca đêm)
 - KHÔNG cung cấp thông tin tuyệt mật
+
+⚠️ YÊU CẦU TRÍCH DẪN (BẮT BUỘC):
+- Phải xác định chính xác số hiệu "Điều" (Article) và "Khoản" (Clause - nếu có) trong văn bản nguồn.
+- Ví dụ đúng: [Nội quy Công ty ABC - Điều 5.1], [Bộ luật Lao động 2019 - Khoản 2 Điều 106].
+- Tuyệt đối KHÔNG tự suy diễn số điều nếu văn bản không ghi rõ.
+
+🎯 YÊU CẦU ĐỘ DÀI NGHIÊM NGẶT:
+- Tối đa 5 câu
+- Khoảng 200 từ (không được vượt quá)
+- Tổng hợp ngắn gọn, không liệt kê chi tiết từng văn bản
 
 ✓ ĐỊNH DẠNG ĐẦU RA (OUTPUT FORMAT):
 Theo [Tên tài liệu nội quy - Điều X], công ty quy định [số liệu cụ thể], [đánh giá: hợp lệ/cao hơn/thấp hơn] mức tối thiểu [số liệu] quy định tại [Tên tài liệu luật - Điều Y].
 
 📌 LƯU Ý QUAN TRỌNG:
-- Sao chép CHÍNH XÁC tên tài liệu trong ngoặc vuông [...] từ phần "Thông tin tham khảo" bên dưới
-- Trích xuất đúng số liệu (nếu hỏi ca ngày thì lấy ca ngày, hỏi ca đêm thì lấy ca đêm)
-- Chỉ so sánh nội quy công ty với luật nhà nước
-- Không giải thích, không dài dòng, chỉ 1-2 câu"""
+- Sao chép CHÍNH XÁC tên tài liệu trong ngoặc vuông [...] từ phần "Thông tin tham khảo".
+- Trích xuất đúng số liệu và trích dẫn đúng điều khoản tương ứng của số liệu đó.
+- Chỉ so sánh nội quy công ty với luật nhà nước.
+- Ưu tiên tổng hợp thay vì liệt kê, tối đa 5 câu, khoảng 200 từ.'''
 
         if fallback_mode:
             base_prompt += """\n\n⚠️ CHẾ ĐỘ FALLBACK:
@@ -560,6 +573,12 @@ Hệ thống đã tự động tìm kiếm trong cơ sở dữ liệu pháp lu�
 - KHÔNG in "Bước 1", "Bước 2", "Bước 3" hoặc bất kỳ quá trình suy luận nào
 - KHÔNG in các hướng dẫn như "Trích dẫn chính xác từ ngữ cảnh", "Trả lời câu hỏi"
 - KHÔNG in bất kỳ tiền tố nào như "Trả lời:", "Câu trả lời:", "Dựa trên"
+- KHÔNG liệt kê tất cả thông tin từ tài liệu - chỉ tổng hợp những gì liên quan
+
+🎯 YÊU CẦU ĐỘ DÀI NGHIÊM NGẶT:
+- Tối đa 5 câu
+- Khoảng 200 từ (không được vượt quá)
+- Tổng hợp ngắn gọn, không liệt kê chi tiết
 
 ✓ CHỈ IN CÂU TRẢ LỜI CUỐI CÙNG theo mẫu:
 Theo [Tên tài liệu - Điều X], [nội dung cụ thể].
