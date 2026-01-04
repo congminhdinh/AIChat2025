@@ -230,7 +230,7 @@
     <header class="header">
         <div class="logo">AI CHAT 2025</div>
         <nav class="nav-tabs">
-            <a href="@(webAppUrl)/Chat" class="nav-item @(currentPath.StartsWith("/Chat") ? "active" : "")">Chat</a>
+            @* <a href="@(webAppUrl)/Chat" class="nav-item @(currentPath.StartsWith("/Chat") ? "active" : "")">Chat</a> *@
 
             @if (IdentityHelper.IsAdmin() && IdentityHelper.GetTenantId() == 1)
             {
