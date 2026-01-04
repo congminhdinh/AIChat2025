@@ -36,6 +36,8 @@ builder.Services.AddScoped<ChatBusiness>();
 builder.Services.AddHttpClient<ChatBusiness>();
 builder.Services.AddScoped<PromptConfigBusiness>();
 builder.Services.AddScoped<SystemPromptBusiness>();
+builder.Services.AddScoped<ChatFeedbackBusiness>();
+builder.Services.AddHttpClient<ChatFeedbackBusiness>();
 
 // Add SignalR
 builder.AddCustomSignalR();
@@ -111,4 +113,5 @@ app.MapHub<ChatHub>("/hubs/chat");
 app.MapChatEndpoints();
 app.MapPromptConfigEndpoints();
 app.MapSystemPromptEndpoints();
+app.MapChatFeedbackEndpoints();
 app.Run();

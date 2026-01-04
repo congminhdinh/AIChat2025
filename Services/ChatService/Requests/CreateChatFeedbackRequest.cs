@@ -6,6 +6,6 @@ namespace ChatService.Requests
     {
         public int MessageId { get; set; }
         public string Content { get; set; }
-        public string Category { get; set; }
+        public ChatFeedbackCategory Category { get; set; }
     }
 }

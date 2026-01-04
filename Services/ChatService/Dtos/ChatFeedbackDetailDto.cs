@@ -2,7 +2,11 @@
 {
     public class ChatFeedbackDetailDto
     {
-        public ChatFeedbackDetailDto(int id, short ratings, string content, string category)
+        public ChatFeedbackDetailDto()
+        {
+
+        }
+        public ChatFeedbackDetailDto(int id, short ratings, string content, ChatFeedbackCategory category)
         {
             Id = id;
             Ratings = ratings;
@@ -13,6 +17,6 @@
         public int Id { get; set; }
         public short Ratings { get; set; }
         public string Content { get; set; }
-        public string Category { get; set; }
+        public ChatFeedbackCategory Category { get; set; }
     }
 }

@@ -67,11 +67,11 @@ namespace ChatService.Features
             {
                 throw new Exception(nameof(input));
             }
-            var feedback = await _feedbackRepo.GetByIdAsync(input.Id);
-            
-            if(feedback == null)
+            var feedback = await _feedbackRepo.FirstOrDefaultAsync(new ChatFeedbackByMessageSpec(_currentUserProvider.TenantId, input.MessageId));
+
+            if (feedback == null)
             {
-                var newFeedback = new ChatFeedback(message.RequestId, message.Id, input.Ratings, "", "", "");
+                var newFeedback = new ChatFeedback(message.RequestId, message.Id, input.Ratings, ChatFeedbackCategory.Initialized, "", "");
                 await _feedbackRepo.AddAsync(newFeedback);
                 return new BaseResponse<int>(newFeedback.Id, input.CorrelationId());
             }
@@ -86,10 +86,10 @@ namespace ChatService.Features
 
         public async Task<BaseResponse<ChatFeedbackDetailDto>> GetChatFeedbackDetail(GetChatFeedbackByIdRequest input)
         {
-            var feedback = await _feedbackRepo.GetByIdAsync(input.Id);
+            var feedback = await _feedbackRepo.FirstOrDefaultAsync(new ChatFeedbackByMessageSpec(_currentUserProvider.TenantId, input.Id));
             if (feedback == null)
             {
-                throw new Exception("Feedback is null");
+                return new BaseResponse<ChatFeedbackDetailDto>(new ChatFeedbackDetailDto(), input.CorrelationId());
             }
             return new BaseResponse<ChatFeedbackDetailDto>(new ChatFeedbackDetailDto(feedback.Id, feedback.Ratings, feedback.Content, feedback.Category), input.CorrelationId());
         }
@@ -113,7 +113,7 @@ namespace ChatService.Features
 
         public async Task<BaseResponse<int>> UpdateChatFeedback(UpdateChatFeedbackRequest input)
         {
-            var feedback = await _feedbackRepo.GetByIdAsync(input.Id);
+            var feedback = await _feedbackRepo.FirstOrDefaultAsync(new ChatFeedbackByMessageSpec(_currentUserProvider.TenantId, input.Id));
             if (feedback == null)
             {
                 throw new Exception("Feedback is null");

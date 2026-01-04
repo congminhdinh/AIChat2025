@@ -6,7 +6,7 @@
         {
             
         }
-        public ChatFeedbackDto(int id, string message, string response, short ratings, string content, string category)
+        public ChatFeedbackDto(int id, string message, string response, short ratings, string content, ChatFeedbackCategory category)
         {
             Id = id;
             Message = message;
@@ -20,6 +20,6 @@
         public string Response { get; set; }
         public short Ratings { get; set; } = 0; //1 like, 2 dislike
         public string Content { get; set; }
-        public string Category { get; set; }
+        public ChatFeedbackCategory Category { get; set; }
     }
 }
