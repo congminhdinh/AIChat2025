@@ -232,7 +232,7 @@
         <nav class="nav-tabs">
             <a href="@(webAppUrl)/Chat" class="nav-item @(currentPath.StartsWith("/Chat") ? "active" : "")">Chat</a>
 
-            @if (IdentityHelper.IsAdmin())
+            @if (IdentityHelper.IsAdmin() && IdentityHelper.GetTenantId() == 1)
             {
                 <a href="@(webAppUrl)/Tenant" class="nav-item @(currentPath.StartsWith("/Tenant") ? "active" : "")">Tenant</a>
                 <a href="@(webAppUrl)/Document" class="nav-item @(currentPath.StartsWith("/Document") ? "active" : "")">Tài liệu</a>
