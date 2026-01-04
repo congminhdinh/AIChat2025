@@ -3,6 +3,8 @@
 
     let currentConversationId = null;
     let hubConnection = null;
+    let signalRRetryCount = 0;
+    const MAX_SIGNALR_RETRIES = 10;
 
     document.addEventListener('DOMContentLoaded', function () {
         initializeChat();
@@ -15,13 +17,22 @@
     }
 
     async function setupSignalR() {
-        debugger;
         // Check if signalR is loaded
         if (typeof signalR === 'undefined') {
-            console.error('SignalR library is not loaded. Retrying in 500ms...');
+            signalRRetryCount++;
+
+            if (signalRRetryCount > MAX_SIGNALR_RETRIES) {
+                console.error('SignalR library failed to load after multiple retries. Please refresh the page.');
+                showError('Không thể tải thư viện SignalR. Vui lòng refresh trang.');
+                return;
+            }
+
+            console.warn(`SignalR library not loaded yet. Retry ${signalRRetryCount}/${MAX_SIGNALR_RETRIES}...`);
             setTimeout(() => setupSignalR(), 500);
             return;
         }
+
+        console.log('SignalR library loaded successfully. Initializing connection...');
 
         const apiGatewayUrl = window.location.origin.replace(/:\d+/, ':7235');
 

@@ -104,7 +104,19 @@ public class ChatBusiness: BaseHttpClient
         {
             return new BaseResponse<ConversationDto>("Conversation not found", BaseResponseStatus.Error, request.CorrelationId());
         }
-
+        //var messages = conversation.Messages
+        //        .OrderBy(m => m.Timestamp)
+        //        .Select(m => new MessageDto
+        //        {
+        //            Id = m.Id,
+        //            ConversationId = m.ConversationId,
+        //            ReferenceDocIdList = !string.IsNullOrEmpty(m.ReferenceDocIds) ? m.ReferenceDocIds.Split(",").Select(int.Parse).ToList() : new List<int>(),
+        //            RequestId = m.RequestId,
+        //            Content = m.Message,
+        //            Timestamp = m.Timestamp,
+        //            UserId = m.UserId,
+        //            Type = m.Type
+        //        }).ToList();
         return new BaseResponse<ConversationDto>(new ConversationDto
         {
             Id = conversation.Id,

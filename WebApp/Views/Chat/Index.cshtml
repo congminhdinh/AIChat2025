@@ -459,6 +459,13 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js" integrity="sha512-VKOOv3pNe/ux9v0rkDg3RSLk/Pg+csN+6lMaLQLKBN3lhQvEBDRFOI09DkpjAI/Vxp3qbP8qj0yPYOZqC7F9qw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- SignalR Library with fallback -->
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"
+            crossorigin="anonymous"
+            onload="console.log('SignalR loaded successfully from jsDelivr')"
+            onerror="this.onerror=null; this.src='https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js'; console.log('Trying alternative CDN...')">
+    </script>
+
+    <!-- Chat Script -->
     <script src="~/Scripts/Chat/chat.js" asp-append-version="true"></script>
 }

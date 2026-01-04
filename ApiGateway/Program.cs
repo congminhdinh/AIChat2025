@@ -21,13 +21,16 @@ builder.Services.AddReverseProxy()
 builder.Services.AddHttpClient();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("SignalRPolicy", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("https://localhost:7262") // URL chính xác c?a WebApp
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials(); // Bây gi? m?i ???c phép thêm dòng này
     });
 });
+
+
 // 3. Add Swagger services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -87,7 +90,7 @@ app.UseSwaggerUI(options =>
         }
     }
 });
-app.UseCors("AllowAll");
+app.UseCors("SignalRPolicy");
 app.MapReverseProxy();
 app.MapGet("/swagger/service/{clusterId}", async (
     string clusterId,
