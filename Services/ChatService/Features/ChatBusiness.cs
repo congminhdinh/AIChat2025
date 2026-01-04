@@ -117,6 +117,8 @@ public class ChatBusiness
                 {
                     Id = m.Id,
                     ConversationId = m.ConversationId,
+                    ReferenceDocIdList = m.ReferenceDocIds.Split(",").Select(int.Parse).ToList(),
+                    RequestId = m.RequestId,
                     Content = m.Message,
                     Timestamp = m.Timestamp,
                     UserId = m.UserId,
@@ -195,6 +197,8 @@ public class ChatBusiness
             Timestamp = botResponse.Timestamp,
             Type = ChatType.Response
         };
+        message.RequestId = botResponse.RequestId;
+        message.ReferenceDocIds = string.Join(",", botResponse.ReferenceDocIdList);
 
         await _messageRepo.AddAsync(message, ct);
 

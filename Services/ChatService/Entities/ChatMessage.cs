@@ -21,6 +21,8 @@ namespace ChatService.Entities
         public int UserId { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
         public ChatType Type { get; set; }
+        public int RequestId { get; set; } = 0;
+        public string ReferenceDocIds { get; set; } = "";
         public virtual ChatConversation? Conversation { get; set; }
     }
 }
