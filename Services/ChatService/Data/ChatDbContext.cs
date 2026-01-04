@@ -14,6 +14,7 @@ namespace ChatService.Data
         public DbSet<ChatMessage> ChatMessages { get; set; }
         public DbSet<PromptConfig> PromptConfigs { get; set; }
         public DbSet<SystemPrompt> SystemPrompts { get; set; }
+        public DbSet<ChatFeedback> ChatFeedbacks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

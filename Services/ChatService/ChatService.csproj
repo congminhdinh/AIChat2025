@@ -14,10 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Specifications\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="MassTransit" Version="8.3.4" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.3.4" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
