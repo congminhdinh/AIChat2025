@@ -9,5 +9,7 @@ namespace WebApp.Models.Chat
         public bool IsBot { get; set; }
         public int UserId { get; set; }
         public int Type { get; set; }
+        public int FeedbackId { get; set; } = 0;
+        public short Ratings { get; set; } = 0;
     }
 }

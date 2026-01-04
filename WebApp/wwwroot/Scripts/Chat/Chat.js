@@ -54,7 +54,7 @@
             }
 
             removeLoadingIndicator();
-            appendMessage(messageDto.content, messageDto.type, true, messageDto.id);
+            appendMessage(messageDto.content, messageDto.type, true, messageDto.id, messageDto.feedbackId || 0, messageDto.ratings || 0);
         });
 
         hubConnection.onreconnecting(function (error) {
@@ -219,22 +219,23 @@
         chatContent.innerHTML = '';
 
         messages.forEach(function (message) {
-            appendMessage(message.content, message.type, false, message.id);
+            appendMessage(message.content, message.type, false, message.id, message.feedbackId || 0, message.ratings || 0);
         });
 
         scrollToBottom();
     }
 
-    function appendMessage(content, type, animate = true, messageId = null) {
+    function appendMessage(content, type, animate = true, messageId = null, feedbackId = 0, ratings = 0) {
         const chatContent = document.querySelector('.chat-content');
         if (!chatContent) return;
 
         const messageDiv = document.createElement('div');
         messageDiv.className = type === 0 ? 'message user' : 'message bot';
 
-        // Store messageId in bot messages for feedback
+        // Store messageId and feedbackId in bot messages for feedback
         if (type !== 0 && messageId) {
             messageDiv.dataset.messageId = messageId;
+            messageDiv.dataset.feedbackId = feedbackId || 0;
         }
 
         const avatarDiv = document.createElement('div');
@@ -250,12 +251,12 @@
             const footerDiv = document.createElement('div');
             footerDiv.className = 'msg-footer';
             footerDiv.innerHTML = `
-                <button class="action-btn btn-like" title="Like" onclick="handleLike(this)">
+                <button class="action-btn btn-like ${ratings === 1 ? 'active' : ''}" title="Like" onclick="handleLike(this)">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
                     </svg>
                 </button>
-                <button class="action-btn btn-dislike" title="Dislike" onclick="handleDislike(this)">
+                <button class="action-btn btn-dislike ${ratings === 2 ? 'active' : ''}" title="Dislike" onclick="handleDislike(this)">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path>
                     </svg>
@@ -505,6 +506,11 @@
             const result = await response.json();
 
             if (result.success) {
+                // Update FeedbackId in DOM if returned
+                if (result.data && result.data.feedbackId) {
+                    messageDiv.dataset.feedbackId = result.data.feedbackId;
+                }
+
                 // Toggle active state
                 const likeBtn = messageDiv.querySelector('.btn-like');
                 const dislikeBtn = messageDiv.querySelector('.btn-dislike');
@@ -515,11 +521,22 @@
                     likeBtn.classList.add('active');
                     dislikeBtn.classList.remove('active');
                 }
+
+                // Show success notification
+                if (typeof toastr !== 'undefined') {
+                    toastr.success('Cảm ơn phản hồi của bạn!');
+                }
             } else {
                 console.error('Failed to rate:', result.message);
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(result.message || 'Không thể gửi đánh giá. Vui lòng thử lại.');
+                }
             }
         } catch (error) {
             console.error('Error rating message:', error);
+            if (typeof toastr !== 'undefined') {
+                toastr.error('Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
+            }
         }
     }
 
@@ -548,6 +565,11 @@
             const result = await response.json();
 
             if (result.success) {
+                // Update FeedbackId in DOM if returned
+                if (result.data && result.data.feedbackId) {
+                    messageDiv.dataset.feedbackId = result.data.feedbackId;
+                }
+
                 // Toggle active state
                 const likeBtn = messageDiv.querySelector('.btn-like');
                 const dislikeBtn = messageDiv.querySelector('.btn-dislike');
@@ -558,11 +580,22 @@
                     dislikeBtn.classList.add('active');
                     likeBtn.classList.remove('active');
                 }
+
+                // Show success notification
+                if (typeof toastr !== 'undefined') {
+                    toastr.success('Cảm ơn phản hồi của bạn!');
+                }
             } else {
                 console.error('Failed to rate:', result.message);
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(result.message || 'Không thể gửi đánh giá. Vui lòng thử lại.');
+                }
             }
         } catch (error) {
             console.error('Error rating message:', error);
+            if (typeof toastr !== 'undefined') {
+                toastr.error('Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
+            }
         }
     }
 
@@ -571,6 +604,8 @@
         if (!messageDiv) return;
 
         const messageId = messageDiv.dataset.messageId;
+        const feedbackId = parseInt(messageDiv.dataset.feedbackId || '0');
+
         if (!messageId) {
             console.error('Message ID not found');
             return;
@@ -601,24 +636,38 @@
                 // Set messageId
                 document.querySelector('#feedbackMessageId').value = messageId;
 
-                // Fetch existing feedback data
-                const feedbackResponse = await fetch(`/Chat/GetChatFeedback?messageId=${messageId}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
+                // Conditional logic based on FeedbackId
+                if (feedbackId !== 0) {
+                    // UPDATE MODE: Fetch existing feedback data
+                    const feedbackResponse = await fetch(`/Chat/GetChatFeedback?messageId=${messageId}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const feedbackResult = await feedbackResponse.json();
+
+                    if (feedbackResult.success && feedbackResult.data) {
+                        const feedback = feedbackResult.data;
+                        document.querySelector('#feedbackId').value = feedback.id || feedbackId;
+                        document.querySelector('#feedbackCategory').value = feedback.category || '1';
+                        document.querySelector('#feedbackContent').value = feedback.content || '';
+                    } else {
+                        // If fetch fails, still set the feedbackId we have
+                        document.querySelector('#feedbackId').value = feedbackId;
+                        if (typeof toastr !== 'undefined') {
+                            toastr.warning('Không thể tải dữ liệu phản hồi. Bạn có thể tiếp tục chỉnh sửa.');
+                        }
                     }
-                });
-
-                const feedbackResult = await feedbackResponse.json();
-
-                if (feedbackResult.success && feedbackResult.data) {
-                    const feedback = feedbackResult.data;
-                    document.querySelector('#feedbackId').value = feedback.id || '';
-                    document.querySelector('#feedbackCategory').value = feedback.category || '1';
-                    document.querySelector('#feedbackContent').value = feedback.content || '';
+                } else {
+                    // CREATE MODE: Leave form empty, set feedbackId to empty
+                    document.querySelector('#feedbackId').value = '';
+                    document.querySelector('#feedbackCategory').value = '1';
+                    document.querySelector('#feedbackContent').value = '';
                 }
 
-                // Auto-focus textarea
+                // Auto-focus textarea (with 100ms delay per UIShareLogic.txt)
                 setTimeout(function () {
                     const textarea = document.querySelector('#feedbackContent');
                     if (textarea) {
@@ -628,7 +677,11 @@
             }
         } catch (error) {
             console.error('Error opening feedback modal:', error);
-            showError('Không thể mở form phản hồi.');
+            if (typeof toastr !== 'undefined') {
+                toastr.error('Không thể mở form phản hồi.');
+            } else {
+                showError('Không thể mở form phản hồi.');
+            }
         }
     }
 
@@ -653,15 +706,21 @@
         const content = document.querySelector('#feedbackContent').value.trim();
 
         if (!content) {
-            alert('Vui lòng nhập nội dung phản hồi');
+            if (typeof toastr !== 'undefined') {
+                toastr.warning('Vui lòng nhập nội dung phản hồi');
+            } else {
+                alert('Vui lòng nhập nội dung phản hồi');
+            }
             return;
         }
 
         try {
             let response;
+            let isUpdate = false;
 
-            // If feedbackId exists and category is not Initialized, update. Otherwise create.
-            if (feedbackId && category !== 0) {
+            // If feedbackId exists, update. Otherwise create.
+            if (feedbackId) {
+                isUpdate = true;
                 response = await fetch('/Chat/UpdateChatFeedback', {
                     method: 'POST',
                     headers: {
@@ -690,15 +749,37 @@
             const result = await response.json();
 
             if (result.success) {
+                // Update FeedbackId in DOM after creation
+                if (!isUpdate && result.data && result.data.id) {
+                    const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+                    if (messageDiv) {
+                        messageDiv.dataset.feedbackId = result.data.id;
+                    }
+                }
+
+                // Close modal
                 closeFeedbackModal();
-                // Show success message (you can use toastr if available)
-                console.log('Feedback submitted successfully');
+
+                // Show success notification
+                if (typeof toastr !== 'undefined') {
+                    toastr.success(isUpdate ? 'Cập nhật phản hồi thành công!' : 'Gửi phản hồi thành công!');
+                } else {
+                    console.log('Feedback submitted successfully');
+                }
             } else {
-                alert(result.message || 'Không thể gửi phản hồi. Vui lòng thử lại.');
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(result.message || 'Không thể gửi phản hồi. Vui lòng thử lại.');
+                } else {
+                    alert(result.message || 'Không thể gửi phản hồi. Vui lòng thử lại.');
+                }
             }
         } catch (error) {
             console.error('Error submitting feedback:', error);
-            alert('Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
+            if (typeof toastr !== 'undefined') {
+                toastr.error('Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
+            } else {
+                alert('Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
+            }
         }
     }
 

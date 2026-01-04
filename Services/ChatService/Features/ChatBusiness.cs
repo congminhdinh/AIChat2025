@@ -127,6 +127,7 @@ public class ChatBusiness: BaseHttpClient
                     Timestamp = m.Timestamp,
                     UserId = m.UserId,
                     FeedbackId = listFeedbacks.Where(t => t.ResponseId == m.Id).Select(n =>n.Id).FirstOrDefault(),
+                    Ratings = listFeedbacks.Where(t => t.ResponseId == m.Id).Select(n => n.Ratings).FirstOrDefault(),
                     Type = m.Type
                 }).ToList()
         }, request.CorrelationId());

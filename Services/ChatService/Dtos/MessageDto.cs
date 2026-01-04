@@ -13,5 +13,6 @@ public class MessageDto
     public bool IsBot { get; init; }
     public int UserId { get; init; }
     public int FeedbackId { get; init; } = 0;
+    public short Ratings { get; init; } = 0;
     public ChatType Type { get; init; }
 }
