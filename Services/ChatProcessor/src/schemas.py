@@ -9,6 +9,7 @@ class PromptConfigDto(BaseModel):
 class UserPromptReceivedMessage(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     conversation_id: int = Field(alias='conversationId')
+    message_id: int = Field(alias='messageId')  # NEW: Maps to MessageId from C# event
     message: str
     token: str
     timestamp: Optional[datetime] = Field(default_factory=datetime.utcnow)
@@ -18,6 +19,8 @@ class UserPromptReceivedMessage(BaseModel):
 class BotResponseCreatedMessage(BaseModel):
     model_config = ConfigDict(populate_by_name=True, protected_namespaces=())
     conversation_id: int = Field(alias='conversationId')
+    request_id: int = Field(alias='requestId')  # NEW: Maps to RequestId (original MessageId)
+    reference_doc_id_list: List[int] = Field(default_factory=list, alias='referenceDocIdList')  # NEW: List of source_id from Qdrant
     message: str
     token: str
     timestamp: Optional[datetime] = Field(default_factory=datetime.utcnow)

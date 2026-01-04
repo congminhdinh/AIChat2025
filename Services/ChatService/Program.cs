@@ -33,6 +33,7 @@ builder.AddCustomDbContext<ChatDbContext>(
 
 // Add Business Logic
 builder.Services.AddScoped<ChatBusiness>();
+builder.Services.AddHttpClient<ChatBusiness>();
 builder.Services.AddScoped<PromptConfigBusiness>();
 builder.Services.AddScoped<SystemPromptBusiness>();
 

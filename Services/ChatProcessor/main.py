@@ -172,9 +172,11 @@ class ChatProcessor:
                 system_prompt=prompt_message.system_prompt
             )
 
-            # Step 5: Construct response with the original token
+            # Step 5: Construct response with the original token and message_id as request_id
             response_message = BotResponseCreatedMessage(
                 conversation_id=result['conversation_id'],
+                request_id=prompt_message.message_id,  # NEW: Map message_id to request_id
+                reference_doc_id_list=result.get('reference_doc_id_list', []),  # NEW: Include source_id list from Qdrant
                 message=result['message'],
                 token=prompt_message.token,  # Include the exact token from input
                 timestamp=result['timestamp'],
@@ -191,6 +193,8 @@ class ChatProcessor:
                 # Send error response with the original token
                 error_response = BotResponseCreatedMessage(
                     conversation_id=prompt_message.conversation_id,
+                    request_id=prompt_message.message_id,  # NEW: Include message_id even in error response
+                    reference_doc_id_list=[],  # NEW: Empty list for error response
                     message='Có lỗi xảy ra, vui lòng thử lại',
                     token=prompt_message.token,
                     timestamp=datetime.utcnow(),

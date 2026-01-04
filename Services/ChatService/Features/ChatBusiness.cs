@@ -7,6 +7,7 @@ using ChatService.Requests;
 using ChatService.Specifications;
 using Infrastructure;
 using Infrastructure.Authentication;
+using Infrastructure.Logging;
 using Infrastructure.Tenancy;
 using Infrastructure.Web;
 using MassTransit;
@@ -19,7 +20,7 @@ namespace ChatService.Features;
 /// Business logic for chat operations.
 /// Handles conversation and message management with RabbitMQ integration.
 /// </summary>
-public class ChatBusiness
+public class ChatBusiness: BaseHttpClient
 {
 
     private readonly IRepository<ChatConversation> _conversationRepo;
@@ -27,17 +28,17 @@ public class ChatBusiness
     private readonly IRepository<PromptConfig> _promptConfigRepo;
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly ICurrentUserProvider _currentUserProvider;
-    private readonly ILogger<ChatBusiness> _logger;
+    private readonly ILogger<ChatBusiness> _chatLogger;
     private readonly SystemPromptBusiness _systemPromptBusiness;
 
-    public ChatBusiness(IRepository<ChatConversation> conversationRepo, IRepository<ChatMessage> messageRepo, IRepository<PromptConfig> promptConfigRepo, IPublishEndpoint publishEndpoint, ICurrentUserProvider currentUserProvider, ILogger<ChatBusiness> logger, SystemPromptBusiness systemPromptBusiness)
+    public ChatBusiness(IRepository<ChatConversation> conversationRepo, IRepository<ChatMessage> messageRepo, IRepository<PromptConfig> promptConfigRepo, IPublishEndpoint publishEndpoint, ICurrentUserProvider currentUserProvider, ILogger<ChatBusiness> logger, SystemPromptBusiness systemPromptBusiness, HttpClient httpClient, IAppLogger<BaseHttpClient> appLogger): base(httpClient, appLogger)
     {
         _conversationRepo = conversationRepo;
         _messageRepo = messageRepo;
         _promptConfigRepo = promptConfigRepo;
         _publishEndpoint = publishEndpoint;
         _currentUserProvider = currentUserProvider;
-        _logger = logger;
+        _chatLogger = logger;
         _systemPromptBusiness = systemPromptBusiness;
     }
 
@@ -117,7 +118,7 @@ public class ChatBusiness
                 {
                     Id = m.Id,
                     ConversationId = m.ConversationId,
-                    ReferenceDocIdList = m.ReferenceDocIds.Split(",").Select(int.Parse).ToList(),
+                    ReferenceDocIdList = !string.IsNullOrEmpty(m.ReferenceDocIds)? m.ReferenceDocIds.Split(",").Select(int.Parse).ToList(): new List<int>(),
                     RequestId = m.RequestId,
                     Content = m.Message,
                     Timestamp = m.Timestamp,
@@ -166,13 +167,14 @@ public class ChatBusiness
         var userPromptEvent = new UserPromptReceivedEvent
         {
             ConversationId = request.ConversationId,
+            MessageId = message.Id,
             Message = request.Message,
             Token = _currentUserProvider.Token?? string.Empty,
             Timestamp = message.Timestamp,
             SystemInstruction = systemInstructions,
             SystemPrompt = activeSystemPrompt
         };
-        _logger.LogInformation($"Publishing UserPromptReceivedEvent: {JsonSerializer.Serialize(userPromptEvent)}");
+        _chatLogger.LogInformation($"Publishing UserPromptReceivedEvent: {JsonSerializer.Serialize(userPromptEvent)}");
         await _publishEndpoint.Publish(userPromptEvent, ct);
 
         return new MessageDto
@@ -187,7 +189,7 @@ public class ChatBusiness
     }
     public async Task<MessageDto> SaveBotMessageAsync(BotResponseCreatedEvent botResponse, CancellationToken ct = default)
     {
-        _logger.LogInformation($"Saving bot response: {JsonSerializer.Serialize(botResponse)}");
+        _chatLogger.LogInformation($"Saving bot response: {JsonSerializer.Serialize(botResponse)}");
         var tokenInfo = TokenDecoder.DecodeJwtToken(botResponse.Token);
         var userId = TokenDecoder.GetUserId(tokenInfo); 
         var tenantId = TokenDecoder.GetTenantId(tokenInfo);
@@ -198,7 +200,8 @@ public class ChatBusiness
             Type = ChatType.Response
         };
         message.RequestId = botResponse.RequestId;
-        message.ReferenceDocIds = string.Join(",", botResponse.ReferenceDocIdList);
+        var distinctReferences = botResponse.ReferenceDocIdList.Distinct();
+        message.ReferenceDocIds = string.Join(",", distinctReferences);
 
         await _messageRepo.AddAsync(message, ct);
 

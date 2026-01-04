@@ -944,6 +944,7 @@ Bạn đang trả lời dựa trên thông tin tĩnh (Static Context), không ph
                     'model_used': ollama_service.model,
                     'rag_documents_used': 0,
                     'source_ids': [],
+                    'reference_doc_id_list': [],  # NEW: Empty list for NONE scenario
                     'scenario': scenario
                 }
 
@@ -1071,6 +1072,7 @@ Lưu ý: Hiện không tìm thấy tài liệu tham khảo liên quan. Hãy tr�
                 'model_used': ollama_service.model,
                 'rag_documents_used': documents_used,
                 'source_ids': source_ids,
+                'reference_doc_id_list': source_ids,  # NEW: Also return as reference_doc_id_list for RabbitMQ event
                 'scenario': scenario,  # NEW: Include scenario for debugging
                 'fallback_triggered': fallback_triggered  # NEW: Include fallback status
             }

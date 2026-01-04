@@ -1,1 +1,43 @@
-Role: Senior .NET Fullstack DeveloperTask: Implement the "System Prompt" Management module in the WebApp project.1. General Requirements & StandardsPage Title: "Cấu hình prompt hệ thống".Route Path: /SystemPrompt.Primary Logic: Strictly adhere to the architectural patterns, AJAX workflows, and UX guardrails defined in the attached UIShareLogic.txt111111.Design Pattern: Use Partial Injection (Static Shell + Dynamic List Partial + Shared Modal for Forms). Service & Model SynchronizationAPI Inspection: Analyze the ChatService (Web API) for all System Prompt endpoints (GET, POST, PUT, DELETE).Cloning: Clone all associated DTO and Request models from the ChatService API to the WebApp project that related to the endpoints of SystemPrompt(do not invent new structures).Backend: Create SystemPromptBusiness.cs and SystemPromptController.cs to handle data operations, supporting backend pagination and filtering.3. View & UI LogicShell (Index):Implement a search bar with a 500ms debounce3.Add a Status Dropdown for filtering: int IsActive (-1: Initialized/All, 0: Inactive, 1: Active). Include a "Create" button4.List Partial (_List): Render a table with the following columns5:STT: Calculated sequential index: $STT = (CurrentPage - 1) \times PageSize + CurrentRowIndex + 1$6.Name: Display the Name field.Content: Display the Content field.Status: Display the status using consistent Badge indicators (e.g., Active/Inactive)7.Pagination: Implement backend-driven pagination at the bottom of the list8.4. Scripts & Modal UXAJAX Loop: Implement the full communication cycle (Trigger → Request → Injection) in system-prompt.js9999.Shared Modal: Load Create/Edit forms into the #modal-content-container10.Scrollable Modal: Enforce max-height and overflow-y: auto for the modal content to ensure readability.Focus Delay: Apply a 100ms delay for auto-focusing the primary input field upon injection: setTimeout(() => input.focus(), 100);.5. Feedback & UX GuardrailsLoading State: Always display a visual spinner/overlay while a Partial View is being fetched11.Action Feedback: All POST/PUT/DELETE operations must process JSON responses and show Toastr notifications12.Destructive Actions: Use SweetAlert2 with an explicit confirmation dialog for the Delete action13.
+Role: Expert Python Backend Developer / Distributed Systems Architect
+
+Task: Update RabbitMQ message processing and event schemas for ChatProcessor and EmbeddingService.
+
+1. Objective Update the Python backend services to support the latest .NET event structures. Focus on mapping IDs through the processing pipeline and extracting RAG metadata from the vector database.
+
+2. Event Schemas (C# Reference)
+
+Received Event: UserPromptReceivedEvent
+
+Fields: ConversationId, MessageId (New), Message, Token, Timestamp, SystemInstruction, SystemPrompt.
+
+Return Event: BotResponseCreatedEvent
+
+Fields: ConversationId, RequestId (New - maps to MessageId), ReferenceDocIdList (New), Message, Token, Timestamp, ModelUsed.
+
+3. Logic Requirements
+
+ID Persistence: Extract MessageId from the incoming UserPromptReceivedEvent. This ID must be carried through the entire processing flow and returned as the RequestId in the final BotResponseCreatedEvent.
+
+RAG ID Extraction: Within the retrieval logic (connecting to Qdrant), capture the unique source_id from the payload of every retrieved document chunk.
+
+Event Construction: Aggregate these source_id values into the ReferenceDocIdList.
+
+Naming Conventions: Implement a mapping strategy to bridge PascalCase (used by .NET RabbitMQ events) and snake_case (used within Python logic). Ensure the final JSON payload sent back to RabbitMQ matches the .NET record property names exactly.
+
+4. Implementation Scope
+
+ChatProcessor: Update the consumer logic to parse the new MessageId and ensure it is passed to the internal processing functions.
+
+EmbeddingService / ChatBusiness: Modify the search/retrieval functions to return both the content and the list of unique source_id values.
+
+RabbitMQ Producer: Ensure the outgoing message strictly adheres to the BotResponseCreatedEvent structure, specifically:
+
+RequestId = original MessageId.
+
+ReferenceDocIdList = List of unique integers/IDs from Qdrant search results.
+
+5. Technical Constraints
+
+Use Pydantic models with alias or Field configuration if available to manage case conversion.
+
+Maintain strictly identical field names for the outgoing RabbitMQ JSON to prevent .NET deserialization errors.
