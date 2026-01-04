@@ -234,7 +234,7 @@
 
             @if (IdentityHelper.IsAdmin())
             {
-                <a href="@(webAppUrl)/SystemPrompt" class="nav-item @(currentPath.StartsWith("/Tenant") ? "active" : "")">Tenant</a>
+                <a href="@(webAppUrl)/Tenant" class="nav-item @(currentPath.StartsWith("/Tenant") ? "active" : "")">Tenant</a>
                 <a href="@(webAppUrl)/Document" class="nav-item @(currentPath.StartsWith("/Document") ? "active" : "")">Tài liệu</a>
                 <a href="@(webAppUrl)/Account" class="nav-item @(currentPath.StartsWith("/Account") ? "active" : "")">Tài khoản</a>
 @*                 

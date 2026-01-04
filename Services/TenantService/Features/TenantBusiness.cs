@@ -2,6 +2,7 @@
 using Infrastructure.Paging;
 using Infrastructure.Web;
 using TenantService.Data;
+using TenantService.Dtos;
 using TenantService.Entities;
 using TenantService.Requests;
 using TenantService.Specifications;
@@ -18,17 +19,31 @@ namespace TenantService.Features
             _currentUserProvider = currentUserProvider;
         }
 
-        public async Task<BaseResponse<PaginatedList<Tenant>>> GetTenantList(GetTenantListRequest input)
+        public async Task<BaseResponse<PaginatedList<TenantDto>>> GetTenantList(GetTenantListRequest input)
         {
             if (!CheckIsSuperAdmin())
             {
                 throw new Exception("Only super admin can access this resource");
             }
             var tenants = await _repository.ListAsync(new TenantListSpec(input.Name, input.PageIndex, input.PageSize));
+            var tenantDtos = tenants.Select(m => new TenantDto(m.Id, m.Name, m.Description, m.IsActive, m.CreatedAt, m.LastModifiedAt?? m.CreatedAt)).ToList();
             var count = await _repository.CountAsync(new TenantListSpec(input.Name)); 
-            return new BaseResponse<PaginatedList<Tenant>>(new PaginatedList<Tenant>(tenants, count, input.PageIndex, input.PageSize),  input.CorrelationId());
+            return new BaseResponse<PaginatedList<TenantDto>>(new PaginatedList<TenantDto>(tenantDtos, count, input.PageIndex, input.PageSize),  input.CorrelationId());
         }
 
+        public async Task<BaseResponse<TenantDto>> GetTenantById(GetTenantByIdRequest input)
+        {
+            if (!CheckIsSuperAdmin())
+            {
+                throw new Exception("Only super admin can access this resource");
+            }
+            var tenant = await _repository.GetByIdAsync(input.Id);
+            if (tenant == null)
+            {
+                throw new Exception("Tenant doesnt exist");
+            }
+            return new BaseResponse<TenantDto>(new TenantDto(tenant.Id, tenant.Name, tenant.Description, tenant.IsActive, tenant.CreatedAt, tenant.LastModifiedAt ?? tenant.CreatedAt), input.CorrelationId());
+        }
         public async Task<BaseResponse<int>> CreateTenant(CreateTenantRequest input)
         {
             if (!CheckIsSuperAdmin())

@@ -1,0 +1,240 @@
+@using AdminCMS.Models
+@using AdminCMS.Models.Tenant
+@model PaginatedListDto<TenantDto>
+
+<div class="table-wrapper">
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 60px;">STT</th>
+                <th style="width: 200px;">Tên Tenant</th>
+                <th style="width: 300px;">Mô tả</th>
+                <th style="width: 120px;">Trạng thái</th>
+                <th style="width: 150px;">Ngày tạo</th>
+                <th style="width: 200px;">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Items == null || !Model.Items.Any())
+            {
+                <tr>
+                    <td colspan="6" class="text-center">Không có tenant nào</td>
+                </tr>
+            }
+            else
+            {
+                int stt = (Model.PageIndex - 1) * Model.PageSize + 1;
+                foreach (var tenant in Model.Items)
+                {
+                    <tr>
+                        <td>@stt</td>
+                        <td>@tenant.Name</td>
+                        <td>@(tenant.Description ?? "")</td>
+                        <td>
+                            @if (tenant.IsActive)
+                            {
+                                <span class="badge badge-success">
+                                    <i class="bi bi-check-circle"></i> Hoạt động
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-error">
+                                    <i class="bi bi-lock"></i> Đã khóa
+                                </span>
+                            }
+                        </td>
+                        <td>@tenant.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn btn-primary btn-edit-tenant" data-tenant-id="@tenant.Id" title="Chỉnh sửa thông tin">
+                                    <i class="bi bi-pencil-square"></i> Sửa
+                                </button>
+                                @if (tenant.IsActive)
+                                {
+                                    <button class="btn btn-warning btn-disable-tenant" data-tenant-id="@tenant.Id" title="Vô hiệu hóa tenant">
+                                        <i class="bi bi-lock-fill"></i> Vô hiệu hóa
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">
+                                        <i class="bi bi-lock-fill"></i> Đã khóa
+                                    </span>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                    stt++;
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (Model.TotalPages > 1)
+{
+    <div id="pagination-container" class="pagination-container">
+        <a class="page-link @(Model.PageIndex == 1 ? "disabled" : "")" href="#" data-page="@(Model.PageIndex - 1)">Trước</a>
+
+        @for (int i = 1; i <= Model.TotalPages; i++)
+        {
+            <a class="page-link @(i == Model.PageIndex ? "active" : "")" href="#" data-page="@i">@i</a>
+        }
+
+        <a class="page-link @(Model.PageIndex == Model.TotalPages ? "disabled" : "")" href="#" data-page="@(Model.PageIndex + 1)">Sau</a>
+    </div>
+}
+
+<style>
+    .table-wrapper {
+        border: 1px solid #eee;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    thead th {
+        padding: 16px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    tbody td {
+        padding: 14px 16px;
+        border-bottom: 1px solid #f0f0f0;
+        vertical-align: middle;
+    }
+
+    tbody tr:hover {
+        background-color: #f8f9ff;
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .badge-success {
+        background-color: #d1f2eb;
+        color: #0f5132;
+    }
+
+    .badge-error {
+        background-color: #f8d7da;
+        color: #842029;
+    }
+
+    .actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    .btn i {
+        font-size: 1rem;
+    }
+
+    .btn-primary {
+        background-color: #0d6efd;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #0b5ed7;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(13, 110, 253, 0.3);
+    }
+
+    .btn-warning {
+        background-color: #ffc107;
+        color: #000;
+    }
+
+    .btn-warning:hover {
+        background-color: #ffb300;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+    }
+
+    .text-muted {
+        color: #6c757d;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 25px;
+        gap: 5px;
+    }
+
+    .page-link {
+        min-width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: #666;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        border: 1px solid transparent;
+        padding: 4px 12px;
+        transition: all 0.2s;
+    }
+
+    .page-link.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+
+    .page-link:hover:not(.active):not(.disabled) {
+        background-color: #eee;
+    }
+
+    .page-link.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .text-center {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+    }
+</style>

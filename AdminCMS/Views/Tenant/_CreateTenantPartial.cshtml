@@ -1,0 +1,187 @@
+@{
+}
+<div class="create-modal-container">
+    <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" id="createTenantLabel">
+            <i class="bi bi-building-add text-primary me-2"></i>Tạo Tenant mới
+        </h5>
+        <button type="button" class="btn-close-modal" onclick="closeCreateModal()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <div class="modal-body">
+        <p class="text-muted small mb-4">
+            Thiết lập thông tin tenant mới và tài khoản quản trị viên cho tenant.
+        </p>
+
+        <form id="createTenantForm">
+            <input type="hidden" id="createIsActive" name="IsActive" value="true" />
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-12">
+                    <label for="createTenantName" class="form-label fw-semibold text-secondary small">
+                        <i class="bi bi-building me-1"></i>Tên Tenant <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control bg-light border-0 py-2"
+                           id="createTenantName" name="Name"
+                           placeholder="Nhập tên tenant..." required>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-12">
+                    <label for="createTenantDescription" class="form-label fw-semibold text-secondary small">
+                        <i class="bi bi-card-text me-1"></i>Mô tả
+                    </label>
+                    <textarea class="form-control bg-light border-0 py-2"
+                              id="createTenantDescription" name="Description"
+                              rows="3"
+                              placeholder="Nhập mô tả về tenant..."></textarea>
+                </div>
+            </div>
+
+            <hr class="my-4" />
+
+            <p class="text-muted small mb-3">
+                <i class="bi bi-info-circle me-1"></i>Thông tin tài khoản quản trị viên (Tùy chọn)
+            </p>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-12">
+                    <label for="createTenantAccountName" class="form-label fw-semibold text-secondary small">
+                        <i class="bi bi-person-fill me-1"></i>Tên tài khoản
+                    </label>
+                    <input type="text" class="form-control bg-light border-0 py-2"
+                           id="createTenantAccountName" name="AccountName"
+                           placeholder="Nhập tên tài khoản quản trị...">
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-12">
+                    <label for="createTenantEmail" class="form-label fw-semibold text-secondary small">
+                        <i class="bi bi-envelope-fill me-1"></i>Email
+                    </label>
+                    <input type="email" class="form-control bg-light border-0 py-2"
+                           id="createTenantEmail" name="Email"
+                           placeholder="Nhập email quản trị viên...">
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-12">
+                    <label for="createTenantPassword" class="form-label fw-semibold text-secondary small">
+                        <i class="bi bi-key-fill me-1"></i>Mật khẩu
+                    </label>
+                    <div class="password-input-group">
+                        <input type="password" class="form-control bg-light border-0 py-2"
+                               id="createTenantPassword" name="Password"
+                               placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)...">
+                        <button type="button" class="btn-toggle-password" onclick="togglePasswordVisibility('createTenantPassword', this)">
+                            <i class="bi bi-eye-fill"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="modal-footer border-0 justify-content-center pt-0">
+        <button type="button" class="btn btn-light px-4 rounded-pill border" onclick="closeCreateModal()">
+            Hủy bỏ
+        </button>
+        <button type="button" class="btn btn-primary px-4 rounded-pill shadow" id="btnSubmitCreateTenant">
+            <i class="bi bi-check-lg me-1"></i> Tạo Tenant
+        </button>
+    </div>
+</div>
+
+<style>
+    .create-modal-container {
+        padding: 5px;
+    }
+
+    /* Header & Close button */
+    .btn-close-modal {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        color: #adb5bd;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+
+    .btn-close-modal:hover {
+        color: #495057;
+        transform: rotate(90deg);
+    }
+
+    /* Forms */
+    .form-control:focus, .form-select:focus {
+        background-color: #fff !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        border: 1px solid #0d6efd !important;
+    }
+
+    /* Password Input Group */
+    .password-input-group {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .password-input-group .form-control {
+        padding-right: 45px;
+    }
+
+    .btn-toggle-password {
+        position: absolute;
+        right: 10px;
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 5px 10px;
+        transition: color 0.2s;
+    }
+
+    .btn-toggle-password:hover {
+        color: #0d6efd;
+    }
+
+    .btn-toggle-password i {
+        font-size: 1.1rem;
+    }
+
+    .rounded-pill {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .shadow-sm {
+        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;
+    }
+
+    .text-danger {
+        color: #dc3545;
+    }
+</style>
+
+<script>
+    // Toggle password visibility
+    window.togglePasswordVisibility = function(inputId, button) {
+        const input = document.getElementById(inputId);
+        const icon = button.querySelector('i');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('bi-eye-fill');
+            icon.classList.add('bi-eye-slash-fill');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('bi-eye-slash-fill');
+            icon.classList.add('bi-eye-fill');
+        }
+    };
+</script>
