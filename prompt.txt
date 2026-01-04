@@ -1,49 +1,57 @@
-Role: Senior .NET Fullstack Developer Task: Update the Feedback Statistics Dashboard (Stat/Index.cshtml) for WebApp.
+Role: Senior .NET AI Engineer & RAG System Architect.
 
-1. Initialization & Core Data Flow
+Project Context: I am building a Multitenant RAG system using python (ChatProcessor). I am encountering specific issues with Hybrid Search accuracy (specifically with abbreviations) and Response Generation control.
 
-Initial Load: On DOMContentLoaded, execute three parallel tasks:
+Input Data:
 
-Summary Stats: Call ChatBusiness.CountMessage() (ensure there is an endpoint like GET /chat/count) to display the Total Message Count.
+Source Code: Please analyze the current Hybrid Search logic in ChatProcessor\docs.
 
-Chart Data: Call an endpoint to get the total count of Likes (Ratings=1) and Dislikes (Ratings=2). Update the Pie Chart/Visuals with these numbers.
+Execution Logs: Please analyze the following logs captured during a failed query test:
 
-Feedback List: Call GET /chat/chat-feedback/ with default Ratings = 0 (Initial state) and PageIndex = 1.
+Plaintext
 
-2. List Rendering & Pagination (Follow UIShareLogic.txt)
+2026-01-04 23:33:37.337 [INFO] ... Processing message: 'Mức đóng BHXH hằng tháng của người lao động là bao...'
+2026-01-04 23:33:37.337 [INFO] ... Extracted 1 keywords: ['BHXH']
+2026-01-04 23:33:38.032 [INFO] ... Qdrant exact search completed: tenant_id=1, results=10
+2026-01-04 23:33:38.034 [INFO] ... Similarity filtering: 10 -> 0 results (excluded 10 below 0.5)
+2026-01-04 23:33:38.037 [INFO] ... Keyword search completed: tenant_id=1, keywords=['BHXH'], results=0
+2026-01-04 23:33:38.038 [WARNING] ... Fallback triggered: Only 0 quality tenant results (threshold: 2)
+Problem Description:
 
-Partial View Pattern: The feedback list must be rendered via a Partial View to support AJAX-based pagination without reloading the whole page.
+Retrieval Issue (Scenario: Abbreviation "BHXH"):
 
-Pagination Logic: Use event delegation on .page-link. When a page is clicked:
+The user asks about "BHXH" (short for "Bảo hiểm xã hội").
 
-Trigger an AJAX call to the controller.
+Vector Search Failure: As seen in the logs (Similarity filtering), the system did find 10 potential results in the Global Tenant (ID 1), but the logic discarded all of them because their similarity score was below the hardcoded 0.5 threshold.
 
-Update only the #feedback-table-container.
+Keyword Search Failure: The logs show keywords=['BHXH'] returning 0 results. This indicates a lack of semantic flexibility; the documents likely contain the full phrase "Bảo hiểm xã hội" but not the exact token "BHXH".
 
-Ensure the scroll position is maintained or smoothly moved to the top of the table.
+Result: The system triggers a fallback and returns no valid context.
 
-3. UI/UX & Layout Requirements
+Generation Issue (Scenario: Full Text):
 
-Dashboard Structure: 2-column grid. Left (300px): Statistics cards and Pie Chart. Right (Flexible): Feedback Table.
+When the user asks with the full phrase "Bảo hiểm xã hội", the retrieval works, but the generated answer is excessively long. The current System Prompt fails to constrain the verbosity effectively.
 
-Scrolling & Responsiveness: * The main container must be scrollable (overflow-y: auto).
+Task Requirements:
 
-Avoid overflow: hidden that cuts off content.
+1. Refactor Hybrid Search Logic:
 
-Table Column Logic: * The Bot Response column must be the widest.
+Modify the search strategy in ChatProcessor to handle the issues identified in the logs.
 
-Use white-space: normal and word-wrap: break-word to ensure long AI responses wrap and fill the available space.
+Address the aggressive 0.5 similarity filtering that is causing false negatives for short/abbreviated queries.
 
-Do not truncate the Bot Response in this view; let it expand the row height naturally.
+Address the keyword extraction logic to improve hit rates when the user uses common abbreviations (like BHXH) vs. formal document terms.
 
-Filtering: Use the dropdown in the header (Thích, Không thích, Mặc định) to re-trigger the list fetch with the selected Ratings filter.
+2. Optimize System Prompt:
 
-4. Technical Guardrails
+Rewrite the System Prompt to enforce strict output constraints.
 
-Tenant Security: Ensure all requests pass the TenantId (handle this via the ICurrentUserProvider on the backend).
+Constraint: The final answer must be concise, limited to a maximum of 5 sentences and approximately 200 words.
 
-Naming Convention: All JSON interactions must use PascalCase to match the .NET Backend DTOs.
+The model must prioritize synthesis over listing all retrieved chunks.
 
-Visual Consistency: Use the color scheme from the previous designs (Primary Blue: #0d6efd, Success Green: #198754, Danger Red: #dc3545).
+Deliverables:
 
-Loading States: Show a spinner within the table container during AJAX calls as per UIShareLogic.txt.
+The modified hybrid search logic.
+
+The updated System Prompt string.
