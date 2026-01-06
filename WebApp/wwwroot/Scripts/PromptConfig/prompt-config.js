@@ -7,7 +7,8 @@
     let currentIsActive = -1;
     let searchTimeout = null;
 
-    document.addEventListener('DOMValueLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
+        debugger;
         initializePromptConfig();
     });
 
@@ -78,16 +79,16 @@
     }
 
     // ========== LOAD SYSTEM PROMPT LIST (PARTIAL VIEW) ==========
-    async function loadPromptConfigList(keyword = '', pageIndex = 1) {
+    async function loadPromptConfigList(keyword = '', isActive = -1, pageIndex = 1) {
         debugger;
         try {
             showLoadingState();
             currentPage = pageIndex;
             currentKeyword = keyword;
+            currentIsActive = isActive;
 
             const params = new URLSearchParams({
                 keyword: keyword,
-                isActive: isActive,
                 pageIndex: pageIndex,
                 pageSize: pageSize
             });
@@ -95,7 +96,7 @@
             const response = await fetch(`${WEB_APP_URL}/PromptConfig/GetPromptConfigs?${params.toString()}`, {
                 method: 'GET',
                 headers: {
-                    'Value-Type': 'text/html'
+                    'Content-Type': 'text/html'
                 }
             });
 
@@ -137,7 +138,7 @@
             const response = await fetch(`${WEB_APP_URL}/PromptConfig/GetCreatePromptConfigModal`, {
                 method: 'GET',
                 headers: {
-                    'Value-Type': 'text/html'
+                    'Content-Type': 'text/html'
                 }
             });
 
@@ -218,7 +219,7 @@
             const response = await fetch(`${WEB_APP_URL}/PromptConfig/Create`, {
                 method: 'POST',
                 headers: {
-                    'Value-Type': 'application/json'
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(requestData)
             });
@@ -244,7 +245,7 @@
             const response = await fetch(`${WEB_APP_URL}/PromptConfig/GetPromptConfigById?id=${id}`, {
                 method: 'GET',
                 headers: {
-                    'Value-Type': 'text/html'
+                    'Content-Type': 'text/html'
                 }
             });
 
@@ -327,7 +328,7 @@
             const response = await fetch(`${WEB_APP_URL}/PromptConfig/Update`, {
                 method: 'POST',
                 headers: {
-                    'Value-Type': 'application/json'
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(requestData)
             });
@@ -368,7 +369,7 @@
             const response = await fetch(`${WEB_APP_URL}/PromptConfig/Delete?id=${id}`, {
                 method: 'DELETE',
                 headers: {
-                    'Value-Type': 'application/json'
+                    'Content-Type': 'application/json'
                 }
             });
 

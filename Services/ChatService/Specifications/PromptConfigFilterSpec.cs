@@ -18,4 +18,14 @@ public sealed class PromptConfigFilterSpec : TenancySpecification<PromptConfig>
 
         Query.OrderBy(x => x.Key);
     }
+
+    public PromptConfigFilterSpec(string? key, int tenantId, int pageIndex, int pageSize) : base(tenantId)
+    {
+        if (!string.IsNullOrWhiteSpace(key))
+        {
+            Query.Where(x => x.Key.Contains(key));
+        }
+
+        Query.OrderByDescending(m => m.LastModifiedAt).Skip(pageSize * (pageIndex - 1)).Take(pageSize);
+    }
 }

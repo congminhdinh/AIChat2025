@@ -21,6 +21,11 @@ namespace ChatService.Endpoints
                 return await business.GetListAsync(request);
             });
 
+            group.MapGet("/prompt-config/{id}", async (PromptConfigBusiness business, int id) =>
+            {
+                return await business.GetById(id);
+            });
+
             group.MapPost("/prompt-config/", async (PromptConfigBusiness business, [FromBody] CreatePromptConfigRequest request) =>
             {
                 return await business.CreateAsync(request);

@@ -74,7 +74,7 @@ namespace StorageService.Features
                 var minioClient = NewMinIOClient();
                 var fileName = string.IsNullOrWhiteSpace(file.FileName) ? file.File.FileName : file.FileName;
                 var newFileName = $"{Path.GetFileNameWithoutExtension(fileName)}_{new DateTimeOffset(DateTime.Now).ToUnixTimeSeconds()}{Path.GetExtension(fileName)}";
-                var filePath = !string.IsNullOrEmpty(file.Directory) ? Path.Combine(file.Directory, newFileName) : newFileName;
+                var filePath = !string.IsNullOrEmpty(file.Directory) ? $"{file.Directory}/{newFileName}" : newFileName;
 
 
                 using (var stream = file.File.OpenReadStream())

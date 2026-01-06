@@ -20,3 +20,5 @@ public sealed class PromptConfigByKeySpec : TenancySpecification<PromptConfig>
         }
     }
 }
+
+

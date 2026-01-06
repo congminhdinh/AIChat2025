@@ -32,7 +32,7 @@ namespace WebApp.Business
                 }
 
                 var response = await GetObjectQueryWithTokenAsync<BaseResponse<PaginatedListDto<PromptConfigDto>>>(
-                    "/web-api/chat/system-prompt/",
+                    "/web-api/chat/prompt-config/",
                     request,
                     token,
                     cancellationToken
@@ -84,7 +84,7 @@ namespace WebApp.Business
                 }
 
                 var response = await GetWithTokenAsync<BaseResponse<PromptConfigDto>>(
-                    $"/web-api/chat/system-prompt/{id}",
+                    $"/web-api/chat/prompt-config/{id}",
                     token,
                     cancellationToken
                 );
@@ -135,7 +135,7 @@ namespace WebApp.Business
                 }
 
                 var response = await PostWithTokenAsync<CreatePromptConfigRequest, BaseResponse<int>>(
-                    "/web-api/chat/system-prompt/",
+                    "/web-api/chat/prompt-config/",
                     request,
                     token,
                     cancellationToken
@@ -187,7 +187,7 @@ namespace WebApp.Business
                 }
 
                 var response = await PutWithTokenAsync<UpdatePromptConfigRequest, BaseResponse<int>>(
-                    $"/web-api/chat/system-prompt/{request.Id}",
+                    $"/web-api/chat/prompt-config/{request.Id}",
                     request,
                     token,
                     cancellationToken
@@ -242,7 +242,7 @@ namespace WebApp.Business
                 headers.Add("Bearer", token);
 
                 var response = await DeleteWithHeadersAsync<BaseResponse<int>>(
-                    $"/web-api/chat/system-prompt/{id}",
+                    $"/web-api/chat/prompt-config/{id}",
                     headers,
                     cancellationToken
                 );

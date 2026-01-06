@@ -4,6 +4,7 @@ using ChatService.Entities;
 using ChatService.Requests;
 using ChatService.Specifications;
 using Infrastructure;
+using Infrastructure.Paging;
 using Infrastructure.Web;
 
 namespace ChatService.Features
@@ -46,7 +47,6 @@ namespace ChatService.Features
                 Key = request.Key,
                 Value = request.Value,
                 TenantId = tenantId,
-                CreatedAt = DateTime.UtcNow,
                 CreatedBy = _currentUserProvider.Username
             };
 
@@ -91,12 +91,31 @@ namespace ChatService.Features
             // Update entity
             entity.Key = request.Key;
             entity.Value = request.Value;
-            entity.LastModifiedAt = DateTime.UtcNow;
             entity.LastModifiedBy = _currentUserProvider.Username;
 
             await _repository.UpdateAsync(entity);
 
             return new BaseResponse<int>(entity.Id, request.CorrelationId());
+        }
+
+        public async Task<BaseResponse<PromptConfigDto>> GetById(int id)
+        {
+            var request = new BaseRequest();
+            var tenantId = _currentUserProvider.TenantId;
+
+            // Check if ID exists
+            var entity = await _repository.GetByIdAsync(id);
+            if (entity == null || entity.TenantId != tenantId)
+            {
+                return new BaseResponse<PromptConfigDto>
+                {
+                    Status = BaseResponseStatus.Error,
+                    Message = "PromptConfig not found.",
+                    Data = new PromptConfigDto()
+                };
+            }
+
+            return new BaseResponse<PromptConfigDto>(new PromptConfigDto() { Id = entity.Id, Key = entity.Key, Value = entity.Value}, request.CorrelationId());
         }
 
         /// <summary>
@@ -125,13 +144,13 @@ namespace ChatService.Features
         /// <summary>
         /// Gets a list of PromptConfigs with optional keyword filtering.
         /// </summary>
-        public async Task<BaseResponse<List<PromptConfigDto>>> GetListAsync(GetListPromptConfiRequest request)
+        public async Task<BaseResponse<PaginatedList<PromptConfigDto>>> GetListAsync(GetListPromptConfiRequest request)
         {
             var tenantId = _currentUserProvider.TenantId;
 
-            var spec = new PromptConfigFilterSpec(request.Key, tenantId);
+            var spec = new PromptConfigFilterSpec(request.Key, tenantId, request.PageIndex, request.PageSize);
             var entities = await _repository.ListAsync(spec);
-
+            var count = await _repository.CountAsync(new PromptConfigFilterSpec(request.Key, tenantId));
             var dtos = entities.Select(e => new PromptConfigDto
             {
                 Id = e.Id,
@@ -139,7 +158,7 @@ namespace ChatService.Features
                 Value = e.Value
             }).ToList();
 
-            return new BaseResponse<List<PromptConfigDto>>(dtos, request.CorrelationId());
+            return new BaseResponse<PaginatedList<PromptConfigDto>>(new PaginatedList<PromptConfigDto>(dtos, count, request.PageIndex, request.PageSize), request.CorrelationId());
         }
 
     }
