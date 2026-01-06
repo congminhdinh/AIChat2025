@@ -1,13 +1,12 @@
-@model WebApp.Models.PaginatedListDto<WebApp.Models.SystemPrompt.SystemPromptDto>
+﻿@model WebApp.Models.PaginatedListDto<WebApp.Models.PromptConfig.PromptConfigDto>
 
 <div class="table-wrapper">
     <table>
         <thead>
             <tr>
                 <th style="width: 60px;">STT</th>
-                <th style="width: 200px;">Tên</th>
-                <th>Nội dung</th>
-                <th style="width: 150px;">Trạng thái</th>
+                <th style="width: 250px;">Tên</th>
+                <th style="width: 300px;">Giá trị</th>
                 <th style="width: 180px;">Thao tác</th>
             </tr>
         </thead>
@@ -25,24 +24,8 @@
                 {
                     <tr>
                         <td>@stt</td>
-                        <td>@item.Name</td>
-                        <td>
-                            @item.Content
-                        </td>
-                        <td>
-                            @if (item.IsActive)
-                            {
-                                <span class="badge badge-success">
-                                    <i class="bi bi-check-circle"></i> Đang hoạt động
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge badge-secondary">
-                                    <i class="bi bi-x-circle"></i> Không hoạt động
-                                </span>
-                            }
-                        </td>
+                        <td>@item.Key</td>
+                        <td>@item.Value</td>
                         <td>
                             <div class="actions">
                                 <button class="btn btn-primary btn-edit-system-prompt" data-id="@item.Id" title="Chỉnh sửa">
@@ -104,12 +87,12 @@
         color: white;
     }
 
-    thead th {
-        padding: 16px;
-        text-align: left;
-        font-weight: 600;
-        font-size: 0.9rem;
-    }
+        thead th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
 
     tbody td {
         padding: 14px 16px;
@@ -166,29 +149,29 @@
         white-space: nowrap;
     }
 
-    .btn i {
-        font-size: 0.9rem;
-    }
+        .btn i {
+            font-size: 0.9rem;
+        }
 
     .btn-primary {
         background-color: #0d6efd;
         color: white;
     }
 
-    .btn-primary:hover {
-        background-color: #0b5ed7;
-        box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
-    }
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+            box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
+        }
 
     .btn-danger {
         background-color: #dc3545;
         color: white;
     }
 
-    .btn-danger:hover {
-        background-color: #bb2d3b;
-        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
-    }
+        .btn-danger:hover {
+            background-color: #bb2d3b;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+        }
 
     .text-center {
         text-align: center;
@@ -214,10 +197,10 @@
         display: inline-block;
     }
 
-    .page-item.disabled .page-link {
-        pointer-events: none;
-        opacity: 0.5;
-    }
+        .page-item.disabled .page-link {
+            pointer-events: none;
+            opacity: 0.5;
+        }
 
     .page-link {
         padding: 8px 14px;
@@ -233,10 +216,10 @@
         gap: 5px;
     }
 
-    .page-link:hover:not(.disabled) {
-        background-color: #e9ecef;
-        border-color: #dee2e6;
-    }
+        .page-link:hover:not(.disabled) {
+            background-color: #e9ecef;
+            border-color: #dee2e6;
+        }
 
     .page-item.active .page-link {
         background-color: #0d6efd;

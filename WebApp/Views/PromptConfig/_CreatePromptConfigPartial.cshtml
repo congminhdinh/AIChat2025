@@ -1,0 +1,127 @@
+﻿<div class="create-modal-container">
+    <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">
+            <i class="bi bi-plus-circle-fill text-primary me-2"></i>Tạo từ điển doanh nghiệp
+        </h5>
+        <button type="button" class="btn-close-modal" onclick="closeCreateModal()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <div class="modal-body">
+        <p class="text-muted small mb-4">
+            Thiết lập từ điển hệ thống để thêm thuật ngữ cho AI Chatbot.
+        </p>
+
+        <form id="createPromptConfigForm">
+            <div class="row g-3 mb-3">
+                <div class="col-md-12">
+                    <label for="createPromptConfigKey" class="form-label fw-semibold text-secondary small">
+                        <i class="bi bi-card-heading me-1"></i>Tên <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control bg-light border-0 py-2"
+                           id="createPromptConfigKey" name="Key"
+                           placeholder="Nhập tên prompt..." required>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-12">
+                    <label for="createPromptConfigValue" class="form-label fw-semibold text-secondary small">
+                        <i class="bi bi-file-text-fill me-1"></i>Nội dung <span class="text-danger">*</span>
+                    </label>
+                    <textarea class="form-control bg-light border-0 py-2"
+                              id="createPromptConfigValue" name="Value"
+                              rows="6"
+                              placeholder="Nhập nội dung prompt..." required></textarea>
+                    <div class="form-text small text-muted">
+                        <i class="bi bi-info-circle me-1"></i>Ví dụ: Anh Nam - Tổng Giám đốc.
+                    </div>
+                </div>
+            </div>
+
+           
+        </form>
+    </div>
+
+    <div class="modal-footer border-0 justify-content-center pt-0">
+        <button type="button" class="btn btn-light px-4 rounded-pill border" onclick="closeCreateModal()">
+            Hủy bỏ
+        </button>
+        <button type="button" class="btn btn-primary px-4 rounded-pill shadow" id="btnSubmitCreatePromptConfig">
+            <i class="bi bi-check-lg me-1"></i> Tạo mới
+        </button>
+    </div>
+</div>
+
+<style>
+    .create-modal-container {
+        padding: 5px;
+    }
+
+    .modal-header {
+        padding: 20px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-title {
+        font-size: 1.25rem;
+        color: #2c3e50;
+    }
+
+    .btn-close-modal {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        color: #adb5bd;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+
+        .btn-close-modal:hover {
+            color: #495057;
+            transform: rotate(90deg);
+        }
+
+    .modal-body {
+        padding: 0 25px 20px 25px;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+        .modal-body textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+    .form-control:focus, .form-select:focus {
+        background-color: #fff !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        border: 1px solid #0d6efd !important;
+    }
+
+    .form-label {
+        margin-bottom: 8px;
+    }
+
+    .modal-footer {
+        padding: 15px 25px 25px 25px;
+        gap: 10px;
+    }
+
+    .btn {
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .btn-light:hover {
+        background-color: #e9ecef;
+    }
+
+    .btn-primary:hover {
+        background-color: #0b5ed7;
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+    }
+</style>
