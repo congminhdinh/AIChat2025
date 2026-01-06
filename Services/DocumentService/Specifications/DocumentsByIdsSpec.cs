@@ -4,9 +4,9 @@ using Infrastructure.Specifications;
 
 namespace DocumentService.Specifications
 {
-    public class DocumentsByIdsSpec : TenancySpecification<PromptDocument>
+    public class DocumentsByIdsSpec : Specification<PromptDocument>
     {
-        public DocumentsByIdsSpec(List<int> ids, int tenantId): base(tenantId)
+        public DocumentsByIdsSpec(List<int> ids)
         {
             Query.Where(d => ids.Contains(d.Id));
         }

@@ -7,11 +7,13 @@ using ChatService.Requests;
 using ChatService.Specifications;
 using Infrastructure;
 using Infrastructure.Authentication;
+using Infrastructure.Dtos;
 using Infrastructure.Logging;
 using Infrastructure.Tenancy;
 using Infrastructure.Web;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
 
 namespace ChatService.Features;
@@ -31,8 +33,9 @@ public class ChatBusiness: BaseHttpClient
     private readonly ICurrentUserProvider _currentUserProvider;
     private readonly ILogger<ChatBusiness> _chatLogger;
     private readonly SystemPromptBusiness _systemPromptBusiness;
+    private readonly AppSettings _appSettings;
 
-    public ChatBusiness(IRepository<ChatConversation> conversationRepo, IRepository<ChatMessage> messageRepo, IRepository<PromptConfig> promptConfigRepo, IPublishEndpoint publishEndpoint, ICurrentUserProvider currentUserProvider, ILogger<ChatBusiness> logger, SystemPromptBusiness systemPromptBusiness, HttpClient httpClient, IAppLogger<BaseHttpClient> appLogger, IRepository<ChatFeedback> feedbackRepo) : base(httpClient, appLogger)
+    public ChatBusiness(IRepository<ChatConversation> conversationRepo, IRepository<ChatMessage> messageRepo, IRepository<PromptConfig> promptConfigRepo, IPublishEndpoint publishEndpoint, ICurrentUserProvider currentUserProvider, ILogger<ChatBusiness> logger, SystemPromptBusiness systemPromptBusiness, HttpClient httpClient, IAppLogger<BaseHttpClient> appLogger, IRepository<ChatFeedback> feedbackRepo,IOptionsMonitor<AppSettings> optionsMonitor) : base(httpClient, appLogger)
     {
         _conversationRepo = conversationRepo;
         _messageRepo = messageRepo;
@@ -42,6 +45,7 @@ public class ChatBusiness: BaseHttpClient
         _chatLogger = logger;
         _systemPromptBusiness = systemPromptBusiness;
         _feedbackRepo = feedbackRepo;
+        _appSettings = optionsMonitor.CurrentValue;
     }
 
     /// <summary>
@@ -106,6 +110,13 @@ public class ChatBusiness: BaseHttpClient
         {
             return new BaseResponse<ConversationDto>("Conversation not found", BaseResponseStatus.Error, request.CorrelationId());
         }
+        var documentIds = conversation.Messages
+            .Where(m => !string.IsNullOrEmpty(m.ReferenceDocIds))
+            .SelectMany(m => m.ReferenceDocIds.Split(",").Select(id => int.Parse(id)))
+            .Distinct()
+            .ToList();
+        var documentListResponse = await PostWithTokenAsync<List<int>, List<DocumentChatDto>>($"{_appSettings.ApiGatewayUrl}/web-api/document/list-ids", documentIds, _currentUserProvider.Token ?? string.Empty);
+        var documentList = documentListResponse ?? new List<DocumentChatDto>();
         var listFeedbacksIds = conversation.Messages.Select(c => c.Id).ToList();
         var listFeedbacks = await _feedbackRepo.ListAsync(new ChatFeedbacksByResponseIdsSpec(listFeedbacksIds, _currentUserProvider.TenantId));
         return new BaseResponse<ConversationDto>(new ConversationDto
@@ -121,7 +132,7 @@ public class ChatBusiness: BaseHttpClient
                 {
                     Id = m.Id,
                     ConversationId = m.ConversationId,
-                    ReferenceDocIdList = !string.IsNullOrEmpty(m.ReferenceDocIds) ? m.ReferenceDocIds.Split(",").Select(int.Parse).ToList() : new List<int>(),
+                    ReferenceDocList = documentList.Where(t => m.ReferenceDocIds.Contains(t.Id.ToString())).ToList()?? new List<DocumentChatDto>(),
                     RequestId = m.RequestId,
                     Content = m.Message,
                     Timestamp = m.Timestamp,
@@ -220,10 +231,13 @@ public class ChatBusiness: BaseHttpClient
 
         await _messageRepo.SaveChangesAsync(ct);
 
+        var documentListResponse = await PostWithTokenAsync<List<int>, List<DocumentChatDto>>($"{_appSettings.ApiGatewayUrl}/web-api/document/list-ids", distinctReferences.ToList(), botResponse.Token ?? string.Empty);
+        var documentList = documentListResponse ?? new List<DocumentChatDto>();
         return new MessageDto
         {
             Id = message.Id,
             ConversationId = message.ConversationId,
+            ReferenceDocList = documentList.Where(t => message.ReferenceDocIds.Contains(t.Id.ToString())).ToList() ?? new List<DocumentChatDto>(),
             Content = message.Message,
             Timestamp = message.Timestamp,
             UserId = message.UserId,

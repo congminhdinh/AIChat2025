@@ -1,3 +1,5 @@
+using Infrastructure.Dtos;
+
 namespace WebApp.Models.Chat
 {
     public class MessageDto
@@ -5,6 +7,7 @@ namespace WebApp.Models.Chat
         public int Id { get; set; }
         public int ConversationId { get; set; }
         public string Content { get; set; } = string.Empty;
+        public List<DocumentChatDto> ReferenceDocList { get; init; } = new List<DocumentChatDto>();
         public DateTime Timestamp { get; set; }
         public bool IsBot { get; set; }
         public int UserId { get; set; }

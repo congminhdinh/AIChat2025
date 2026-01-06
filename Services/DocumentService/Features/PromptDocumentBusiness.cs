@@ -8,6 +8,7 @@ using DocumentService.Requests;
 using DocumentService.Specifications;
 using Hangfire;
 using Infrastructure;
+using Infrastructure.Dtos;
 using Infrastructure.Logging;
 using Infrastructure.Paging;
 using Infrastructure.Web;
@@ -84,22 +85,16 @@ namespace DocumentService.Features
 
             return new BaseResponse<PaginatedList<DocumentDto>>(paginatedList, input.CorrelationId());
         }
-        public async Task<List<DocumentDto>> GetDocumentsByIdsAsync(List<int> ids)
+        public async Task<List<DocumentChatDto>> GetDocumentsByIdsAsync(List<int> ids)
         {
-            var tenantId = _currentUserProvider.TenantId;
-            var documents = await _documentRepository.ListAsync(new DocumentsByIdsSpec(ids, tenantId));
-            var dtos = documents.Select(d => new DocumentDto(
+            var documents = await _documentRepository.ListAsync(new DocumentsByIdsSpec(ids));
+            var dtos = documents.Select(d => new DocumentChatDto(
                 d.Id,
-                d.FileName,
-                d.DocumentName,
-                d.FilePath,
-                d.Action,
-                d.LastModifiedAt
-            )
-            {
-                TenantId = d.TenantId
-            }).ToList();
-            return new List<DocumentDto>(dtos);
+                string.IsNullOrEmpty(d.DocumentName)? d.FileName: d.DocumentName,
+                d.FilePath
+            ))
+            .ToList();
+            return dtos;
         }
         public async Task<BaseResponse<int>> CreateDocument(CreateDocumentRequest input)
         {
