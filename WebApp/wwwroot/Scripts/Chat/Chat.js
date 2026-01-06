@@ -54,7 +54,7 @@
             }
 
             removeLoadingIndicator();
-            appendMessage(messageDto.content, messageDto.type, true, messageDto.id, messageDto.feedbackId || 0, messageDto.ratings || 0);
+            appendMessage(messageDto, true);
         });
 
         hubConnection.onreconnecting(function (error) {
@@ -219,15 +219,35 @@
         chatContent.innerHTML = '';
 
         messages.forEach(function (message) {
-            appendMessage(message.content, message.type, false, message.id, message.feedbackId || 0, message.ratings || 0);
+            appendMessage(message, false);
         });
 
         scrollToBottom();
     }
 
-    function appendMessage(content, type, animate = true, messageId = null, feedbackId = 0, ratings = 0) {
+    function appendMessage(message, animate = true) {
         const chatContent = document.querySelector('.chat-content');
         if (!chatContent) return;
+
+        // Handle both message object and simple string (for user messages)
+        let content, type, messageId, feedbackId, ratings, referenceDocList;
+
+        if (typeof message === 'object') {
+            content = message.content || '';
+            type = message.type;
+            messageId = message.id;
+            feedbackId = message.feedbackId || 0;
+            ratings = message.ratings || 0;
+            referenceDocList = message.referenceDocList || [];
+        } else {
+            // Fallback for simple string messages (user messages)
+            content = message;
+            type = 0;
+            messageId = null;
+            feedbackId = 0;
+            ratings = 0;
+            referenceDocList = [];
+        }
 
         const messageDiv = document.createElement('div');
         messageDiv.className = type === 0 ? 'message user' : 'message bot';
@@ -244,7 +264,40 @@
 
         const bubbleDiv = document.createElement('div');
         bubbleDiv.className = 'msg-bubble';
-        bubbleDiv.textContent = content;
+
+        // Handle newline characters: convert \n to <br/>
+        const contentWithBreaks = content.replace(/\n/g, '<br/>');
+        bubbleDiv.innerHTML = contentWithBreaks;
+
+        // Add reference documents section if available (for bot messages only)
+        if (type !== 0 && referenceDocList && referenceDocList.length > 0) {
+            const refBox = document.createElement('div');
+            refBox.className = 'ref-box';
+
+            const refTitle = document.createElement('div');
+            refTitle.className = 'ref-title';
+            refTitle.textContent = 'Tài liệu tham khảo:';
+            refBox.appendChild(refTitle);
+
+            const refList = document.createElement('ol');
+            refList.style.margin = '0';
+            refList.style.paddingLeft = '20px';
+
+            referenceDocList.forEach(function (doc) {
+                const listItem = document.createElement('li');
+                const link = document.createElement('a');
+                link.href = (window.chatConfig?.imageBaseUrl || '') + (doc.filePath || '');
+                link.textContent = doc.documentName || 'Tài liệu';
+                link.className = 'ref-link';
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                listItem.appendChild(link);
+                refList.appendChild(listItem);
+            });
+
+            refBox.appendChild(refList);
+            bubbleDiv.appendChild(refBox);
+        }
 
         // Add action buttons for bot messages
         if (type !== 0) {
@@ -308,7 +361,8 @@
 
         messageInput.value = '';
 
-        appendMessage(content, 0, true);
+        // Append user message
+        appendMessage({ content: content, type: 0 }, true);
 
         showLoadingIndicator();
 

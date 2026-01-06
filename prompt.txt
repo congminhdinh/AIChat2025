@@ -1,57 +1,23 @@
-Role: Senior .NET AI Engineer & RAG System Architect.
 
-Project Context: I am building a Multitenant RAG system using python (ChatProcessor). I am encountering specific issues with Hybrid Search accuracy (specifically with abbreviations) and Response Generation control.
+Task: Update the Chat view (and relevant Partial View) in project WebApp to handle enhanced MessageDto logic for the RAG system.
 
-Input Data:
+Requirements:
 
-Source Code: Please analyze the current Hybrid Search logic in ChatProcessor\docs.
+Reference Documentation Logic: > - Check the ReferenceDocList within the MessageDto.
 
-Execution Logs: Please analyze the following logs captured during a failed query test:
+If the list contains elements, append a section at the bottom of the bot's message bubble titled: "Tài liệu tham khảo:".
 
-Plaintext
+Render this as a numbered list: 1. (DocumentName), 2. (DocumentName), etc..
 
-2026-01-04 23:33:37.337 [INFO] ... Processing message: 'Mức đóng BHXH hằng tháng của người lao động là bao...'
-2026-01-04 23:33:37.337 [INFO] ... Extracted 1 keywords: ['BHXH']
-2026-01-04 23:33:38.032 [INFO] ... Qdrant exact search completed: tenant_id=1, results=10
-2026-01-04 23:33:38.034 [INFO] ... Similarity filtering: 10 -> 0 results (excluded 10 below 0.5)
-2026-01-04 23:33:38.037 [INFO] ... Keyword search completed: tenant_id=1, keywords=['BHXH'], results=0
-2026-01-04 23:33:38.038 [WARNING] ... Fallback triggered: Only 0 quality tenant results (threshold: 2)
-Problem Description:
 
-Retrieval Issue (Scenario: Abbreviation "BHXH"):
+Each document name must be a hyperlink. Construct the URL using the format: {ImageBaseUrl}{FilePath}.
 
-The user asks about "BHXH" (short for "Bảo hiểm xã hội").
+Text Formatting:
 
-Vector Search Failure: As seen in the logs (Similarity filtering), the system did find 10 potential results in the Global Tenant (ID 1), but the logic discarded all of them because their similarity score was below the hardcoded 0.5 threshold.
+The system must correctly handle newline characters (\n) within the message content. - In the Razor view or via JavaScript injection, ensure every \n is converted into a functional line break (e.g., using <br/> or CSS white-space: pre-line) to maintain message structure.
 
-Keyword Search Failure: The logs show keywords=['BHXH'] returning 0 results. This indicates a lack of semantic flexibility; the documents likely contain the full phrase "Bảo hiểm xã hội" but not the exact token "BHXH".
+Architectural Consistency: - Ensure this logic is applied within the Partial View responsible for rendering chat messages, following our Partial Injection pattern. - If the message is rendered client-side after an AJAX call, update the JavaScript template logic to match these requirements.
 
-Result: The system triggers a fallback and returns no valid context.
 
-Generation Issue (Scenario: Full Text):
 
-When the user asks with the full phrase "Bảo hiểm xã hội", the retrieval works, but the generated answer is excessively long. The current System Prompt fails to constrain the verbosity effectively.
-
-Task Requirements:
-
-1. Refactor Hybrid Search Logic:
-
-Modify the search strategy in ChatProcessor to handle the issues identified in the logs.
-
-Address the aggressive 0.5 similarity filtering that is causing false negatives for short/abbreviated queries.
-
-Address the keyword extraction logic to improve hit rates when the user uses common abbreviations (like BHXH) vs. formal document terms.
-
-2. Optimize System Prompt:
-
-Rewrite the System Prompt to enforce strict output constraints.
-
-Constraint: The final answer must be concise, limited to a maximum of 5 sentences and approximately 200 words.
-
-The model must prioritize synthesis over listing all retrieved chunks.
-
-Deliverables:
-
-The modified hybrid search logic.
-
-The updated System Prompt string.
+Files to inspect: > - Look for the Chat Controller, the MessageDto definition, and the .cshtml files related to the Chat interface (e.g., _ChatMessagePartial.cshtml or Index.cshtml).

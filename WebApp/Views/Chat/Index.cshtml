@@ -476,6 +476,13 @@
             onerror="this.onerror=null; this.src='https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js'; console.log('Trying alternative CDN...')">
     </script>
 
+    <!-- Global Config -->
+    <script>
+        window.chatConfig = {
+            imageBaseUrl: '@ViewBag.ImageBaseUrl'
+        };
+    </script>
+
     <!-- Chat Script -->
     <script src="~/Scripts/Chat/chat.js" asp-append-version="true"></script>
 }

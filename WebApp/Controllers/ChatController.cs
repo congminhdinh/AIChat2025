@@ -2,6 +2,7 @@
 using Infrastructure.Web;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using WebApp.Business;
 using WebApp.Helpers;
 using WebApp.Models.Chat;
@@ -14,17 +15,21 @@ namespace WebApp.Controllers
         private readonly ChatBusiness _chatBusiness;
         private readonly ChatFeedbackBusiness _chatFeedbackBusiness;
         private readonly IdentityHelper _identityHelper;
+        private readonly AppSettings _appSettings;
 
-        public ChatController(ChatBusiness chatBusiness, ChatFeedbackBusiness chatFeedbackBusiness, IdentityHelper identityHelper)
+        public ChatController(ChatBusiness chatBusiness, ChatFeedbackBusiness chatFeedbackBusiness, IdentityHelper identityHelper, IOptions<AppSettings> appSettings)
         {
             _chatBusiness = chatBusiness;
             _chatFeedbackBusiness = chatFeedbackBusiness;
             _identityHelper = identityHelper;
+            _appSettings = appSettings.Value;
         }
 
         public IActionResult Index()
         {
             // Global [Authorize] filter handles authentication
+            // Pass ImageBaseUrl to view for document reference links
+            ViewBag.ImageBaseUrl = _appSettings.ImageBaseUrl;
             return View();
         }
 
