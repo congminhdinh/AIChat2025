@@ -8,9 +8,9 @@
         {
             WebApp.Models.Document.Enums.DocumentAction.Upload => "Tải lên",
             WebApp.Models.Document.Enums.DocumentAction.Standardization => "Chuẩn hóa",
-            WebApp.Models.Document.Enums.DocumentAction.Vectorize_Start => "Bắt đầu vector hóa",
-            WebApp.Models.Document.Enums.DocumentAction.Vectorize_Success => "Vector hóa thành công",
-            WebApp.Models.Document.Enums.DocumentAction.Vectorize_Failed => "Vector hóa thất bại",
+            WebApp.Models.Document.Enums.DocumentAction.Vectorize_Start => "Bắt đầu nạp dữ liệu",
+            WebApp.Models.Document.Enums.DocumentAction.Vectorize_Success => "Nạp dữ liệu thành công",
+            WebApp.Models.Document.Enums.DocumentAction.Vectorize_Failed => "Nạp dữ liệu thất bại",
             WebApp.Models.Document.Enums.DocumentAction.Update_Metadata => "Cập nhật metadata",
             _ => "Không xác định"
         };
@@ -70,7 +70,7 @@
                                     Sửa
                                 </button>
                                 <button class="btn btn-sm btn-info btn-vectorize-doc" data-doc-id="@doc.Id">
-                                    Vectorize
+                                    Nạp dữ liệu
                                 </button>
                                 <button class="btn btn-sm btn-danger btn-delete-doc" data-doc-id="@doc.Id">
                                     Xóa

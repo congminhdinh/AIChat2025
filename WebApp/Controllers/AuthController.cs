@@ -70,7 +70,7 @@ namespace WebApp.Controllers
             }
         }
 
-        [HttpPost]
+        //[HttpPost]
         public async Task<IActionResult> Logout()
         {
             await _identityHelper.RemoveAuthen();

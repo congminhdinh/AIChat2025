@@ -1,23 +1,29 @@
+Task: Refactor the UI of Admin CMS and WebApp to use Tabler.io (Bootstrap 5) with a unified Blue & White theme.
 
-Task: Update the Chat view (and relevant Partial View) in project WebApp to handle enhanced MessageDto logic for the RAG system.
+1. Layout & Style:
 
-Requirements:
+Global Theme: Unified Blue/White aesthetic. Consolidate all common CSS into _Layout.cshtml.
 
-Reference Documentation Logic: > - Check the ReferenceDocList within the MessageDto.
+Viewport: Remove Footer. Set layout to 100vh with a scrollable main content area (overflow-y: auto). Ensure no content is hidden or overlapped.
 
-If the list contains elements, append a section at the bottom of the bot's message bubble titled: "Tài liệu tham khảo:".
+Icons & Buttons: Replace all text buttons with SVG Tabler Icons.
 
-Render this as a numbered list: 1. (DocumentName), 2. (DocumentName), etc..
+Claude must infer appropriate icons based on button text (e.g., Edit -> icon-edit, Delete -> icon-trash, Vectorize -> icon-bolt).
 
+All icon buttons must have Bootstrap Tooltips (data-bs-toggle="tooltip") showing the original action text on hover.
 
-Each document name must be a hyperlink. Construct the URL using the format: {ImageBaseUrl}{FilePath}.
+2. Script & Path Logic (Crucial):
 
-Text Formatting:
+UrlRoot Integration: Stop using ~/ for internal assets.
 
-The system must correctly handle newline characters (\n) within the message content. - In the Razor view or via JavaScript injection, ensure every \n is converted into a functional line break (e.g., using <br/> or CSS white-space: pre-line) to maintain message structure.
+Utils.js: Create/Update utils.js to define a global JavaScript variable UrlRoot. This UrlRoot should be populated from the WebAppUrl setting in appsettings.json (via Razor in _Layout.cshtml).
 
-Architectural Consistency: - Ensure this logic is applied within the Partial View responsible for rendering chat messages, following our Partial Injection pattern. - If the message is rendered client-side after an AJAX call, update the JavaScript template logic to match these requirements.
+Path Refactor: Update all <script src="..."> and <link href="..."> tags to use the UrlRoot variable instead of the tilde ~/ prefix.
 
+3. Functional Components:
 
+Tables: Implement sticky headers, hover effects, and ensure "Bot Response" columns wrap text to fill available space.
 
-Files to inspect: > - Look for the Chat Controller, the MessageDto definition, and the .cshtml files related to the Chat interface (e.g., _ChatMessagePartial.cshtml or Index.cshtml).
+Feedback Stats: Refactor as a 2-column Tabler Dashboard (Stats Cards on the left, Data Table on the right).
+
+Reference: Adhere to claude.md and UIShareLogic.txt for AJAX and coding patterns.

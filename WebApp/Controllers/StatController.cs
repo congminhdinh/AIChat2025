@@ -11,13 +11,16 @@ namespace WebApp.Controllers
     {
         private readonly ChatBusiness _chatBusiness;
         private readonly ChatFeedbackBusiness _chatFeedbackBusiness;
+        private readonly IdentityHelper _identityHelper;
 
         public StatController(
             ChatBusiness chatBusiness,
-            ChatFeedbackBusiness chatFeedbackBusiness)
+            ChatFeedbackBusiness chatFeedbackBusiness,
+            IdentityHelper identityHelper)
         {
             _chatBusiness = chatBusiness;
             _chatFeedbackBusiness = chatFeedbackBusiness;
+            _identityHelper = identityHelper;
         }
 
         public ActionResult Index()
