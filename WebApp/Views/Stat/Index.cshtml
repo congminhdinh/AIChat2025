@@ -1,31 +1,14 @@
-﻿@{
-    ViewData["Title"] = "Stat";
+@{
+    ViewData["Title"] = "Báo cáo Phản hồi";
 }
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
+
+@section Styles {
     <style>
-        :root {
-            --primary: #0d6efd;
-            --success: #198754;
-            --danger: #dc3545;
-            --bg-light: #f8f9fa;
-            --border: #dee2e6;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            background-color: #f4f7f6;
-            margin: 20px;
-            color: #333;
-        }
-
-        .dashboard-container {
+        .stats-dashboard {
             display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 20px;
-            align-items: start;
+            grid-template-columns: 320px 1fr;
+            gap: 24px;
+            padding: 0;
         }
 
         .stats-sidebar {
@@ -34,323 +17,313 @@
             gap: 20px;
         }
 
-        .card {
+        .stat-card {
             background: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
         }
 
-            .card h4 {
-                margin-top: 0;
-                color: #666;
-                font-size: 0.85rem;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-            }
-
-        /* SCROLLABLE MAIN CONTAINER - Required per prompt.txt */
-        .dashboard-container {
-            overflow-y: auto;
-            max-height: calc(100vh - 100px); /* Adjust based on header height */
+        .stat-card h4 {
+            margin: 0 0 20px 0;
+            color: var(--primary-color);
+            font-size: 1rem;
+            font-weight: 600;
         }
 
-        .pie-chart-fake {
-            width: 140px;
-            height: 140px;
+        .pie-chart-container {
+            width: 160px;
+            height: 160px;
             border-radius: 50%;
-            background: conic-gradient(var(--success) 0% 82%, var(--danger) 82% 100%);
-            margin: 15px auto;
+            margin: 0 auto 20px auto;
             position: relative;
         }
 
-            .pie-chart-fake::after {
-                content: attr(data-percentage);
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: white;
-                width: 75px;
-                height: 75px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-weight: bold;
-                font-size: 1.1rem;
-            }
-
-        .stat-item {
-            margin-bottom: 12px;
-            border-bottom: 1px dashed #eee;
-            padding-bottom: 8px;
+        .pie-chart {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(
+                var(--success-color) 0% var(--positive-percentage, 50%),
+                var(--danger-color) var(--positive-percentage, 50%) 100%
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
         }
 
-        .stat-value {
-            font-size: 1.4rem;
-            font-weight: bold;
-            display: block;
-            color: var(--primary);
+        .pie-chart::after {
+            content: attr(data-percentage);
+            position: absolute;
+            background: white;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) inset;
+        }
+
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 0.85rem;
+        }
+
+        .chart-legend span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.positive {
+            background-color: var(--success-color);
+        }
+
+        .legend-dot.negative {
+            background-color: var(--danger-color);
+        }
+
+        .stat-item {
+            padding: 16px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
         }
 
         .stat-label {
-            font-size: 0.8rem;
-            color: #888;
+            display: block;
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-bottom: 8px;
         }
 
-        /* Table Area */
-        .table-container {
+        .stat-value {
+            display: block;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .table-card {
             background: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
         }
 
         .table-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #f1f1f1;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f0f0f0;
         }
 
-        /* Filter & Button Group */
+        .table-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
         .header-actions {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             align-items: center;
         }
 
         .filter-select {
-            padding: 6px 12px;
-            border-radius: 4px;
-            border: 1px solid var(--border);
-            font-size: 0.85rem;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            font-size: 0.875rem;
             outline: none;
-            color: #555;
+            background-color: #f8f9fa;
+            color: #495057;
             cursor: pointer;
+            transition: all 0.2s;
         }
 
-            .filter-select:focus {
-                border-color: var(--primary);
-            }
-
-        .btn-excel {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 7px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 0.8rem;
+        .filter-select:focus {
+            border-color: var(--primary-color);
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
         }
 
-        /* FULL TEXT DISPLAY - NO truncation, allow word wrapping */
-        .table-wrapper {
-            overflow-x: auto; /* Horizontal scroll if table too wide */
+        .feedback-table-wrapper {
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
         }
 
-        .table-wrapper table {
+        .feedback-table {
             width: 100%;
-            table-layout: auto; /* Allow columns to size based on content */
             border-collapse: collapse;
         }
 
-        .table-wrapper td {
+        .feedback-table thead {
+            position: sticky;
+            top: 0;
+            background-color: var(--primary-color);
+            z-index: 10;
+        }
+
+        .feedback-table th {
+            padding: 14px 16px;
+            text-align: left;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+            border: none;
+        }
+
+        .feedback-table tbody tr {
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .feedback-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .feedback-table td {
+            padding: 14px 16px;
+            vertical-align: top;
+            font-size: 0.875rem;
+        }
+
+        .feedback-table td.bot-response {
             white-space: normal;
             word-wrap: break-word;
-            overflow-wrap: break-word;
-            vertical-align: top;
-            padding: 12px;
-            border-bottom: 1px solid var(--border);
-            line-height: 1.5;
-            font-size: 0.9rem;
-        }
-
-        /* Bot Response column - WIDEST column with full text */
-        .table-wrapper td:nth-child(3) {
-            min-width: 300px; /* Ensure Bot Response column is widest */
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-        }
-
-        th {
-            background-color: #f8f9fa;
-            text-align: left;
-            padding: 12px;
-            border-bottom: 2px solid var(--border);
-            color: #555;
-            font-size: 0.85rem;
-        }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid var(--border);
-            vertical-align: top;
-            line-height: 1.5;
-            font-size: 0.9rem;
+            max-width: 500px;
+            line-height: 1.6;
         }
 
         .col-stt {
-            width: 40px;
+            width: 50px;
         }
 
-        .col-q {
-            width: 20%;
+        .col-question {
+            width: 25%;
         }
 
-        .col-a {
-            width: 35%;
+        .col-response {
+            width: 40%;
         }
 
-        .col-rate {
+        .col-rating {
+            width: 100px;
+        }
+
+        .col-category {
             width: 120px;
         }
 
-        .col-cat {
-            width: 140px;
-        }
-
-        .badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: bold;
-        }
-
-        .badge-success {
-            background-color: #d1e7dd;
-            color: #0f5132;
-        }
-
-        .badge-danger {
-            background-color: #f8d7da;
-            color: #842029;
-        }
-
-        .badge-secondary {
-            background-color: #e2e3e5;
-            color: #41464b;
-        }
-
-        .badge-info {
-            background-color: #cff4fc;
-            color: #055160;
-        }
-
-        .text-wrap {
-            white-space: normal;
-            word-wrap: break-word;
-        }
-
-        .text-truncate {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: block;
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 5px;
-            margin-top: 20px;
-            list-style: none;
-            padding: 0;
-        }
-
-        .page-item {
-            padding: 6px 12px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.85rem;
-        }
-
-            .page-item.active {
-                background-color: var(--primary);
-                color: white;
-                border-color: var(--primary);
-            }
-
-        /* Loading spinner */
-        .loading-spinner {
+        .loading-state {
             text-align: center;
             padding: 60px 20px;
             color: #6c757d;
         }
 
-        .loading-spinner i {
+        .loading-state i {
             font-size: 3rem;
+            color: var(--primary-color);
+        }
+
+        .pagination-container {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
         }
     </style>
-</head>
-<body>
+}
 
-    <h2 style="margin-bottom: 25px; padding-left: 10px; border-left: 5px solid var(--primary);">Báo cáo Phản hồi Hệ thống</h2>
+<div class="page-container">
+    <div class="page-header">
+        <h2 style="margin: 0; font-size: 1.75rem; font-weight: 700; color: #2c3e50; display: flex; align-items: center; gap: 12px;">
+            <i class="ti ti-chart-bar"></i> Báo cáo Phản hồi Hệ thống
+        </h2>
+    </div>
 
-    <div class="dashboard-container">
-
+    <div class="stats-dashboard">
+        <!-- Stats Sidebar -->
         <div class="stats-sidebar">
-            <div class="card">
-                <h4>Tỉ lệ hài lòng</h4>
-                <div class="pie-chart-fake" id="pie-chart" data-percentage="50%"></div>
-                <div style="display: flex; justify-content: center; gap: 15px; font-size: 0.75rem;">
-                    <span><span style="color:var(--success)">●</span> Tích cực</span>
-                    <span><span style="color:var(--danger)">●</span> Tiêu cực</span>
+            <!-- Satisfaction Chart Card -->
+            <div class="stat-card">
+                <h4><i class="ti ti-chart-pie"></i> Tỉ lệ hài lòng</h4>
+                <div class="pie-chart-container">
+                    <div class="pie-chart" id="pie-chart" data-percentage="50%"></div>
+                </div>
+                <div class="chart-legend">
+                    <span>
+                        <div class="legend-dot positive"></div>
+                        Tích cực
+                    </span>
+                    <span>
+                        <div class="legend-dot negative"></div>
+                        Tiêu cực
+                    </span>
                 </div>
             </div>
 
-            <div class="card">
+            <!-- Statistics Card -->
+            <div class="stat-card">
                 <div class="stat-item">
-                    <span class="stat-label">Tổng tin nhắn</span>
+                    <span class="stat-label"><i class="ti ti-message"></i> Tổng tin nhắn</span>
                     <span class="stat-value" id="total-messages-value">...</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-label">Lượt đánh giá</span>
+                    <span class="stat-label"><i class="ti ti-star"></i> Lượt đánh giá</span>
                     <span class="stat-value" id="total-ratings-value">...</span>
                 </div>
             </div>
         </div>
 
-        <div class="table-container">
+        <!-- Table Section -->
+        <div class="table-card">
             <div class="table-header">
-                <h3 style="margin: 0; font-size: 1.1rem;">Chi tiết phản hồi gần đây</h3>
-
+                <h3><i class="ti ti-list"></i> Chi tiết phản hồi gần đây</h3>
                 <div class="header-actions">
                     <select class="filter-select" id="filter-rating">
-                        <option value="">-- Tất cả đánh giá --</option>
+                        <option value="">Tất cả đánh giá</option>
                         <option value="1">Thích (Like)</option>
                         <option value="2">Không thích (Dislike)</option>
                         <option value="0" selected>Mặc định (Initial)</option>
                     </select>
-
-                    <button class="btn-excel">Xuất Excel</button>
+                    <button class="icon-btn btn-success" id="btn-export-excel" data-bs-toggle="tooltip" title="Xuất Excel">
+                        <i class="ti ti-file-spreadsheet"></i>
+                    </button>
                 </div>
             </div>
 
             <div id="feedback-table-container">
-                <div class="loading-spinner">
-                    <div style="font-size: 3rem; color: #0d6efd;">⏳</div>
-                    <p style="margin-top: 15px;">Đang tải dữ liệu...</p>
+                <div class="loading-state">
+                    <i class="ti ti-loader"></i>
+                    <p style="margin-top: 15px; font-weight: 500;">Đang tải dữ liệu...</p>
                 </div>
             </div>
         </div>
-
     </div>
+</div>
 
-    @section Scripts {
-        <script src="~/Scripts/Stat/stat.js" asp-append-version="true"></script>
-    }
-
-</body>
-</html>
+@section Scripts {
+    <script src="~/Scripts/Stat/stat.js" asp-append-version="true"></script>
+}

@@ -1,15 +1,15 @@
 @using WebApp.Models.Chat
 @model WebApp.Models.PaginatedListDto<ChatFeedbackDto>
 
-<div class="table-wrapper">
-    <table>
+<div class="feedback-table-wrapper">
+    <table class="feedback-table">
         <thead>
             <tr>
-                <th style="width: 50px;">STT</th>
-                <th style="width: 20%;">Câu hỏi</th>
-                <th style="width: 35%;">Câu trả lời (Bot)</th>
-                <th style="width: 100px;">Đánh giá</th>
-                <th style="width: 140px;">Phân loại</th>
+                <th class="col-stt">STT</th>
+                <th class="col-question">Câu hỏi</th>
+                <th class="col-response">Câu trả lời (Bot)</th>
+                <th class="col-rating">Đánh giá</th>
+                <th class="col-category">Phân loại</th>
                 <th>Góp ý chi tiết</th>
             </tr>
         </thead>
@@ -17,7 +17,10 @@
             @if (Model.Items == null || !Model.Items.Any())
             {
                 <tr>
-                    <td colspan="6" class="text-center" style="padding: 40px;">Không có phản hồi nào</td>
+                    <td colspan="6" class="text-center" style="padding: 40px; color: #6c757d;">
+                        <i class="ti ti-inbox" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+                        Không có phản hồi nào
+                    </td>
                 </tr>
             }
             else
@@ -27,39 +30,35 @@
                 {
                     <tr>
                         <td>@stt</td>
-                        <td>
-                            <div style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
-                                @feedback.Message
-                            </div>
-                        </td>
-                        <td>
-                            <div style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
-                                @feedback.Response
-                            </div>
-                        </td>
+                        <td class="bot-response">@feedback.Message</td>
+                        <td class="bot-response">@feedback.Response</td>
                         <td>
                             @if (feedback.Ratings == 1)
                             {
-                                <span class="badge badge-success">Thích</span>
+                                <span class="badge badge-success">
+                                    <i class="ti ti-thumb-up"></i> Thích
+                                </span>
                             }
                             else if (feedback.Ratings == 2)
                             {
-                                <span class="badge badge-danger">Không thích</span>
+                                <span class="badge badge-danger">
+                                    <i class="ti ti-thumb-down"></i> Không thích
+                                </span>
                             }
                             else
                             {
-                                <span class="badge badge-secondary">Mặc định</span>
+                                <span class="badge badge-new">
+                                    <i class="ti ti-minus"></i> Mặc định
+                                </span>
                             }
                         </td>
                         <td>
-                            <span class="badge badge-info">@((int)feedback.Category)</span>
+                            <span class="badge badge-processing">@((int)feedback.Category)</span>
                         </td>
-                        <td>
+                        <td class="bot-response">
                             @if (!string.IsNullOrEmpty(feedback.Content))
                             {
-                                <div style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
-                                    @feedback.Content
-                                </div>
+                                @feedback.Content
                             }
                             else
                             {
@@ -76,30 +75,24 @@
 
 @if (Model.TotalPages > 1)
 {
-    <div class="pagination-container" style="display: flex; justify-content: center; margin-top: 20px;">
-        <ul class="pagination" style="list-style: none; display: flex; gap: 5px; padding: 0;">
-            <li class="page-item @(Model.PageIndex == 1 ? "disabled" : "")" style="display: inline-block;">
-                <a class="page-link" href="#" data-page="@(Model.PageIndex - 1)"
-                   style="padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 4px; text-decoration: none; color: #0d6efd;">
-                    Trước
+    <div class="pagination-container">
+        <ul class="pagination">
+            <li class="page-item @(Model.PageIndex == 1 ? "disabled" : "")">
+                <a class="page-link" href="#" data-page="@(Model.PageIndex - 1)">
+                    <i class="ti ti-chevron-left"></i> Trước
                 </a>
             </li>
 
             @for (int i = 1; i <= Model.TotalPages; i++)
             {
-                <li class="page-item @(i == Model.PageIndex ? "active" : "")" style="display: inline-block;">
-                    <a class="page-link" href="#" data-page="@i"
-                       style="padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 4px; text-decoration: none;
-                              @(i == Model.PageIndex ? "background-color: #0d6efd; color: white;" : "color: #0d6efd;")">
-                        @i
-                    </a>
+                <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                    <a class="page-link" href="#" data-page="@i">@i</a>
                 </li>
             }
 
-            <li class="page-item @(Model.PageIndex == Model.TotalPages ? "disabled" : "")" style="display: inline-block;">
-                <a class="page-link" href="#" data-page="@(Model.PageIndex + 1)"
-                   style="padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 4px; text-decoration: none; color: #0d6efd;">
-                    Sau
+            <li class="page-item @(Model.PageIndex == Model.TotalPages ? "disabled" : "")">
+                <a class="page-link" href="#" data-page="@(Model.PageIndex + 1)">
+                    Sau <i class="ti ti-chevron-right"></i>
                 </a>
             </li>
         </ul>

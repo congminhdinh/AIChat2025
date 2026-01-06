@@ -93,19 +93,23 @@
             background: #0d6efd;
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 50px;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border-radius: 50%;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            font-size: 1.2rem;
             transition: all 0.2s;
         }
 
         .btn-create:hover {
             background: #0b5ed7;
             box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
+            transform: scale(1.05);
         }
 
         #data-list-container {
@@ -195,8 +199,8 @@
                 <option value="0">Không hoạt động</option>
             </select>
 
-            <button class="btn-create" id="btnCreateSystemPrompt">
-                <i class="bi bi-plus-circle-fill"></i> Tạo mới
+            <button class="btn-create" id="btnCreateSystemPrompt" data-bs-toggle="tooltip" title="Tạo mới">
+                <i class="ti ti-plus"></i>
             </button>
         </div>
     </div>

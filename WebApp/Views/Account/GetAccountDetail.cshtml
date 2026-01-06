@@ -84,11 +84,11 @@
     </div>
 
     <div class="modal-footer border-0 justify-content-center pt-0">
-        <button type="button" class="btn btn-light px-4 rounded-pill border" onclick="closeEditModal()">
-            Hủy bỏ
+        <button type="button" class="icon-btn" onclick="closeEditModal()" data-bs-toggle="tooltip" title="Hủy">
+            <i class="ti ti-x"></i>
         </button>
-        <button type="button" class="btn btn-primary px-4 rounded-pill shadow" id="btnSubmitEditAccount">
-            <i class="bi bi-check-lg me-1"></i> Lưu thay đổi
+        <button type="button" class="icon-btn btn-primary" id="btnSubmitEditAccount" data-bs-toggle="tooltip" title="Lưu thay đổi">
+            <i class="ti ti-check"></i>
         </button>
     </div>
 </div>
@@ -159,6 +159,32 @@
 
     .shadow-sm {
         box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;
+    }
+
+    .icon-btn {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        border: 1px solid #dee2e6;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        color: #495057;
+    }
+
+    .icon-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .icon-btn.btn-primary {
+        background-color: #0d6efd;
+        color: white;
+        border-color: #0d6efd;
     }
 </style>
 

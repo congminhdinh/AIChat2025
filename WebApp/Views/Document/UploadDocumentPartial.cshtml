@@ -26,9 +26,11 @@
     </div>
 
     <div class="modal-footer-actions">
-        <button type="button" class="btn-modal btn-cancel" onclick="closeUploadModal()">Hủy</button>
-        <button type="button" class="btn-modal btn-upload" onclick="submitUpload()">
-            Tải lên
+        <button type="button" class="icon-btn" onclick="closeUploadModal()" data-bs-toggle="tooltip" title="Hủy">
+            <i class="ti ti-x"></i>
+        </button>
+        <button type="button" class="icon-btn btn-primary" onclick="submitUpload()" data-bs-toggle="tooltip" title="Tải lên">
+            <i class="ti ti-upload"></i>
         </button>
     </div>
 </div>
@@ -137,19 +139,29 @@
         color: #333;
     }
 
-    .btn-upload {
-        background-color: var(--primary-color, #0d6efd);
+    .icon-btn {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        border: 1px solid #dee2e6;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        color: #495057;
+    }
+
+    .icon-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .icon-btn.btn-primary {
+        background-color: #0d6efd;
         color: white;
-        box-shadow: 0 2px 5px rgba(13, 110, 253, 0.3);
-    }
-
-    .btn-upload:hover {
-        opacity: 0.9;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(13, 110, 253, 0.4);
-    }
-
-    .btn-upload:active {
-        transform: translateY(0);
+        border-color: #0d6efd;
     }
 </style>

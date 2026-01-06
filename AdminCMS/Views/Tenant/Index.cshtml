@@ -79,38 +79,44 @@
             background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 8px 20px;
-            border-radius: 20px;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border-radius: 50%;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-            transition: opacity 0.2s;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s;
         }
 
         .btn-create:hover {
             opacity: 0.9;
+            transform: scale(1.05);
         }
 
         .btn-refresh {
             background-color: #6c757d;
             color: white;
             border: none;
-            padding: 8px 20px;
-            border-radius: 20px;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border-radius: 50%;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-            transition: opacity 0.2s;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s;
         }
 
         .btn-refresh:hover {
             opacity: 0.9;
+            transform: scale(1.05);
         }
 
         .search-wrapper {
@@ -251,11 +257,11 @@
             </div>
 
             <div class="action-group">
-                <button class="btn-create" id="btn-create-tenant">
-                    <i class="bi bi-building-add"></i> Tạo Tenant mới
+                <button class="btn-create" id="btn-create-tenant" data-bs-toggle="tooltip" title="Tạo Tenant mới">
+                    <i class="ti ti-plus"></i>
                 </button>
-                <button class="btn-refresh" id="btn-refresh-tenants">
-                    <i class="bi bi-arrow-clockwise"></i> Làm mới
+                <button class="btn-refresh" id="btn-refresh-tenants" data-bs-toggle="tooltip" title="Làm mới">
+                    <i class="ti ti-refresh"></i>
                 </button>
             </div>
         </div>

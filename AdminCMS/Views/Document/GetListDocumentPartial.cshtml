@@ -69,14 +69,14 @@
                         <td>@(doc.LastModifiedAt.HasValue? doc.LastModifiedAt.Value.ToString("dd/MM/yyyy HH:mm") : "")</td>
                         <td>
                             <div class="actions">
-                                <button class="btn btn-sm btn-primary btn-edit-doc" data-doc-id="@doc.Id">
-                                    Sửa
+                                <button class="icon-btn btn-edit-doc" data-doc-id="@doc.Id" data-bs-toggle="tooltip" title="Sửa">
+                                    <i class="ti ti-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-info btn-vectorize-doc" data-doc-id="@doc.Id">
-                                    Nạp dữ liệu
+                                <button class="icon-btn btn-info btn-vectorize-doc" data-doc-id="@doc.Id" data-bs-toggle="tooltip" title="Nạp dữ liệu">
+                                    <i class="ti ti-bolt"></i>
                                 </button>
-                                <button class="btn btn-sm btn-danger btn-delete-doc" data-doc-id="@doc.Id">
-                                    Xóa
+                                <button class="icon-btn btn-danger btn-delete-doc" data-doc-id="@doc.Id" data-bs-toggle="tooltip" title="Xóa">
+                                    <i class="ti ti-trash"></i>
                                 </button>
                             </div>
                         </td>

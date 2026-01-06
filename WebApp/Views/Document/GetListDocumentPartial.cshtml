@@ -66,14 +66,14 @@
                         <td>@(doc.LastModifiedAt.HasValue? doc.LastModifiedAt.Value.ToString("dd/MM/yyyy HH:mm") : "")</td>
                         <td>
                             <div class="actions">
-                                <button class="btn btn-sm btn-primary btn-edit-doc" data-doc-id="@doc.Id">
-                                    Sửa
+                                <button class="icon-btn btn-primary btn-edit-doc" data-doc-id="@doc.Id" data-bs-toggle="tooltip" title="Sửa">
+                                    <i class="ti ti-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-info btn-vectorize-doc" data-doc-id="@doc.Id">
-                                    Nạp dữ liệu
+                                <button class="icon-btn btn-info btn-vectorize-doc" data-doc-id="@doc.Id" data-bs-toggle="tooltip" title="Nạp dữ liệu">
+                                    <i class="ti ti-bolt"></i>
                                 </button>
-                                <button class="btn btn-sm btn-danger btn-delete-doc" data-doc-id="@doc.Id">
-                                    Xóa
+                                <button class="icon-btn btn-danger btn-delete-doc" data-doc-id="@doc.Id" data-bs-toggle="tooltip" title="Xóa">
+                                    <i class="ti ti-trash"></i>
                                 </button>
                             </div>
                         </td>
@@ -111,7 +111,7 @@
 <style>
     .actions {
         display: flex;
-        gap: 5px;
+        gap: 8px;
         flex-wrap: wrap;
     }
 
@@ -132,17 +132,34 @@
         font-size: 0.8rem;
     }
 
-    .btn-primary {
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .icon-btn i {
+        font-size: 1.1rem;
+    }
+
+    .btn-primary, .icon-btn.btn-primary {
         background-color: #0d6efd;
         color: white;
     }
 
-    .btn-info {
+    .btn-info, .icon-btn.btn-info {
         background-color: #0dcaf0;
         color: white;
     }
 
-    .btn-danger {
+    .btn-danger, .icon-btn.btn-danger {
         background-color: #dc3545;
         color: white;
     }

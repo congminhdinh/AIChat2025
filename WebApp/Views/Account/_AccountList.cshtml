@@ -59,14 +59,14 @@
                         </td>
                         <td>
                             <div class="actions">
-                                <button class="btn btn-primary btn-edit-account" data-account-id="@account.Id" title="Chỉnh sửa thông tin">
-                                    <i class="bi bi-pencil-square"></i> Sửa
+                                <button class="icon-btn btn-primary btn-edit-account" data-account-id="@account.Id" data-bs-toggle="tooltip" title="Sửa">
+                                    <i class="ti ti-edit"></i>
                                 </button>
-                                <button class="btn btn-warning btn-change-password-account" data-account-id="@account.Id" title="Đổi mật khẩu">
-                                    <i class="bi bi-shield-lock-fill"></i> Đổi MK
+                                <button class="icon-btn btn-warning btn-change-password-account" data-account-id="@account.Id" data-bs-toggle="tooltip" title="Đổi mật khẩu">
+                                    <i class="ti ti-key"></i>
                                 </button>
-                                <button class="btn btn-danger btn-delete-account" data-account-id="@account.Id" title="Xóa tài khoản">
-                                    <i class="bi bi-trash3-fill"></i> Xóa
+                                <button class="icon-btn btn-danger btn-delete-account" data-account-id="@account.Id" data-bs-toggle="tooltip" title="Xóa">
+                                    <i class="ti ti-trash"></i>
                                 </button>
                             </div>
                         </td>
@@ -199,6 +199,23 @@
 
     .btn i {
         font-size: 1rem;
+    }
+
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .icon-btn i {
+        font-size: 1.1rem;
     }
 
     .btn-primary {

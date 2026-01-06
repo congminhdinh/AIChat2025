@@ -47,13 +47,13 @@
                         <td>@tenant.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
                         <td>
                             <div class="actions">
-                                <button class="btn btn-primary btn-edit-tenant" data-tenant-id="@tenant.Id" title="Chỉnh sửa thông tin">
-                                    <i class="bi bi-pencil-square"></i> Sửa
+                                <button class="icon-btn btn-primary btn-edit-tenant" data-tenant-id="@tenant.Id" data-bs-toggle="tooltip" title="Sửa">
+                                    <i class="ti ti-edit"></i>
                                 </button>
                                 @if (tenant.IsActive)
                                 {
-                                    <button class="btn btn-warning btn-disable-tenant" data-tenant-id="@tenant.Id" title="Vô hiệu hóa tenant">
-                                        <i class="bi bi-lock-fill"></i> Vô hiệu hóa
+                                    <button class="icon-btn btn-warning btn-disable-tenant" data-tenant-id="@tenant.Id" data-bs-toggle="tooltip" title="Vô hiệu hóa">
+                                        <i class="ti ti-lock"></i>
                                     </button>
                                 }
                                 else
@@ -162,6 +162,24 @@
 
     .btn i {
         font-size: 1rem;
+    }
+
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: transparent;
+    }
+
+    .icon-btn i {
+        font-size: 1.1rem;
     }
 
     .btn-primary {

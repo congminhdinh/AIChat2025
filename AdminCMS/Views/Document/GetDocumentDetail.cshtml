@@ -4,7 +4,7 @@
 <div class="edit-modal-container">
     <div class="modal-header border-0 pb-0">
         <h5 class="modal-title fw-bold" id="editDocumentLabel">Chỉnh sửa tài liệu</h5>
-        <button type="button" class="btn-close-modal" onclick="closeEditModal()">×</button>
+        <button type="button" class="btn-close-modal" onclick="closeEditModal()" data-bs-toggle="tooltip" title="Đóng"><i class="ti ti-x"></i></button>
     </div>
     <div class="modal-body">
         <p class="text-muted small mb-4">
@@ -25,8 +25,8 @@
         </form>
     </div>
     <div class="modal-footer border-0 justify-content-center">
-        <button type="button" class="btn btn-secondary px-4 rounded-pill" onclick="closeEditModal()">Hủy bỏ</button>
-        <button type="button" class="btn btn-primary px-4 rounded-pill" id="btnSubmitEditDocument">Lưu thay đổi</button>
+        <button type="button" class="icon-btn btn-danger" onclick="closeEditModal()" data-bs-toggle="tooltip" title="Hủy bỏ"><i class="ti ti-x"></i></button>
+        <button type="button" class="icon-btn btn-success" id="btnSubmitEditDocument" data-bs-toggle="tooltip" title="Lưu thay đổi"><i class="ti ti-check"></i></button>
     </div>
 </div>
 

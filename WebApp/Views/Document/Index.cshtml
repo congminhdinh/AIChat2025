@@ -126,19 +126,44 @@
             background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 8px 20px;
-            border-radius: 20px;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border-radius: 50%;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-            transition: opacity 0.2s;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s;
         }
 
             .btn-upload:hover {
                 opacity: 0.9;
+                transform: scale(1.05);
+            }
+
+        .btn-refresh {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border-radius: 50%;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+
+            .btn-refresh:hover {
+                opacity: 0.9;
+                transform: scale(1.05);
             }
 
         .instruction-link {
@@ -419,12 +444,11 @@
                         Để kết quả trả ra từ AI được tốt nhất, hãy xử lý tài liệu trước khi tải lên.
                         Hướng dẫn chi tiết <a href="#">tại đây</a>.
                     </p> *@
-                    <button class="btn-upload" id="btn-upload-document">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
-                        Upload tài liệu
+                    <button class="btn-upload" id="btn-upload-document" data-bs-toggle="tooltip" title="Upload tài liệu">
+                        <i class="ti ti-upload"></i>
                     </button>
-                    <button class="btn-upload" id="btn-refresh-documents" style="background-color: #6c757d; margin-left: 10px;">
-                        🔄 Làm mới
+                    <button class="btn-refresh" id="btn-refresh-documents" data-bs-toggle="tooltip" title="Làm mới">
+                        <i class="ti ti-refresh"></i>
                     </button>
                 </div>
             </div>

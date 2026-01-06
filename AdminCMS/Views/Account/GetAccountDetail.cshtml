@@ -6,8 +6,8 @@
         <h5 class="modal-title fw-bold" id="editAccountLabel">
             <i class="bi bi-person-vcard-fill text-primary me-2"></i>Chỉnh sửa tài khoản
         </h5>
-        <button type="button" class="btn-close-modal" onclick="closeEditModal()">
-            <i class="bi bi-x-lg"></i>
+        <button type="button" class="btn-close-modal" onclick="closeEditModal()" data-bs-toggle="tooltip" title="Đóng">
+            <i class="ti ti-x"></i>
         </button>
     </div>
 
@@ -85,11 +85,11 @@
     </div>
 
     <div class="modal-footer border-0 justify-content-center pt-0">
-        <button type="button" class="btn btn-light px-4 rounded-pill border" onclick="closeEditModal()">
-            Hủy bỏ
+        <button type="button" class="icon-btn btn-danger" onclick="closeEditModal()" data-bs-toggle="tooltip" title="Hủy bỏ">
+            <i class="ti ti-x"></i>
         </button>
-        <button type="button" class="btn btn-primary px-4 rounded-pill shadow" id="btnSubmitEditAccount">
-            <i class="bi bi-check-lg me-1"></i> Lưu thay đổi
+        <button type="button" class="icon-btn btn-success" id="btnSubmitEditAccount" data-bs-toggle="tooltip" title="Lưu thay đổi">
+            <i class="ti ti-check"></i>
         </button>
     </div>
 </div>
