@@ -22,12 +22,20 @@ namespace WebApp.Controllers
 
         public IActionResult Index()
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             return View();
         }
 
         [HttpGet]
         public async Task<IActionResult> GetPromptConfigs([FromQuery] string? keyword, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             var request = new GetListPromptConfigRequest
             {
                 Key = keyword,
@@ -54,6 +62,10 @@ namespace WebApp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetPromptConfigById(int id)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             var response = await _systemPromptBusiness.GetByIdAsync(id);
 
             if (response.Status == BaseResponseStatus.Error || response.Data == null)
@@ -67,12 +79,20 @@ namespace WebApp.Controllers
         [HttpGet]
         public IActionResult GetCreatePromptConfigModal()
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             return PartialView("_CreatePromptConfigPartial");
         }
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreatePromptConfigRequest request)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             // Validate required fields
             if (string.IsNullOrWhiteSpace(request.Key))
             {
@@ -97,6 +117,10 @@ namespace WebApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Update([FromBody] UpdatePromptConfigRequest request)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             if (request.Id <= 0)
             {
                 return Json(new { success = false, message = "ID không hợp lệ" });
@@ -126,6 +150,10 @@ namespace WebApp.Controllers
         [HttpDelete]
         public async Task<IActionResult> Delete(int id)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             if (id <= 0)
             {
                 return Json(new { success = false, message = "ID không hợp lệ" });

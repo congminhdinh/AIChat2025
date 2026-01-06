@@ -21,12 +21,20 @@ namespace WebApp.Controllers
 
         public IActionResult Index()
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             return View();
         }
 
         [HttpGet]
         public async Task<IActionResult> GetDocuments([FromQuery] string? keyword, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             var request = new GetDocumentListRequest
             {
                 FileName = keyword,
@@ -53,12 +61,20 @@ namespace WebApp.Controllers
         [HttpGet]
         public IActionResult UploadDocumentPartial()
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             return PartialView();
         }
 
         [HttpGet]
         public async Task<IActionResult> GetListDocumentPartial([FromQuery] GetDocumentListRequest request)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             var response = await _documentBusiness.GetListAsync(request);
 
             if (response.Status == BaseResponseStatus.Error)
@@ -72,6 +88,10 @@ namespace WebApp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetDocument(int id)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             var response = await _documentBusiness.GetByIdAsync(id);
 
             if (response.Status == BaseResponseStatus.Error)
@@ -85,6 +105,10 @@ namespace WebApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Upload([FromForm] IFormFile file, [FromForm] string? documentName)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             if (file == null || file.Length == 0)
             {
                 return Json(new { success = false, message = "Vui lòng chọn tệp để tải lên" });
@@ -110,6 +134,10 @@ namespace WebApp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetDocumentById(int id)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             var response = await _documentBusiness.GetByIdAsync(id);
 
             if (response.Status == BaseResponseStatus.Error)
@@ -125,11 +153,19 @@ namespace WebApp.Controllers
 
         public IActionResult GetDocumentDetail()
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             return PartialView();
         }
         [HttpPost]
         public async Task<IActionResult> Edit([FromBody] UpdateDocumentRequest request)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             if (request.DocumentId <= 0)
             {
                 return Json(new { success = false, message = "ID tài liệu không hợp lệ" });
@@ -152,6 +188,10 @@ namespace WebApp.Controllers
         [HttpDelete]
         public async Task<IActionResult> Delete(int id)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             if (id <= 0)
             {
                 return Json(new { success = false, message = "ID tài liệu không hợp lệ" });
@@ -170,6 +210,10 @@ namespace WebApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Vectorize(int id)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             if (id <= 0)
             {
                 return Json(new { success = false, message = "ID tài liệu không hợp lệ" });

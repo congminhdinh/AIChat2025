@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Infrastructure;
+using Microsoft.AspNetCore.Mvc;
 using WebApp.Business;
-using Infrastructure;
+using WebApp.Helpers;
 using WebApp.Models;
 using WebApp.Models.Chat;
 
@@ -21,12 +22,20 @@ namespace WebApp.Controllers
 
         public ActionResult Index()
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             return View();
         }
 
         [HttpGet]
         public async Task<IActionResult> GetMessageCount()
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             var response = await _chatBusiness.CountMessage();
 
             if (response.Status == BaseResponseStatus.Error)
@@ -38,6 +47,10 @@ namespace WebApp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetRatingCounts()
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             // Fetch feedback with Ratings=1 (Likes) and Ratings=2 (Dislikes)
             var likesResponse = await _chatFeedbackBusiness.GetChatFeedbackListAsync(1, 1, 1000000);
             var dislikesResponse = await _chatFeedbackBusiness.GetChatFeedbackListAsync(2, 1, 1000000);
@@ -66,6 +79,10 @@ namespace WebApp.Controllers
             [FromQuery] int pageIndex = 1,
             [FromQuery] int pageSize = 10)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             var response = await _chatFeedbackBusiness.GetChatFeedbackListAsync(ratings, pageIndex, pageSize);
 
             if (response.Status == BaseResponseStatus.Error || response.Data == null)

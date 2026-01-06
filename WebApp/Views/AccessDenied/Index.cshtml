@@ -1,0 +1,146 @@
+﻿@model ErrorViewModel
+@{
+    Layout = null; // Tắt layout để dùng CSS thuần hoàn toàn
+    ViewData["Title"] = "403 - Từ chối truy cập";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <style>
+        /* CSS THUẦN */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: #333;
+        }
+
+        .error-container {
+            text-align: center;
+            background: white;
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .error-code {
+            font-size: 100px;
+            font-weight: 900;
+            color: #e74c3c;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .error-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 20px 0 10px;
+            color: #2c3e50;
+        }
+
+        .error-message {
+            color: #7f8c8d;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .countdown-box {
+            font-size: 16px;
+            color: #95a5a6;
+            margin-bottom: 20px;
+        }
+
+        #countdown {
+            font-weight: bold;
+            color: #3498db;
+            font-size: 20px;
+        }
+
+        .btn-back {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+            .btn-back:hover {
+                background-color: #2980b9;
+            }
+
+        /* Icon ổ khóa đơn giản bằng CSS */
+        .lock-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            border: 4px solid #e74c3c;
+            border-radius: 10px;
+            position: relative;
+        }
+
+            .lock-icon::before {
+                content: "";
+                position: absolute;
+                width: 30px;
+                height: 30px;
+                border: 4px solid #e74c3c;
+                border-bottom: none;
+                border-radius: 20px 20px 0 0;
+                top: -35px;
+                left: 11px;
+            }
+    </style>
+</head>
+<body>
+
+    <div class="error-container">
+        <div class="lock-icon"></div>
+        <h1 class="error-code">403</h1>
+        <h2 class="error-title">Truy cập bị chặn!</h2>
+        <p class="error-message">
+            Bạn không có đủ quyền hạn để truy cập vào khu vực này.
+            Hệ thống sẽ đưa bạn quay lại an toàn.
+        </p>
+
+        <div class="countdown-box">
+            Tự động quay lại trang chủ sau <span id="countdown">3</span> giây...
+        </div>
+
+        <a href="@Url.Action("Index", "Chat")" class="btn-back">
+            Quay lại ngay
+        </a>
+    </div>
+
+    <script>
+        // Logic đếm ngược và điều hướng
+        let seconds = 3;
+        const countdownDisplay = document.getElementById('countdown');
+
+        const timer = setInterval(() => {
+            seconds--;
+            if (countdownDisplay) {
+                countdownDisplay.textContent = seconds;
+            }
+
+            if (seconds <= 0) {
+                clearInterval(timer);
+                window.location.href = '@Url.Action("Index", "Chat")';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

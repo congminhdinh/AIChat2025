@@ -25,6 +25,10 @@ namespace WebApp.Controllers
 
         public IActionResult Index()
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             // Global [Authorize] filter handles authentication
             return View();
         }
@@ -32,6 +36,10 @@ namespace WebApp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAccounts([FromQuery] string? keyword, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             var request = new GetAccountListRequest
             {
                 Name = keyword,
@@ -61,6 +69,10 @@ namespace WebApp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAccountById(int id)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             var response = await _accountBusiness.GetByIdAsync(id);
 
             if (response.Status == BaseResponseStatus.Error || response.Data == null)
@@ -90,6 +102,10 @@ namespace WebApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Update([FromForm] UpdateWebAppAccountRequest request)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             if (request.AccountId <= 0)
             {
                 return Json(new { success = false, message = "ID tài khoản không hợp lệ" });
@@ -108,6 +124,10 @@ namespace WebApp.Controllers
         [HttpDelete]
         public async Task<IActionResult> Delete(int id)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             if (id <= 0)
             {
                 return Json(new { success = false, message = "ID tài khoản không hợp lệ" });
@@ -126,12 +146,20 @@ namespace WebApp.Controllers
         [HttpGet]
         public IActionResult GetCreateAccountModal()
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             return PartialView("_CreateAccountPartial");
         }
 
         [HttpPost]
         public async Task<IActionResult> Create([FromForm] CreateWebAppAccountRequest request)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             // Validate required fields
             if (string.IsNullOrWhiteSpace(request.Name))
             {
@@ -166,6 +194,10 @@ namespace WebApp.Controllers
         [HttpGet]
         public IActionResult GetChangePasswordModal()
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             return PartialView("ChangePasswordPartial");
         }
 
@@ -182,6 +214,10 @@ namespace WebApp.Controllers
         [HttpPost]
         public async Task<IActionResult> AdminChangePassword([FromBody] AdminChangePasswordRequest request)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             // Validate passwords match
             if (string.IsNullOrEmpty(request.NewPassword))
             {
@@ -211,6 +247,10 @@ namespace WebApp.Controllers
         [HttpPost]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
+            if (!_identityHelper.IsAdmin())
+            {
+                return View("AccessDenied");
+            }
             // Validate passwords match
             if (string.IsNullOrEmpty(request.NewPassword))
             {

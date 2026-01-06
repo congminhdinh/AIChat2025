@@ -2,6 +2,7 @@
 using Infrastructure.Enums;
 using Infrastructure.Logging;
 using Infrastructure.Web;
+using Microsoft.AspNetCore.Mvc;
 using WebApp.Models.Account;
 
 namespace WebApp.Business
@@ -14,16 +15,13 @@ namespace WebApp.Business
             _currentUserProvider = currentUserProvider;
         }
 
-        public async Task<List<int>> GetPermissionsAsync()
-        {
-            var token = _currentUserProvider.Token;
-            var userId = _currentUserProvider.UserId;
-            var response = await GetWithTokenAsync<BaseResponse<AccountDto>>($"/web-api/account/{userId}", token);
-            if(response == null || response.Data == null)
-            {
-               return new List<int>();
-            }
-            return response.Data.PermissionList;
-        }
+        //public IActionResult PermissionCheck()
+        //{
+        //    if (!_currentUserProvider.IsAdmin)
+        //    {
+        //        return new RedirectResult("Error");
+        //    }
+        //    return ;
+        //}
     }
 }
