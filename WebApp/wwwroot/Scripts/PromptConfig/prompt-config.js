@@ -12,6 +12,7 @@
     });
 
     function initializePromptConfig() {
+        debugger;
         setupEventListeners();
         loadPromptConfigList();
     }
@@ -78,6 +79,7 @@
 
     // ========== LOAD SYSTEM PROMPT LIST (PARTIAL VIEW) ==========
     async function loadPromptConfigList(keyword = '', pageIndex = 1) {
+        debugger;
         try {
             showLoadingState();
             currentPage = pageIndex;
