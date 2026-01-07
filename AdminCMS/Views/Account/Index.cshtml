@@ -12,30 +12,46 @@
             border-radius: 16px;
             padding: 30px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.02);
+            max-height: calc(100vh - 120px);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
+        /* --- PAGE HEADER AREA --- */
         .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            width: 100% !important;
+            margin-bottom: 20px;
             gap: 15px;
         }
 
         .page-title {
-            font-size: 1.5rem;
+            flex-shrink: 0 !important;
+            white-space: nowrap;
+            font-size: 1.25rem;
             font-weight: 700;
-            color: #2c3e50;
-            display: flex;
-            align-items: center;
+        }
+
+        .header-actions {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
             gap: 10px;
+            flex-grow: 1;
+            justify-content: flex-end;
         }
 
         .search-box {
             position: relative;
-            max-width: 400px;
             flex-grow: 1;
+            max-width: 400px;
+            min-width: 120px;
         }
 
         .search-input {
@@ -65,44 +81,17 @@
             height: 18px;
         }
 
-        .btn-create {
-            background: #0d6efd;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 50px;
-            font-weight: 600;
-            cursor: pointer;
+        .action-buttons {
             display: flex;
+            gap: 10px;
             align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
-        }
-
-        .btn-create:hover {
-            background: #0b5ed7;
-            box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
-        }
-
-        .btn-refresh {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 50px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
-        }
-
-        .btn-refresh:hover {
-            background: #5c636a;
+            flex-shrink: 0;
+            flex-wrap: nowrap;
         }
 
         #data-list-container {
+            flex: 1;
+            overflow-y: auto;
             min-height: 400px;
         }
 
@@ -177,18 +166,21 @@
             <i class="bi bi-people-fill"></i> Quản lý Tài khoản
         </div>
 
-        <div class="search-box">
-            <i class="bi bi-search search-icon"></i>
-            <input type="text" id="txtSearchAccount" class="search-input" placeholder="Tìm kiếm theo tên...">
+        <div class="header-actions">
+            <div class="search-box">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" id="txtSearchAccount" class="search-input" placeholder="Tìm kiếm theo tên...">
+            </div>
+
+            <div class="action-buttons">
+                <button class="icon-btn btn-success" id="btn-create-account" data-bs-toggle="tooltip" title="Tạo tài khoản mới">
+                    <i class="ti ti-user-plus"></i>
+                </button>
+                <button class="icon-btn" id="btn-refresh-accounts" data-bs-toggle="tooltip" title="Làm mới">
+                    <i class="ti ti-refresh"></i>
+                </button>
+            </div>
         </div>
-
-        <button class="icon-btn btn-success" id="btn-create-account" data-bs-toggle="tooltip" title="Tạo tài khoản mới">
-            <i class="ti ti-user-plus"></i>
-        </button>
-
-        <button class="icon-btn" id="btn-refresh-accounts" data-bs-toggle="tooltip" title="Làm mới">
-            <i class="ti ti-refresh"></i>
-        </button>
     </div>
 
     <div id="data-list-container">

@@ -16,23 +16,19 @@
     }
 
     function setupEventListeners() {
-        // Create button
-        const createButton = document.querySelector('#btn-create-account');
-        if (createButton) {
-            createButton.addEventListener('click', function (e) {
-                e.preventDefault();
-                openCreateModal();
-            });
-        }
+        // Create button - using event delegation for consistency
+        Utils.on('#btn-create-account', 'click', function (e) {
+            e.preventDefault();
+            const btn = this;
+            Utils.ButtonProtection.protect(btn, () => openCreateModal());
+        });
 
-        // Refresh button
-        const refreshButton = document.querySelector('#btn-refresh-accounts');
-        if (refreshButton) {
-            refreshButton.addEventListener('click', function (e) {
-                e.preventDefault();
-                loadAccountList(currentKeyword, 1);
-            });
-        }
+        // Refresh button - using event delegation for consistency
+        Utils.on('#btn-refresh-accounts', 'click', function (e) {
+            e.preventDefault();
+            const btn = this;
+            Utils.ButtonProtection.protect(btn, () => loadAccountList(currentKeyword, 1));
+        });
 
         // Search input with debounce
         const searchInput = document.querySelector('#txtSearchAccount');
@@ -72,10 +68,11 @@
                 deleteAccount(accountId);
             }
 
-            // Pagination links
-            if (e.target.classList.contains('page-link') && !e.target.parentElement.classList.contains('disabled')) {
+            // Pagination links - using closest() for consistency
+            const pageLink = e.target.closest('.page-link');
+            if (pageLink && !pageLink.parentElement.classList.contains('disabled')) {
                 e.preventDefault();
-                const page = parseInt(e.target.getAttribute('data-page'));
+                const page = parseInt(pageLink.getAttribute('data-page'));
                 if (page > 0) {
                     loadAccountList(currentKeyword, page);
                 }
@@ -158,10 +155,13 @@
                 modalContainer.innerHTML = html;
                 modalOverlay.classList.add('active');
 
-                // Attach submit handler
+                // Attach submit handler with button protection
                 const submitBtn = document.querySelector('#btnSubmitEditAccount');
                 if (submitBtn) {
-                    submitBtn.addEventListener('click', submitEditAccount);
+                    submitBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        Utils.ButtonProtection.protect(submitBtn, submitEditAccount);
+                    });
                 }
 
                 const nameInput = document.querySelector('#editAccountName');
@@ -289,7 +289,10 @@
 
                 const submitBtn = document.querySelector('#btnSubmitCreateAccount');
                 if (submitBtn) {
-                    submitBtn.addEventListener('click', submitCreateAccount);
+                    submitBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        Utils.ButtonProtection.protect(submitBtn, submitCreateAccount);
+                    });
                 }
 
                 const nameInput = document.querySelector('#createAccountName');
@@ -412,10 +415,13 @@
                 modalContainer.innerHTML = html;
                 modalOverlay.classList.add('active');
 
-                // Attach submit handler
+                // Attach submit handler with button protection
                 const submitBtn = document.querySelector('#btnSubmitChangePassword');
                 if (submitBtn) {
-                    submitBtn.addEventListener('click', submitChangePassword);
+                    submitBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        Utils.ButtonProtection.protect(submitBtn, submitChangePassword);
+                    });
                 }
 
                 const oldPasswordInput = document.querySelector('#oldPassword');
@@ -453,7 +459,10 @@
 
                 const submitBtn = document.querySelector('#btnSubmitAdminChangePassword');
                 if (submitBtn) {
-                    submitBtn.addEventListener('click', submitAdminChangePassword);
+                    submitBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        Utils.ButtonProtection.protect(submitBtn, submitAdminChangePassword);
+                    });
                 }
 
                 const newPasswordInput = document.querySelector('#adminNewPassword');

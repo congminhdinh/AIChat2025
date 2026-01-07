@@ -4,29 +4,24 @@
     let currentPage = 1;
     let pageSize = 10;
     let currentKeyword = '';
-    let currentIsActive = -1;
     let searchTimeout = null;
 
     document.addEventListener('DOMContentLoaded', function () {
-        debugger;
         initializePromptConfig();
     });
 
     function initializePromptConfig() {
-        debugger;
         setupEventListeners();
         loadPromptConfigList();
     }
 
     function setupEventListeners() {
-        // Create button
-        const createButton = document.querySelector('#btnCreatePromptConfig');
-        if (createButton) {
-            createButton.addEventListener('click', function (e) {
-                e.preventDefault();
-                openCreateModal();
-            });
-        }
+        // Create button - using event delegation for consistency
+        Utils.on('#btnCreatePromptConfig', 'click', function (e) {
+            e.preventDefault();
+            const btn = this;
+            Utils.ButtonProtection.protect(btn, () => openCreateModal());
+        });
 
         // Search input with debounce
         const searchInput = document.querySelector('#txtSearchPromptConfig');
@@ -35,17 +30,8 @@
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(() => {
                     currentKeyword = e.target.value.trim();
-                    loadPromptConfigList(currentKeyword, currentIsActive, 1);
+                    loadPromptConfigList(currentKeyword, 1);
                 }, 500); // 500ms debounce
-            });
-        }
-
-        // Status filter
-        const statusSelect = document.querySelector('#selectIsActive');
-        if (statusSelect) {
-            statusSelect.addEventListener('change', function (e) {
-                currentIsActive = parseInt(e.target.value);
-                loadPromptConfigList(currentKeyword, currentIsActive, 1);
             });
         }
 
@@ -67,25 +53,24 @@
                 deletePromptConfig(parseInt(id));
             }
 
-            // Pagination links
-            if (e.target.classList.contains('page-link') && !e.target.parentElement.classList.contains('disabled')) {
+            // Pagination links - using closest() for consistency
+            const pageLink = e.target.closest('.page-link');
+            if (pageLink && !pageLink.parentElement.classList.contains('disabled')) {
                 e.preventDefault();
-                const page = parseInt(e.target.getAttribute('data-page'));
+                const page = parseInt(pageLink.getAttribute('data-page'));
                 if (page > 0) {
-                    loadPromptConfigList(currentKeyword, currentIsActive, page);
+                    loadPromptConfigList(currentKeyword, page);
                 }
             }
         });
     }
 
     // ========== LOAD SYSTEM PROMPT LIST (PARTIAL VIEW) ==========
-    async function loadPromptConfigList(keyword = '', isActive = -1, pageIndex = 1) {
-        debugger;
+    async function loadPromptConfigList(keyword = '', pageIndex = 1) {
         try {
             showLoadingState();
             currentPage = pageIndex;
             currentKeyword = keyword;
-            currentIsActive = isActive;
 
             const params = new URLSearchParams({
                 keyword: keyword,
@@ -155,10 +140,13 @@
                 modalContainer.innerHTML = html;
                 modalOverlay.classList.add('active');
 
-                // Attach submit handler
+                // Attach submit handler with button protection
                 const submitBtn = document.querySelector('#btnSubmitCreatePromptConfig');
                 if (submitBtn) {
-                    submitBtn.addEventListener('click', submitCreatePromptConfig);
+                    submitBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        Utils.ButtonProtection.protect(submitBtn, submitCreatePromptConfig);
+                    });
                 }
 
                 // Auto-focus on first input
@@ -262,10 +250,13 @@
                 modalContainer.innerHTML = html;
                 modalOverlay.classList.add('active');
 
-                // Attach submit handler
+                // Attach submit handler with button protection
                 const submitBtn = document.querySelector('#btnSubmitEditPromptConfig');
                 if (submitBtn) {
-                    submitBtn.addEventListener('click', submitEditPromptConfig);
+                    submitBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        Utils.ButtonProtection.protect(submitBtn, submitEditPromptConfig);
+                    });
                 }
 
                 // Auto-focus on first input

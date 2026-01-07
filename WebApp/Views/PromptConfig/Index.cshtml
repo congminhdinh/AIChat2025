@@ -12,36 +12,46 @@
             border-radius: 16px;
             padding: 30px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.02);
+            max-height: calc(100vh - 120px);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
+        /* --- PAGE HEADER AREA --- */
         .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            width: 100% !important;
+            margin-bottom: 20px;
             gap: 15px;
         }
 
         .page-title {
-            font-size: 1.5rem;
+            flex-shrink: 0 !important;
+            white-space: nowrap;
+            font-size: 1.25rem;
             font-weight: 700;
-            color: #2c3e50;
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
 
-        .filters-group {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
+        .header-actions {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            gap: 10px;
+            flex-grow: 1;
+            justify-content: flex-end;
         }
 
         .search-box {
             position: relative;
-            max-width: 300px;
+            flex-grow: 1;
+            max-width: 400px;
+            min-width: 120px;
         }
 
         .search-input {
@@ -55,11 +65,11 @@
             transition: all 0.3s ease;
         }
 
-            .search-input:focus {
-                border-color: #0d6efd;
-                background-color: #fff;
-                box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
-            }
+        .search-input:focus {
+            border-color: #0d6efd;
+            background-color: #fff;
+            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+        }
 
         .search-icon {
             position: absolute;
@@ -71,48 +81,17 @@
             height: 18px;
         }
 
-        .status-select {
-            padding: 10px 15px;
-            border-radius: 25px;
-            border: 1px solid #e0e0e0;
-            background-color: #f8faff;
-            font-size: 0.9rem;
-            outline: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            min-width: 180px;
-        }
-
-            .status-select:focus {
-                border-color: #0d6efd;
-                background-color: #fff;
-                box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
-            }
-
-        .btn-create {
-            background: #0d6efd;
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px;
-            padding: 0;
-            border-radius: 50%;
-            font-weight: 600;
-            cursor: pointer;
+        .action-buttons {
             display: flex;
+            gap: 10px;
             align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            transition: all 0.2s;
+            flex-shrink: 0;
+            flex-wrap: nowrap;
         }
-
-            .btn-create:hover {
-                background: #0b5ed7;
-                box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
-                transform: scale(1.05);
-            }
 
         #data-list-container {
+            flex: 1;
+            overflow-y: auto;
             min-height: 400px;
         }
 
@@ -195,24 +174,20 @@
 <div class="page-container">
     <div class="page-header">
         <div class="page-title">
-            <i class="bi bi-chat-square-text-fill"></i> Cấu hình prompt hệ thống
+            <i class="bi bi-chat-square-text-fill"></i> Cấu hình từ điển doanh nghiệp
         </div>
 
-        <div class="filters-group">
+        <div class="header-actions">
             <div class="search-box">
                 <i class="bi bi-search search-icon"></i>
                 <input type="text" id="txtSearchPromptConfig" class="search-input" placeholder="Tìm kiếm theo tên...">
             </div>
 
-            <select id="selectIsActive" class="status-select">
-                <option value="-1">Tất cả trạng thái</option>
-                <option value="1">Đang hoạt động</option>
-                <option value="0">Không hoạt động</option>
-            </select>
-
-            <button class="btn-create" id="btnCreatePromptConfig" data-bs-toggle="tooltip" title="Tạo mới">
-                <i class="ti ti-plus"></i>
-            </button>
+            <div class="action-buttons">
+                <button class="icon-btn btn-success" id="btnCreatePromptConfig" data-bs-toggle="tooltip" title="Tạo mới">
+                    <i class="ti ti-plus"></i>
+                </button>
+            </div>
         </div>
     </div>
 

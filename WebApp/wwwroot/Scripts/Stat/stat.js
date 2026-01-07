@@ -27,10 +27,11 @@
 
         // Event delegation for pagination
         document.addEventListener('click', function (e) {
-            if (e.target.classList.contains('page-link') &&
-                !e.target.parentElement.classList.contains('disabled')) {
+            // Pagination links - using closest() for consistency
+            const pageLink = e.target.closest('.page-link');
+            if (pageLink && !pageLink.parentElement.classList.contains('disabled')) {
                 e.preventDefault();
-                const page = parseInt(e.target.getAttribute('data-page'));
+                const page = parseInt(pageLink.getAttribute('data-page'));
                 if (page > 0) {
                     currentPage = page;
                     loadFeedbackList();

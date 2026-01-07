@@ -81,76 +81,126 @@
         }
 
         /* --- MAIN LAYOUT --- */
+        /* --- ĐIỀU CHỈNH ĐỘ CAO ĐỂ KHÔNG BỊ RÚT NGẮN --- */
+
         .main-container {
             display: flex;
-            flex-grow: 1;
+            flex-direction: column;
+            flex: 1; /* Thay vì dùng height: calc, dùng flex: 1 để nó tự nở theo body */
             padding: 20px;
-            overflow-y: auto;
-            justify-content: center;
+            overflow: hidden; /* Quan trọng: Main container không được cuộn */
+            min-height: 0; /* Cho phép phần tử con co giãn linh hoạt bên trong */
         }
 
         .content-card {
             background-color: #fff;
             width: 100%;
             max-width: 1200px;
+            margin: 0 auto;
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
+            flex: 1; /* Ép card này nở hết cỡ trong main-container */
             padding: 20px;
+            min-height: 0; /* Bắt buộc để không bị phình quá màn hình */
+        }
+
+        #data-list-container {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-container {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #f8faff;
         }
 
         /* --- PAGE HEADER AREA --- */
         .page-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important; /* Cấm tuyệt đối xuống dòng */
+            align-items: center !important;
+            justify-content: space-between !important;
+            width: 100% !important;
             margin-bottom: 20px;
-            flex-wrap: wrap;
             gap: 15px;
         }
 
+        /* Tiêu đề: Giữ nguyên kích thước, không co */
         .page-title {
+            flex-shrink: 0 !important;
+            white-space: nowrap;
             font-size: 1.25rem;
             font-weight: 700;
-            color: #2c3e50;
         }
 
-        .action-group {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+        /* Cụm công cụ bên phải: Chiếm hết khoảng trống còn lại */
+        .header-actions {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            gap: 10px;
+            flex-grow: 1; /* Nở ra để lấp đầy */
+            justify-content: flex-end; /* Đẩy nội dung sang phải */
         }
 
-        .btn-upload {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-weight: 600;
-            cursor: pointer;
+        /* Ô search: Co giãn linh hoạt */
+        .search-box {
+            position: relative;
+            flex-grow: 1; /* Ô search sẽ là thứ bị co ngắn lại đầu tiên nếu màn hình hẹp */
+            max-width: 400px; /* Không để nó quá dài trên màn hình rộng */
+            min-width: 120px; /* Độ rộng tối thiểu trước khi bị tràn */
+        }
+
+        /* .action-buttons {
             display: flex;
+            gap: 10px;
             align-items: center;
-            gap: 8px;
+            flex-shrink: 0;
+            flex-wrap: nowrap;
+        } */
+
+        .search-input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border-radius: 25px;
+            border: 1px solid var(--border-color);
+            background-color: #f8faff;
             font-size: 0.9rem;
-            transition: opacity 0.2s;
+            outline: none;
+            transition: all 0.3s ease;
         }
 
-            .btn-upload:hover {
-                opacity: 0.9;
-            }
-
-        .instruction-link {
-            font-size: 0.85rem;
-            color: #666;
-            max-width: 500px;
+        .search-input:focus {
+            border-color: var(--primary-color);
+            background-color: #fff;
+            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
         }
 
-            .instruction-link a {
-                color: var(--primary-color);
-                text-decoration: none;
-            }
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            width: 18px;
+            height: 18px;
+        }
 
         /* --- TABLE STYLE --- */
         .table-container {
@@ -345,118 +395,43 @@
             }
         }
 
-        .search-wrapper {
-            flex: 1;
-            max-width: 400px; /* Độ rộng tối đa của ô search */
-            margin: 0 20px;
-        }
-
-        .search-box {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 10px 15px 10px 45px;
-            border-radius: 25px;
-            border: 1px solid var(--border-color);
-            background-color: #f8faff;
-            font-size: 0.9rem;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-
-            .search-input:focus {
-                border-color: var(--primary-color);
-                background-color: #fff;
-                box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
-            }
-
-        .search-icon {
-            position: absolute;
-            left: 15px;
-            color: #999;
-            width: 18px;
-            height: 18px;
-            pointer-events: none;
-        }
-
-        /* Điều chỉnh page-header để các phần tử không bị dính vào nhau trên mobile */
-        @@media (max-width: 992px) {
-            .search-wrapper {
-                max-width: 100%;
-                margin: 10px 0;
-                order: 3; /* Đẩy search xuống dưới cùng khi màn hình nhỏ */
-            }
-
-            .page-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
     </style>
 }
 
 <div class="main-container">
         <div class="content-card">
 
-            <div class="page-header">
-                <div class="page-title">Danh sách tài liệu</div>
+        <div class="page-header">
+            <div class="page-title">
+                <i class="bi bi-file-earmark-text"></i> Danh sách tài liệu
+            </div>
 
-                <div class="search-wrapper">
-                    <div class="search-box">
-                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                        <input type="text" id="txtSearchDocument" class="search-input" placeholder="Nhập tên tài liệu...">
-                    </div>
+            <div class="header-actions">
+                <div class="search-box">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" id="txtSearchDocument" class="search-input" placeholder="Nhập tên tài liệu...">
                 </div>
-                <div class="action-group">
-@*                     <p class="instruction-link">
-                        Để kết quả trả ra từ AI được tốt nhất, hãy xử lý tài liệu trước khi tải lên.
-                        Hướng dẫn chi tiết <a href="#">tại đây</a>.
-                    </p> *@
-                    <button class="icon-btn btn-success" id="btn-upload-document" data-bs-toggle="tooltip" title="Upload tài liệu">
+
+                <div class="action-buttons">
+                    <button class="icon-btn btn-success" id="btn-upload-document" data-bs-toggle="tooltip" title="Upload">
                         <i class="ti ti-upload"></i>
                     </button>
-                    <button class="icon-btn" id="btn-refresh-documents" data-bs-toggle="tooltip" title="Làm mới" style="margin-left: 10px;">
+                    <button class="icon-btn" id="btn-refresh-documents" data-bs-toggle="tooltip" title="Làm mới">
                         <i class="ti ti-refresh"></i>
                     </button>
                 </div>
             </div>
+        </div>
 
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 50px;">ID</th>
-                            <th>Tên tài liệu</th>
-                            <th style="width: 150px;">Trạng thái</th>
-                            <th style="width: 100px;">Phê duyệt</th>
-                            <th>Người tải</th>
-                            <th style="width: 180px;">Thời gian tạo</th>
-                            <th style="width: 200px;">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody id="documents-table-body">
-                        <tr>
-                            <td colspan="7" class="text-center">
-                                <div style="padding: 40px;">
-                                    <div style="font-size: 1.2rem; color: #999;">Đang tải dữ liệu...</div>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div id="pagination-container" class="pagination"></div>
+@*             <div id="data-list-container">
+                <div style="padding: 40px; text-align: center; color: #999;">
+                    <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                    <p>Đang tải dữ liệu...</p>
+                </div>
+            </div> *@
 
         </div>
-    </div>
+</div>
 
 <div id="modal-overlay" class="modal-overlay">
     <div id="modal-content-container" class="modal-content-container">

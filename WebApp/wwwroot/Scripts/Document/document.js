@@ -16,23 +16,19 @@
     }
 
     function setupEventListeners() {
-        // Upload button
-        const uploadButton = document.querySelector('#btn-upload-document');
-        if (uploadButton) {
-            uploadButton.addEventListener('click', async function (e) {
-                e.preventDefault();
-                await openUploadModal();
-            });
-        }
+        // Upload button - using event delegation for consistency
+        Utils.on('#btn-upload-document', 'click', function (e) {
+            e.preventDefault();
+            const btn = this;
+            Utils.ButtonProtection.protect(btn, () => openUploadModal());
+        });
 
-        // Refresh button
-        const refreshButton = document.querySelector('#btn-refresh-documents');
-        if (refreshButton) {
-            refreshButton.addEventListener('click', function (e) {
-                e.preventDefault();
-                loadDocumentList(currentKeyword, 1);
-            });
-        }
+        // Refresh button - using event delegation for consistency
+        Utils.on('#btn-refresh-documents', 'click', function (e) {
+            e.preventDefault();
+            const btn = this;
+            Utils.ButtonProtection.protect(btn, () => loadDocumentList(currentKeyword, 1));
+        });
 
         // Search input with debounce
         const searchInput = document.querySelector('#txtSearchDocument');
@@ -49,30 +45,34 @@
         // Event delegation for dynamically loaded buttons
         document.addEventListener('click', function (e) {
             // Edit button
-            if (e.target.classList.contains('btn-edit-doc')) {
+            if (e.target.closest('.btn-edit-doc')) {
                 e.preventDefault();
-                const docId = e.target.getAttribute('data-doc-id');
+                const btn = e.target.closest('.btn-edit-doc');
+                const docId = btn.getAttribute('data-doc-id');
                 openEditModal(docId);
             }
 
             // Vectorize button
-            if (e.target.classList.contains('btn-vectorize-doc')) {
+            if (e.target.closest('.btn-vectorize-doc')) {
                 e.preventDefault();
-                const docId = e.target.getAttribute('data-doc-id');
+                const btn = e.target.closest('.btn-vectorize-doc');
+                const docId = btn.getAttribute('data-doc-id');
                 vectorizeDocument(docId);
             }
 
             // Delete button
-            if (e.target.classList.contains('btn-delete-doc')) {
+            if (e.target.closest('.btn-delete-doc')) {
                 e.preventDefault();
-                const docId = e.target.getAttribute('data-doc-id');
+                const btn = e.target.closest('.btn-delete-doc');
+                const docId = btn.getAttribute('data-doc-id');
                 deleteDocument(docId);
             }
 
-            // Pagination links
-            if (e.target.classList.contains('page-link') && !e.target.parentElement.classList.contains('disabled')) {
+            // Pagination links - using closest() for consistency
+            const pageLink = e.target.closest('.page-link');
+            if (pageLink && !pageLink.parentElement.classList.contains('disabled')) {
                 e.preventDefault();
-                const page = parseInt(e.target.getAttribute('data-page'));
+                const page = parseInt(pageLink.getAttribute('data-page'));
                 if (page > 0) {
                     loadDocumentList(currentKeyword, page);
                 }
@@ -267,10 +267,13 @@
                 modalContainer.innerHTML = html;
                 modalOverlay.classList.add('active');
 
-                // Attach submit handler
+                // Attach submit handler with button protection
                 const submitBtn = document.querySelector('#btnSubmitEditDocument');
                 if (submitBtn) {
-                    submitBtn.addEventListener('click', submitEditDocument);
+                    submitBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        Utils.ButtonProtection.protect(submitBtn, submitEditDocument);
+                    });
                 }
 
                 const inputField = document.querySelector('#editDocumentName');
@@ -440,8 +443,15 @@
         });
     }
 
-    // Expose functions to global scope for inline onclick handlers
+    // Expose functions to global scope for inline onclick handlers with button protection
     window.closeUploadModal = closeUploadModal;
-    window.submitUpload = submitUpload;
+    window.submitUpload = function() {
+        const submitBtn = document.querySelector('#btnSubmitUpload');
+        if (submitBtn) {
+            Utils.ButtonProtection.protect(submitBtn, submitUpload);
+        } else {
+            submitUpload();
+        }
+    };
     window.closeEditModal = closeEditModal;
 })();

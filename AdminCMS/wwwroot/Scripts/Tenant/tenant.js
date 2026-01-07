@@ -16,23 +16,19 @@
     }
 
     function setupEventListeners() {
-        // Create button
-        const createButton = document.querySelector('#btn-create-tenant');
-        if (createButton) {
-            createButton.addEventListener('click', function (e) {
-                e.preventDefault();
-                openCreateModal();
-            });
-        }
+        // Create button - using event delegation for consistency
+        Utils.on('#btn-create-tenant', 'click', function (e) {
+            e.preventDefault();
+            const btn = this;
+            Utils.ButtonProtection.protect(btn, () => openCreateModal());
+        });
 
-        // Refresh button
-        const refreshButton = document.querySelector('#btn-refresh-tenants');
-        if (refreshButton) {
-            refreshButton.addEventListener('click', function (e) {
-                e.preventDefault();
-                loadTenantList(currentKeyword, 1);
-            });
-        }
+        // Refresh button - using event delegation for consistency
+        Utils.on('#btn-refresh-tenants', 'click', function (e) {
+            e.preventDefault();
+            const btn = this;
+            Utils.ButtonProtection.protect(btn, () => loadTenantList(currentKeyword, 1));
+        });
 
         // Search input with debounce
         const searchInput = document.querySelector('#txtSearchTenant');
@@ -64,10 +60,11 @@
                 disableTenant(tenantId);
             }
 
-            // Pagination links
-            if (e.target.classList.contains('page-link') && !e.target.classList.contains('disabled')) {
+            // Pagination links - using closest() for consistency
+            const pageLink = e.target.closest('.page-link');
+            if (pageLink && !pageLink.parentElement.classList.contains('disabled')) {
                 e.preventDefault();
-                const page = parseInt(e.target.getAttribute('data-page'));
+                const page = parseInt(pageLink.getAttribute('data-page'));
                 if (page > 0) {
                     loadTenantList(currentKeyword, page);
                 }
@@ -152,7 +149,10 @@
 
                 const submitBtn = document.querySelector('#btnSubmitCreateTenant');
                 if (submitBtn) {
-                    submitBtn.addEventListener('click', submitCreateTenant);
+                    submitBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        Utils.ButtonProtection.protect(submitBtn, submitCreateTenant);
+                    });
                 }
 
                 const nameInput = document.querySelector('#createTenantName');
@@ -239,10 +239,13 @@
                 modalContainer.innerHTML = html;
                 modalOverlay.classList.add('active');
 
-                // Attach submit handler
+                // Attach submit handler with button protection
                 const submitBtn = document.querySelector('#btnSubmitEditTenant');
                 if (submitBtn) {
-                    submitBtn.addEventListener('click', submitEditTenant);
+                    submitBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        Utils.ButtonProtection.protect(submitBtn, submitEditTenant);
+                    });
                 }
 
                 const nameInput = document.querySelector('#editTenantName');
