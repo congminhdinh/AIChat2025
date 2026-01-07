@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AdminCMS\AdminCMS.csproj" />
     <ProjectReference Include="..\ApiGateway\ApiGateway.csproj" />
     <ProjectReference Include="..\Services\AccountService\AccountService.csproj" />
     <ProjectReference Include="..\Services\ChatService\ChatService.csproj" />
