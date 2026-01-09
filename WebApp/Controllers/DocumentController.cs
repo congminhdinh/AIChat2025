@@ -226,7 +226,7 @@ namespace WebApp.Controllers
                 return Json(new { success = false, message = response.Message });
             }
 
-            return Json(new { success = true, message = "Đã gửi yêu cầu vectorize tài liệu" });
+            return Json(new { success = true, message = "Đã gửi yêu cầu nạp dữ liệu cho tài liệu" });
         }
     }
 }

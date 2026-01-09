@@ -349,7 +349,7 @@
     async function vectorizeDocument(documentId) {
         const result = await Swal.fire({
             title: 'Xác nhận vectorize',
-            text: 'Bạn có chắc chắn muốn vectorize tài liệu này?',
+            text: 'Bạn có chắc chắn muốn nạp dữ liệu cho tài liệu này?',
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#0d6efd',
@@ -373,10 +373,10 @@
             const responseData = await response.json();
 
             if (responseData.success) {
-                showToast('success', responseData.message || 'Đã gửi yêu cầu vectorize tài liệu');
+                showToast('success', responseData.message || 'Đã gửi yêu cầu nạp dữ liệu cho tài liệu');
                 await loadDocumentList(currentKeyword, currentPage);
             } else {
-                showToast('error', responseData.message || 'Không thể vectorize tài liệu. Vui lòng thử lại.');
+                showToast('error', responseData.message || 'Không thể nạp dữ liệu cho tài liệu. Vui lòng thử lại.');
             }
         } catch (error) {
             console.error('Error vectorizing document:', error);

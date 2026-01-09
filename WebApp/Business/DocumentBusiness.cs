@@ -57,7 +57,7 @@ namespace WebApp.Business
                 return new BaseResponse<PaginatedListDto<DocumentDto>>
                 {
                     Status = BaseResponseStatus.Error,
-                    Message = "Lỗi kết nối đến dịch vụ document"
+                    Message = "Lỗi kết nối đến dịch vụ quản lý tài liệu"
                 };
             }
             catch (Exception ex)
@@ -108,7 +108,7 @@ namespace WebApp.Business
                 return new BaseResponse<DocumentDto>
                 {
                     Status = BaseResponseStatus.Error,
-                    Message = "Lỗi kết nối đến dịch vụ document"
+                    Message = "Lỗi kết nối đến dịch vụ quản lý tài liệu"
                 };
             }
             catch (Exception ex)
@@ -186,7 +186,7 @@ namespace WebApp.Business
                 return new BaseResponse<int>
                 {
                     Status = BaseResponseStatus.Error,
-                    Message = "Lỗi kết nối đến dịch vụ document"
+                    Message = "Lỗi kết nối đến dịch vụ quản lý tài liệu"
                 };
             }
             catch (Exception ex)
@@ -237,7 +237,7 @@ namespace WebApp.Business
                 return new BaseResponse<DocumentDto>
                 {
                     Status = BaseResponseStatus.Error,
-                    Message = "Lỗi kết nối đến dịch vụ document"
+                    Message = "Lỗi kết nối đến dịch vụ quản lý tài liệu"
                 };
             }
             catch (Exception ex)
@@ -291,7 +291,7 @@ namespace WebApp.Business
                 return new BaseResponse<bool>
                 {
                     Status = BaseResponseStatus.Error,
-                    Message = "Lỗi kết nối đến dịch vụ document"
+                    Message = "Lỗi kết nối đến dịch vụ quản lý tài liệu"
                 };
             }
             catch (Exception ex)
@@ -346,7 +346,7 @@ namespace WebApp.Business
                 return new BaseResponse<bool>
                 {
                     Status = BaseResponseStatus.Error,
-                    Message = "Lỗi kết nối đến dịch vụ document"
+                    Message = "Lỗi kết nối đến dịch vụ quản lý tài liệu"
                 };
             }
             catch (Exception ex)
@@ -355,7 +355,7 @@ namespace WebApp.Business
                 return new BaseResponse<bool>
                 {
                     Status = BaseResponseStatus.Error,
-                    Message = "Đã xảy ra lỗi khi vectorize tài liệu"
+                    Message = "Đã xảy ra lỗi khi nạp dữ liệu cho tài liệu"
                 };
             }
         }

@@ -46,7 +46,7 @@ namespace AdminCMS.Controllers
                     {
                         success = true,
                         message = "Đăng nhập thành công",
-                        redirectUrl = "/Chat"
+                        redirectUrl = "/Document"
                     });
                 }
                 else
