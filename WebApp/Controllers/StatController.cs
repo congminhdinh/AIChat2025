@@ -54,24 +54,21 @@ namespace WebApp.Controllers
             {
                 return View("AccessDenied");
             }
-            // Fetch feedback with Ratings=1 (Likes) and Ratings=2 (Dislikes)
-            var likesResponse = await _chatFeedbackBusiness.GetChatFeedbackListAsync(1, 1, 1000000);
-            var dislikesResponse = await _chatFeedbackBusiness.GetChatFeedbackListAsync(2, 1, 1000000);
+            var response = await _chatFeedbackBusiness.GetChatFeedbackListAsync(0, 1, 1000);
 
-            if (likesResponse.Status == BaseResponseStatus.Error || dislikesResponse.Status == BaseResponseStatus.Error)
+            if (response.Status == BaseResponseStatus.Error)
             {
                 return Json(new { success = false, message = "Không thể tải số liệu đánh giá" });
             }
-
-            // Extract total count from PaginatedList - use TotalCount property
-            var likesCount = likesResponse.Data?.Items.Count ?? 0;
-            var dislikesCount = dislikesResponse.Data?.Items.Count ?? 0;
+            var likesCount = response.Data?.Items.Count(m => m.Ratings == 1) ?? 0;
+            var dislikesCount = response.Data?.Items.Count(m => m.Ratings == 2) ?? 0;
 
             return Json(new {
                 success = true,
                 data = new {
                     Likes = likesCount,
-                    Dislikes = dislikesCount
+                    Dislikes = dislikesCount,
+                    Total = response.Data?.Items.Count ?? 0
                 }
             });
         }

@@ -85,8 +85,12 @@
     }
 
     function updateRatingCounts(counts) {
-        const total = counts.Likes + counts.Dislikes;
-        const percentage = total > 0 ? Math.round((counts.Likes / total) * 100) : 50;
+        debugger;
+        const likes = counts.likes || 0;
+        const dislikes = counts.dislikes || 0;
+        const total = counts.total || 0;
+        const totalRatings = likes + dislikes;
+        const percentage = totalRatings > 0 ? Math.round((likes / totalRatings) * 100) : 50;
 
         // Update total ratings stat
         const totalElement = document.querySelector('#total-ratings-value');

@@ -46,7 +46,7 @@ namespace AdminCMS.Controllers
                     {
                         success = true,
                         message = "Đăng nhập thành công",
-                        redirectUrl = "/Document"
+                        redirectUrl = "/Tenant"
                     });
                 }
                 else

@@ -1,6 +1,7 @@
 ﻿using Infrastructure.Logging;
 using Infrastructure.Paging;
 using Infrastructure.Web;
+using Microsoft.Extensions.Options;
 using TenantService.Data;
 using TenantService.Dtos;
 using TenantService.Entities;
@@ -13,10 +14,12 @@ namespace TenantService.Features
     {
         private readonly IRepository<Tenant> _repository;
         private readonly ICurrentUserProvider _currentUserProvider;
-        public TenantBusiness(IRepository<Tenant> repository, ICurrentUserProvider currentUserProvider, HttpClient httpClient, IAppLogger<BaseHttpClient> appLogger): base(httpClient, appLogger)
+        private readonly AppSettings _appSettings;
+        public TenantBusiness(IRepository<Tenant> repository, ICurrentUserProvider currentUserProvider, HttpClient httpClient, IAppLogger<BaseHttpClient> appLogger, IOptionsMonitor<AppSettings> optionsMonitor): base(httpClient, appLogger)
         {
             _repository = repository;
             _currentUserProvider = currentUserProvider;
+            _appSettings = optionsMonitor.CurrentValue;
         }
 
         public async Task<BaseResponse<PaginatedList<TenantDto>>> GetTenantList(GetTenantListRequest input)
@@ -58,10 +61,15 @@ namespace TenantService.Features
             var tenant = new Tenant(input.Name, input.Description, input.IsActive);
             await _repository.AddAsync(tenant);
             await _repository.SaveChangesAsync();
-            //var adminAccountRequest = new
-            //{
-
-            //}
+            var adminAccountRequest = new
+            {
+                Email = input.Email,
+                Password = input.Password,
+                AccountName = input.AccountName,
+                PermissionsList = input.PermissionsList,
+                TenantId = tenant.Id
+            };
+            await PostWithTokenAsync<object, BaseResponse<int>>($"{_appSettings.ApiGatewayUrl}/web-api/account/admin-account", adminAccountRequest, _currentUserProvider.Token?? string.Empty);
             return new BaseResponse<int>(tenant.Id, input.CorrelationId());
         }
 

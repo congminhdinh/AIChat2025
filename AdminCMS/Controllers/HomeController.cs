@@ -20,7 +20,7 @@ public class HomeController : Controller
         // If authenticated, go to Chat
         if (User.Identity?.IsAuthenticated ?? false)
         {
-            return RedirectToAction("Index", "Chat");
+            return RedirectToAction("Index", "Tenant");
         }
 
         // If not authenticated, go to Login
