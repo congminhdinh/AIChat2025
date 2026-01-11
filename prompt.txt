@@ -1,0 +1,108 @@
+# PHASE 1: Project Structure Discovery
+
+## TASK
+Scan the entire project directory and create a complete map of all services, projects, and their locations.
+
+## EXECUTION STEPS
+
+1. **Print current working directory**pwd
+
+2. **List all immediate subdirectories**ls -la
+
+3. **Find all .NET projects**
+```bashFind all .csproj files
+find . -name "*.csproj" -type fFor each .csproj found, output:
+
+Full path
+Project name (from .csproj filename)
+Project type (check if contains "Microsoft.AspNetCore.Mvc" → Frontend, else → Backend)
+
+
+4. **Find all Python services**
+```bashFind all requirements.txt or pyproject.toml
+find . -name "requirements.txt" -o -name "pyproject.toml" -type fFor each found, output:
+
+Directory path
+Service name (directory name)
+Main entry point (find main.py or main.py or app.py)
+
+
+5. **Identify API Gateway**
+```bashSearch for YARP config
+find . -name "yarp.json" -o -name "appsettings.json" -type f | xargs grep -l "yarp"Output:
+
+Project containing YARP
+
+
+## OUTPUT FORMAT
+
+Create: `project_map.md`
+```markdownAIChat2025 - Project Structure Map
+Scanned at: [timestamp]
+Root: [absolute path].NET ProjectsBackend Microservices
+
+AccountService
+
+Path: ./src/Services/AccountService/AccountService.csproj
+Type: WebAPI
+Framework: net9.0
+
+
+
+TenantService
+
+Path: ./src/Services/TenantService/TenantService.csproj
+Type: WebAPI
+Framework: net9.0
+
+
+[... continue for all services ...]Frontend Projects
+
+WebApp
+
+Path: ./src/Frontend/WebApp/WebApp.csproj
+Type: ASP.NET MVC
+Framework: net9.0
+
+
+[... continue ...]API Gateway
+
+Gateway
+
+Path: ./src/Gateway/Gateway.csproj
+Type: YARP Gateway
+Config: ./src/Gateway/appsettings.json
+
+
+Python Services
+ChatProcessor
+
+Path: ./src/AI/ChatProcessor/
+Entry: ./src/AI/ChatProcessor/src/main.py
+Requirements: ./src/AI/ChatProcessor/requirements.txt
+
+
+
+EmbeddingService
+
+Path: ./src/AI/EmbeddingService/
+Entry: ./src/AI/EmbeddingService/src/main.py
+Requirements: ./src/AI/EmbeddingService/requirements.txt
+
+
+Summary
+
+Total .NET Projects: X
+Backend Services: Y
+Frontend Projects: Z
+Python Services: W
+Gateway: 1
+
+
+## CONSTRAINTS
+- Only discover, don't analyze content yet
+- Report exact paths as found
+- If a standard location not found, report [NOT FOUND]
+- List ALL projects found, even if unexpected
+
+START SCANNING NOW.
