@@ -1,108 +1,44 @@
-# PHASE 1: Project Structure Discovery
+Role: Bạn là một Chuyên gia thiết kế hệ thống và Kiến trúc sư phần mềm. Nhiệm vụ của bạn là hỗ trợ tôi viết mục "4.2.2 Thiết kế lớp" cho đồ án tốt nghiệp với đề tài: "Ứng dụng Multi-tenant RAG để xây dựng website tra cứu, giải đáp luật và nội quy tùy biến cho từng doanh nghiệp".
 
-## TASK
-Scan the entire project directory and create a complete map of all services, projects, and their locations.
+Context:
 
-## EXECUTION STEPS
+Hãy đọc file class_analysis_4_1_3.md để hiểu ngữ cảnh hệ thống và danh sách các lớp đã phân tích sơ bộ.
 
-1. **Print current working directory**pwd
+Quét qua mã nguồn tôi cung cấp để lấy thông tin thực tế về các thuộc tính (attributes) và phương thức (methods).
 
-2. **List all immediate subdirectories**ls -la
+Yêu cầu chi tiết:
 
-3. **Find all .NET projects**
-```bashFind all .csproj files
-find . -name "*.csproj" -type fFor each .csproj found, output:
+1. Phân tích và lựa chọn lớp chủ đạo
+Hãy chọn ra 3-4 lớp quan trọng nhất tập trung vào 2 luồng xử lý cốt lõi:
 
-Full path
-Project name (from .csproj filename)
-Project type (check if contains "Microsoft.AspNetCore.Mvc" → Frontend, else → Backend)
+Luồng Cô lập Multi-tenant: (Ví dụ: TenantManager, TenantContextHolder, hoặc TenantInterceptor).
 
+Luồng RAG (Retrieval-Augmented Generation): (Ví dụ: RAGService, VectorStoreService, DocumentProcessor).
 
-4. **Find all Python services**
-```bashFind all requirements.txt or pyproject.toml
-find . -name "requirements.txt" -o -name "pyproject.toml" -type fFor each found, output:
+Với mỗi lớp, hãy trình bày dưới dạng bảng hoặc danh sách bao gồm:
 
-Directory path
-Service name (directory name)
-Main entry point (find main.py or main.py or app.py)
+Tên lớp, các thuộc tính (kiểu dữ liệu), các phương thức (tham số truyền vào, kiểu trả về).
 
+Diễn giải bằng tiếng Việt về vai trò của từng thuộc tính/phương thức trong kiến trúc Multi-tenant và RAG.
 
-5. **Identify API Gateway**
-```bashSearch for YARP config
-find . -name "yarp.json" -o -name "appsettings.json" -type f | xargs grep -l "yarp"Output:
+Lưu ý: Giữ nguyên tên lớp, hàm và thuộc tính theo đúng mã nguồn (tiếng Anh).
 
-Project containing YARP
+2. Thiết kế luồng truyền thông điệp (Sequence Diagram)
+Sử dụng ngôn ngữ PlantUML để vẽ 2 biểu đồ trình tự cho 2 Use Case quan trọng nhất:
 
+Use Case 1: Tải lên và xử lý tài liệu theo Tenant (Ingest Document): Thể hiện cách hệ thống tách biệt dữ liệu của từng doanh nghiệp khi đưa vào Vector Database.
 
-## OUTPUT FORMAT
+Use Case 2: Truy vấn và giải đáp luật (Query/RAG Flow): Thể hiện cách hệ thống lấy tenant_id từ request, truy xuất đúng namespace/collection trong VectorDB và gọi LLM để trả lời.
 
-Create: `project_map.md`
-```markdownAIChat2025 - Project Structure Map
-Scanned at: [timestamp]
-Root: [absolute path].NET ProjectsBackend Microservices
+Yêu cầu về biểu đồ:
 
-AccountService
+Giữ nguyên tên lớp và hàm từ code.
 
-Path: ./src/Services/AccountService/AccountService.csproj
-Type: WebAPI
-Framework: net9.0
+Phần chú thích (Note) và lời nhắn trên mũi tên (Message) sử dụng tiếng Việt.
 
+Đảm bảo tính logic: thể hiện rõ việc kiểm tra quyền truy cập của tenant.
 
+3. Phong cách trình bày
+Viết theo văn phong học thuật, chuyên nghiệp dành cho đồ án tốt nghiệp.
 
-TenantService
-
-Path: ./src/Services/TenantService/TenantService.csproj
-Type: WebAPI
-Framework: net9.0
-
-
-[... continue for all services ...]Frontend Projects
-
-WebApp
-
-Path: ./src/Frontend/WebApp/WebApp.csproj
-Type: ASP.NET MVC
-Framework: net9.0
-
-
-[... continue ...]API Gateway
-
-Gateway
-
-Path: ./src/Gateway/Gateway.csproj
-Type: YARP Gateway
-Config: ./src/Gateway/appsettings.json
-
-
-Python Services
-ChatProcessor
-
-Path: ./src/AI/ChatProcessor/
-Entry: ./src/AI/ChatProcessor/src/main.py
-Requirements: ./src/AI/ChatProcessor/requirements.txt
-
-
-
-EmbeddingService
-
-Path: ./src/AI/EmbeddingService/
-Entry: ./src/AI/EmbeddingService/src/main.py
-Requirements: ./src/AI/EmbeddingService/requirements.txt
-
-
-Summary
-
-Total .NET Projects: X
-Backend Services: Y
-Frontend Projects: Z
-Python Services: W
-Gateway: 1
-
-
-## CONSTRAINTS
-- Only discover, don't analyze content yet
-- Report exact paths as found
-- If a standard location not found, report [NOT FOUND]
-- List ALL projects found, even if unexpected
-
-START SCANNING NOW.
+Độ dài dự kiến sau khi chuyển đổi sang Word khoảng 3-4 trang.
