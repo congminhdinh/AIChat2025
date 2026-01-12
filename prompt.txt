@@ -1,44 +1,55 @@
-Role: Bạn là một Chuyên gia thiết kế hệ thống và Kiến trúc sư phần mềm. Nhiệm vụ của bạn là hỗ trợ tôi viết mục "4.2.2 Thiết kế lớp" cho đồ án tốt nghiệp với đề tài: "Ứng dụng Multi-tenant RAG để xây dựng website tra cứu, giải đáp luật và nội quy tùy biến cho từng doanh nghiệp".
+Please update only Section 4.2.2.3 (Biểu đồ Trình tự) in the provided file 4.2.2_Thiet_ke_lop.md. The rest of the document (class descriptions, attributes, and methods) must remain exactly the same.
 
-Context:
+Please redraw the two sequence diagrams using PlantUML syntax with the following specific logic and Vietnamese annotations:
 
-Hãy đọc file class_analysis_4_1_3.md để hiểu ngữ cảnh hệ thống và danh sách các lớp đã phân tích sơ bộ.
+1. Use Case 1: Data Isolation and Access Control (Cô lập dữ liệu và Kiểm soát truy cập)
 
-Quét qua mã nguồn tôi cung cấp để lấy thông tin thực tế về các thuộc tính (attributes) và phương thức (methods).
+Goal: Show how the system enforces multi-tenant isolation during a data request.
 
-Yêu cầu chi tiết:
+Participants: Client, ApiGateway, CurrentTenantProvider, TenantDbContext/Interceptor, SQL Server.
 
-1. Phân tích và lựa chọn lớp chủ đạo
-Hãy chọn ra 3-4 lớp quan trọng nhất tập trung vào 2 luồng xử lý cốt lõi:
+Key steps to illustrate:
 
-Luồng Cô lập Multi-tenant: (Ví dụ: TenantManager, TenantContextHolder, hoặc TenantInterceptor).
+Client sends a request with a JWT token.
 
-Luồng RAG (Retrieval-Augmented Generation): (Ví dụ: RAGService, VectorStoreService, DocumentProcessor).
+ApiGateway/Middleware extracts the TenantId claim from the JWT.
 
-Với mỗi lớp, hãy trình bày dưới dạng bảng hoặc danh sách bao gồm:
+CurrentTenantProvider stores and provides this TenantId.
 
-Tên lớp, các thuộc tính (kiểu dữ liệu), các phương thức (tham số truyền vào, kiểu trả về).
+TenantDbContext applies a Global Query Filter automatically using the TenantId.
 
-Diễn giải bằng tiếng Việt về vai trò của từng thuộc tính/phương thức trong kiến trúc Multi-tenant và RAG.
+SQL Server executes the query with the injected WHERE TenantId = ... clause.
 
-Lưu ý: Giữ nguyên tên lớp, hàm và thuộc tính theo đúng mã nguồn (tiếng Anh).
+Show the Interceptor logic: when saving data, it auto-injects the TenantId into the entity.
 
-2. Thiết kế luồng truyền thông điệp (Sequence Diagram)
-Sử dụng ngôn ngữ PlantUML để vẽ 2 biểu đồ trình tự cho 2 Use Case quan trọng nhất:
+2. Use Case 2: Legal Q&A with Multi-source RAG (Hỏi đáp pháp luật với RAG đa nguồn)
 
-Use Case 1: Tải lên và xử lý tài liệu theo Tenant (Ingest Document): Thể hiện cách hệ thống tách biệt dữ liệu của từng doanh nghiệp khi đưa vào Vector Database.
+Goal: Show the asynchronous flow of a RAG pipeline that retrieves data from both local company rules and global law.
 
-Use Case 2: Truy vấn và giải đáp luật (Query/RAG Flow): Thể hiện cách hệ thống lấy tenant_id từ request, truy xuất đúng namespace/collection trong VectorDB và gọi LLM để trả lời.
+Participants: User, ChatHub (.NET), RabbitMQ, ChatProcessor (Python), QdrantService, OllamaService.
 
-Yêu cầu về biểu đồ:
+Key steps to illustrate:
 
-Giữ nguyên tên lớp và hàm từ code.
+User sends a message via SignalR to ChatHub.
 
-Phần chú thích (Note) và lời nhắn trên mũi tên (Message) sử dụng tiếng Việt.
+ChatHub publishes a UserPromptReceivedEvent to RabbitMQ.
 
-Đảm bảo tính logic: thể hiện rõ việc kiểm tra quyền truy cập của tenant.
+ChatProcessor (Python) consumes the message and performs Query Expansion and Keyword Extraction.
 
-3. Phong cách trình bày
-Viết theo văn phong học thuật, chuyên nghiệp dành cho đồ án tốt nghiệp.
+Hybrid Search: ChatProcessor calls QdrantService to search in parallel: (i) Tenant's private data and (ii) Global Law (TenantId=1).
 
-Độ dài dự kiến sau khi chuyển đổi sang Word khoảng 3-4 trang.
+Apply RRF (Reciprocal Rank Fusion) to merge results and Fallback logic.
+
+OllamaService generates a response based on the structured context.
+
+ChatProcessor sends the result back via RabbitMQ to ChatHub to broadcast to the User.
+
+Requirements for the output:
+
+Only provide the updated PlantUML code and the accompanying Vietnamese descriptive text for these 2 diagrams.
+
+All annotations, labels, and titles inside the diagrams must be in Vietnamese.
+
+Keep the technical terms like Tenant, Service, RAG, Hybrid Search, Middleware as per the project's terminology rules (SOP 2026).
+
+Ensure the diagrams are detailed enough to reflect the class designs described in sections 4.2.2.1 and 4.2.2.2.
