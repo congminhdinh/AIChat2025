@@ -1,55 +1,27 @@
-Please update only Section 4.2.2.3 (Biểu đồ Trình tự) in the provided file 4.2.2_Thiet_ke_lop.md. The rest of the document (class descriptions, attributes, and methods) must remain exactly the same.
+Tôi đang thực hiện luận văn tốt nghiệp với đề tài "Ứng dụng Multi-tenant RAG để xây dựng website tra cứu pháp luật". Tôi cần bạn đóng vai trò là một Kiến trúc sư Giải pháp (Solution Architect) để viết nội dung cho Mục 5.2.2: Cơ chế hợp nhất tri thức đa nguồn và phân cấp ngữ cảnh.
 
-Please redraw the two sequence diagrams using PlantUML syntax with the following specific logic and Vietnamese annotations:
+Nhiệm vụ:
 
-1. Use Case 1: Data Isolation and Access Control (Cô lập dữ liệu và Kiểm soát truy cập)
+Phân tích dữ liệu nguồn: Hãy đọc kỹ file 4.2.2_Thiet_ke_lop.md và các Biểu đồ Sequence liên quan đến hội thoại RAG(đặc biệt là lớp ChatProcessor).
 
-Goal: Show how the system enforces multi-tenant isolation during a data request.
+Trích xuất Logic Giải pháp: Thay vì mô tả các thuộc tính/phương thức đơn thuần, hãy tập trung vào "Logic đóng góp". Cụ thể là cách hệ thống giải quyết vấn đề "phân mảnh tri thức" bằng cách hợp nhất Nội quy doanh nghiệp (Tenant data) và Luật quốc gia (Global data).
 
-Participants: Client, ApiGateway, CurrentTenantProvider, TenantDbContext/Interceptor, SQL Server.
+Lập Outline chi tiết: Xây dựng khung nội dung cho Mục 5.2.2 bao gồm:
 
-Key steps to illustrate:
+Nguyên lý lọc đa nguồn (Multi-source Filtering) trên Qdrant.
 
-Client sends a request with a JWT token.
+Thuật toán nhận diện kịch bản (Scenario Detection) và cơ chế dự phòng (Fallback).
 
-ApiGateway/Middleware extracts the TenantId claim from the JWT.
+Kỹ thuật xây dựng Prompt với ngữ cảnh phân cấp ưu tiên (Hierarchical Context).
 
-CurrentTenantProvider stores and provides this TenantId.
+Thiết kế Biểu đồ PlantUML: Vẽ 01 biểu đồ mô tả luồng logic của giải pháp này (Solution Logic Flow).
 
-TenantDbContext applies a Global Query Filter automatically using the TenantId.
+Yêu cầu kỹ thuật cho Biểu đồ:
 
-SQL Server executes the query with the injected WHERE TenantId = ... clause.
+Terminology 2026: Sử dụng danh từ số ít, không dùng "các/những", giữ nguyên thuật ngữ tiếng Anh số ít (TenantId, Vector, Metadata, Collection, Prompt).
 
-Show the Interceptor logic: when saving data, it auto-injects the TenantId into the entity.
+Style: Tối giản, chuyên nghiệp (giống phong cách Draw.io).
 
-2. Use Case 2: Legal Q&A with Multi-source RAG (Hỏi đáp pháp luật với RAG đa nguồn)
+Layout: Ưu tiên hướng dọc (Top-Down) để phù hợp với khổ giấy A4, tránh dàn hàng ngang quá rộng.
 
-Goal: Show the asynchronous flow of a RAG pipeline that retrieves data from both local company rules and global law.
-
-Participants: User, ChatHub (.NET), RabbitMQ, ChatProcessor (Python), QdrantService, OllamaService.
-
-Key steps to illustrate:
-
-User sends a message via SignalR to ChatHub.
-
-ChatHub publishes a UserPromptReceivedEvent to RabbitMQ.
-
-ChatProcessor (Python) consumes the message and performs Query Expansion and Keyword Extraction.
-
-Hybrid Search: ChatProcessor calls QdrantService to search in parallel: (i) Tenant's private data and (ii) Global Law (TenantId=1).
-
-Apply RRF (Reciprocal Rank Fusion) to merge results and Fallback logic.
-
-OllamaService generates a response based on the structured context.
-
-ChatProcessor sends the result back via RabbitMQ to ChatHub to broadcast to the User.
-
-Requirements for the output:
-
-Only provide the updated PlantUML code and the accompanying Vietnamese descriptive text for these 2 diagrams.
-
-All annotations, labels, and titles inside the diagrams must be in Vietnamese.
-
-Keep the technical terms like Tenant, Service, RAG, Hybrid Search, Middleware as per the project's terminology rules (SOP 2026).
-
-Ensure the diagrams are detailed enough to reflect the class designs described in sections 4.2.2.1 and 4.2.2.2.
+Nội dung: Tập trung vào luồng xử lý dữ liệu và ra quyết định (Decision Making) thay vì gọi hàm code.

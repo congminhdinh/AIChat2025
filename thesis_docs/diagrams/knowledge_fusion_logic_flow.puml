@@ -1,0 +1,75 @@
+@startuml knowledge_fusion_logic_flow
+'*****************************************************
+' Luồng Logic: Hợp nhất Tri thức Đa nguồn
+' Mục 5.2.2 - Luận văn Multi-tenant RAG
+'*****************************************************
+
+skinparam shadowing false
+skinparam roundcorner 0
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam style strictuml
+
+skinparam activity {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    DiamondBackgroundColor #FFF2CC
+    DiamondBorderColor #D6B656
+}
+
+skinparam note {
+    BackgroundColor #E2F0D9
+    BorderColor #70AD47
+}
+
+title Luồng Hợp nhất Tri thức Đa nguồn
+
+start
+
+:Nhận câu hỏi người dùng;
+
+:Mở rộng truy vấn\n(Query Expansion);
+note right: "OT" → "Overtime"\n"NLĐ" → "Người lao động"
+
+:Tạo Vector Embedding;
+
+fork
+  :Tìm trong\n**Nội quy Công ty**\n(tenant_id = X);
+fork again
+  :Tìm trong\n**Văn bản Pháp luật**\n(tenant_id = 1);
+end fork
+
+:Hợp nhất kết quả\n(RRF Fusion);
+
+if (Kết quả Tenant đủ chất lượng?) then (Có)
+  :Chế độ Bình thường\n60% Tenant + 40% Global;
+else (Không)
+  :Chế độ Dự phòng\nƯu tiên Pháp luật;
+endif
+
+if (Có cả Nội quy và Pháp luật?) then (BOTH)
+  :Prompt SO SÁNH;
+elseif (Chỉ có Nội quy?) then (COMPANY)
+  :Prompt Nguồn đơn;
+elseif (Chỉ có Pháp luật?) then (LEGAL)
+  :Prompt Nguồn đơn;
+elseif (Có SystemPrompt?) then (STATIC)
+  :Prompt Ngữ cảnh tĩnh;
+else (NONE)
+  :Trả về thông báo lỗi;
+  stop
+endif
+
+:Cấu trúc Ngữ cảnh Phân cấp;
+note right
+  **Ưu tiên 1:** Nội quy Công ty
+  **Ưu tiên 2:** Văn bản Pháp luật
+end note
+
+:Sinh câu trả lời từ LLM;
+
+:Gửi kết quả về người dùng;
+
+stop
+
+@enduml
