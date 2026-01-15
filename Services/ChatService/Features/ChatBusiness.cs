@@ -159,8 +159,9 @@ public class ChatBusiness: BaseHttpClient
 
         await _messageRepo.AddAsync(message, ct);
 
+        // Update conversation's LastMessageAt (validate tenant ownership)
         var conversation = await _conversationRepo.GetByIdAsync(request.ConversationId, ct);
-        if (conversation != null)
+        if (conversation != null && conversation.TenantId == _currentUserProvider.TenantId)
         {
             conversation.LastMessageAt = message.Timestamp;
             await _conversationRepo.UpdateAsync(conversation, ct);
@@ -221,9 +222,9 @@ public class ChatBusiness: BaseHttpClient
 
         await _messageRepo.AddAsync(message, ct);
 
-        // Update conversation's LastMessageAt
+        // Update conversation's LastMessageAt (validate tenant ownership)
         var conversation = await _conversationRepo.GetByIdAsync(botResponse.ConversationId, ct);
-        if (conversation != null)
+        if (conversation != null && conversation.TenantId == tenantId)
         {
             conversation.LastMessageAt = message.Timestamp;
             await _conversationRepo.UpdateAsync(conversation, ct);

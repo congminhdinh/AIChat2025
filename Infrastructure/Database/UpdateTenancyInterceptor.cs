@@ -25,7 +25,7 @@ namespace Infrastructure.Database
 
             var currentTenantId = tenantProvider.TenantId;
 
-            if (currentTenantId != 1 && currentTenantId > 0)
+            if (currentTenantId > 0)
             {
                 foreach (var entry in entries)
                 {
