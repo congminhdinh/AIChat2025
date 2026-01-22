@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(find:*)",
-      "Bash(certutil -hashfile:*)",
-      "Bash(del /Q tmpclaude-*)"
-    ]
-  }
-}
