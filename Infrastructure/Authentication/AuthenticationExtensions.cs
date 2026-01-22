@@ -11,9 +11,21 @@ namespace Infrastructure.Authentication
         public static void AddCustomAuthorization(this WebApplicationBuilder builder)
         {
             var key = Encoding.ASCII.GetBytes(AuthorizationConstants.JWT_SECRET_KEY);
+            string cookieScheme = "AIChat2025";
             builder.Services.AddAuthentication(config =>
             {
                 config.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddCookie(cookieScheme, options =>
+            {
+                // Cấu hình đường dẫn login nếu chưa đăng nhập
+                options.LoginPath = "/Auth/Login";
+                options.AccessDeniedPath = "/Account/AccessDenied";
+
+                // Thời gian sống của Cookie (ví dụ 7 ngày cho khớp với logic token của bạn)
+                options.ExpireTimeSpan = TimeSpan.FromDays(7);
+
+                // Cookie chỉ HTTP (bảo mật hơn)
+                options.Cookie.HttpOnly = true;
             }).AddJwtBearer(config =>
             {
                 config.RequireHttpsMetadata = false;

@@ -17,6 +17,10 @@ namespace AccountService.Endpoints
 
             var group = app.MapWebApiGroup("account");
 
+            group.MapGet("/current-user", async (AccountBusiness accountBusiness) =>
+            {
+                return await accountBusiness.GetCurrentUser();
+            });
             group.MapGet("/{id}", async (AccountBusiness accountBusiness, int id) =>
             {
                 return await accountBusiness.GetAccountById(new GetAccountByIdRequest { AccountId = id });
@@ -30,6 +34,11 @@ namespace AccountService.Endpoints
             {
                 return await accountBusiness.CreateAccount(input);
             });
+
+            group.MapPost("/admin-account", async (AccountBusiness accountBusiness, [FromBody] CreateAdminAccountRequest input) =>
+            {
+                return await accountBusiness.CreateAdminAccount(input);
+            });
             group.MapPut("/change-password", async (AccountBusiness accountBusiness, [FromBody] ChangePasswordRequest input) =>
             {
                 return await accountBusiness.ChangePassword(input);
@@ -39,6 +48,10 @@ namespace AccountService.Endpoints
                 return await accountBusiness.UpdateAccount(input);
             });
 
+            group.MapDelete("/{id}", async (AccountBusiness accountBusiness, int id) =>
+            {
+                return await accountBusiness.DeleteAccountById(new DeleteAccountByIdRequest { AccountId = id });
+            });
             ///chỉ cho super admin
             group.MapPost("/tenancy-deactivate", async (AccountBusiness accountBusiness, int tenantId) =>
             {

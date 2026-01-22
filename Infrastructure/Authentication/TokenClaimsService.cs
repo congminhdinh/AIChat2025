@@ -1,4 +1,6 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -17,16 +19,16 @@ namespace Infrastructure.Authentication
             {
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
                 new Claim(ClaimTypes.Name, username),
-                new Claim(AuthorizationConstants.TOKEN_CLAIMS_TENANT, tenantId.ToString()),
+                new Claim(AuthorizationConstants.TOKEN_CLAIMS_TENANT, $"{tenantId}"),
                 new Claim(AuthorizationConstants.POLICY_ADMIN, isAdmin == false? "False": "True"),
                 new(AuthorizationConstants.TOKEN_CLAIMS_TYPE_SCOPE, $"{scope}"),
-                new(AuthorizationConstants.TOKEN_CLAIMS_TENANT, $"{tenantId}"),
+                new Claim(AuthorizationConstants.TOKEN_CLAIMS_USER, $"{userId}"),
             };
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var expires = DateTime.Now.AddDays(7);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(claims),
+                Subject = new ClaimsIdentity(claims, "AIChat2025"),
                 Expires = expires,
                 SigningCredentials = creds
             };
@@ -35,10 +37,17 @@ namespace Infrastructure.Authentication
                 AccessToken: tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor)),
                 RefreshToken: Guid.NewGuid().ToString().Replace("-", ""),
                 ExpiresIn: (long)(expires - DateTime.Now).TotalSeconds,
-                ExpiresAt: expires
+                ExpiresAt: expires, 
+                TenantId: tenantId,
+                UserId: userId,
+                Username: username,
+                Scope: scope,
+                IsAdmin: isAdmin
+
             );
         }
-        
+
     }
-    public record TokenResponseDto(string AccessToken, string RefreshToken, long ExpiresIn, DateTime ExpiresAt);
+
+    public record TokenResponseDto(string AccessToken, string RefreshToken, long ExpiresIn, DateTime ExpiresAt, int TenantId, int UserId, string Username, string Scope, bool IsAdmin);
 }

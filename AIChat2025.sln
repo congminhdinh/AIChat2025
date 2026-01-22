@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36310.24
+# Visual Studio Version 18
+VisualStudioVersion = 18.1.11312.151
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
@@ -20,6 +20,17 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocumentService", "Services\DocumentService\DocumentService.csproj", "{22FB5245-91C4-7667-B958-D27495A38CBD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StorageService", "Services\StorageService\StorageService.csproj", "{80CBFD2B-5FE5-0B06-E862-BB8ABF99224C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatService", "Services\ChatService\ChatService.csproj", "{ABA57B4A-D9DA-3E59-6A10-5DF568D821F3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp", "WebApp\WebApp.csproj", "{3215F6CF-A442-1C21-6AD3-94ED23F4EBA5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdminCMS", "AdminCMS\AdminCMS.csproj", "{FA466381-12FF-459D-A336-7107B02E86FB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,6 +66,18 @@ Global
 		{80CBFD2B-5FE5-0B06-E862-BB8ABF99224C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{80CBFD2B-5FE5-0B06-E862-BB8ABF99224C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{80CBFD2B-5FE5-0B06-E862-BB8ABF99224C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABA57B4A-D9DA-3E59-6A10-5DF568D821F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABA57B4A-D9DA-3E59-6A10-5DF568D821F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABA57B4A-D9DA-3E59-6A10-5DF568D821F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABA57B4A-D9DA-3E59-6A10-5DF568D821F3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3215F6CF-A442-1C21-6AD3-94ED23F4EBA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3215F6CF-A442-1C21-6AD3-94ED23F4EBA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3215F6CF-A442-1C21-6AD3-94ED23F4EBA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3215F6CF-A442-1C21-6AD3-94ED23F4EBA5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA466381-12FF-459D-A336-7107B02E86FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA466381-12FF-459D-A336-7107B02E86FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA466381-12FF-459D-A336-7107B02E86FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA466381-12FF-459D-A336-7107B02E86FB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -65,6 +88,7 @@ Global
 		{48B77330-E520-59DC-32A3-141E82BA3373} = {34B0DA73-1783-489E-BCEE-0439FAF43C68}
 		{22FB5245-91C4-7667-B958-D27495A38CBD} = {34B0DA73-1783-489E-BCEE-0439FAF43C68}
 		{80CBFD2B-5FE5-0B06-E862-BB8ABF99224C} = {34B0DA73-1783-489E-BCEE-0439FAF43C68}
+		{ABA57B4A-D9DA-3E59-6A10-5DF568D821F3} = {34B0DA73-1783-489E-BCEE-0439FAF43C68}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E34BD2E9-64F3-4F69-B222-A53786A7EC73}

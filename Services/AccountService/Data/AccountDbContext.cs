@@ -23,11 +23,11 @@ namespace AccountService.Data
                     Email = "minhdc223@gmail.com",
                     Name = "Admin",
                     IsAdmin = true,
-                    Password = "7Qp+0J3/1Zc/u/O8T/uFzO/o6uX/iT4/5z/0q/3z/q8=:b6a9876543210fedcba9876543210fed", //"Admin@123"
+                    Password = "Xgz3816ok9rbQwhcSCYt00NH9qkEvWDdWiY9LH6fZy4=:ae98995e673341afb9f1932ec28c2c90", //"Admin@123"
                     TenantId = 1,
                     LastModifiedAt = null
                 });
-            modelBuilder.Entity<Account>().HasQueryFilter(a => a.TenancyActive && a.IsActive && !a.IsDeleted);
+            modelBuilder.Entity<Account>().HasQueryFilter(a => a.TenancyActive && !a.IsDeleted);
         }
     }
 }

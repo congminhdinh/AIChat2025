@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(python -c:*)",
-      "Bash(py -c:*)",
-      "Bash(pip install:*)"
-    ]
-  }
-}

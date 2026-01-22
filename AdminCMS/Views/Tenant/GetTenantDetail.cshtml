@@ -1,0 +1,130 @@
+@using AdminCMS.Models.Tenant
+@model TenantDetailViewModel
+
+<div class="edit-modal-container">
+    <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" id="editTenantLabel">
+            <i class="bi bi-building-fill-gear text-primary me-2"></i>Chỉnh sửa Tenant
+        </h5>
+        <button type="button" class="btn-close-modal" onclick="closeEditModal()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <div class="modal-body">
+        <p class="text-muted small mb-4">
+            Cập nhật thông tin cơ bản của tenant. Lưu ý: Không thể thay đổi thông tin tài khoản quản trị viên.
+        </p>
+
+        <form id="editTenantForm">
+            <input type="hidden" id="editTenantId" name="Id" value="@Model.TenantId" />
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-12">
+                    <label for="editTenantName" class="form-label fw-semibold text-secondary small">
+                        <i class="bi bi-building me-1"></i>Tên Tenant <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control bg-light border-0 py-2"
+                           id="editTenantName" name="Name" value="@Model.TenantName"
+                           placeholder="Nhập tên tenant..." required>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-12">
+                    <label for="editTenantDescription" class="form-label fw-semibold text-secondary small">
+                        <i class="bi bi-card-text me-1"></i>Mô tả
+                    </label>
+                    <textarea class="form-control bg-light border-0 py-2"
+                              id="editTenantDescription" name="Description"
+                              rows="4"
+                              placeholder="Nhập mô tả về tenant...">@Model.Description</textarea>
+                </div>
+            </div>
+
+            @if (!Model.IsActive)
+            {
+                <div class="alert alert-warning d-flex align-items-center" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <div class="small">Tenant này đã bị vô hiệu hóa. Liên hệ quản trị viên để kích hoạt lại.</div>
+                </div>
+            }
+        </form>
+    </div>
+
+    <div class="modal-footer border-0 justify-content-center pt-0">
+        <button type="button" class="icon-btn" onclick="closeEditModal()" data-bs-toggle="tooltip" title="Hủy">
+            <i class="ti ti-x"></i>
+        </button>
+        <button type="button" class="icon-btn btn-primary" id="btnSubmitEditTenant" data-bs-toggle="tooltip" title="Lưu thay đổi">
+            <i class="ti ti-check"></i>
+        </button>
+    </div>
+</div>
+
+<style>
+    .edit-modal-container {
+        padding: 5px;
+    }
+
+    /* Header & Close button */
+    .btn-close-modal {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        color: #adb5bd;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+
+    .btn-close-modal:hover {
+        color: #495057;
+        transform: rotate(90deg);
+    }
+
+    /* Forms */
+    .form-control:focus, .form-select:focus {
+        background-color: #fff !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        border: 1px solid #0d6efd !important;
+    }
+
+    .rounded-pill {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .shadow-sm {
+        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;
+    }
+
+    .text-danger {
+        color: #dc3545;
+    }
+
+    .icon-btn {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        border: 1px solid #dee2e6;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        color: #495057;
+    }
+
+    .icon-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .icon-btn.btn-primary {
+        background-color: #0d6efd;
+        color: white;
+        border-color: #0d6efd;
+    }
+</style>

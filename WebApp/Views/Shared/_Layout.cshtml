@@ -1,0 +1,356 @@
+@inject Microsoft.Extensions.Options.IOptions<Infrastructure.AppSettings> AppSettingsOptions
+@inject WebApp.Helpers.IdentityHelper IdentityHelper
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    var webAppUrl = AppSettingsOptions.Value.WebAppUrl ?? "";
+    var currentPath = Context.Request.Path.ToString();
+    var environment = Configuration["ASPNETCORE_ENVIRONMENT"] ?? "Production";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - CorpLex</title>
+
+    <!-- Global JavaScript Variable for WebAppUrl -->
+    <script>
+        const WEB_APP_URL = '@webAppUrl';
+        var UrlRoot = '@webAppUrl';
+    </script>
+
+    <!-- Tabler CSS (includes Bootstrap 5) -->
+    <link href="https://cdn.jsdelivr.net/npm/@@tabler/core@@1.0.0-beta20/dist/css/tabler.min.css" rel="stylesheet">
+
+    <!-- Tabler Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/@@tabler/icons-webfont@@latest/dist/tabler-icons.min.css" rel="stylesheet">
+
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <!-- Global Styles -->
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --bg-color: #f3f6f9;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- HEADER --- */
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0 20px;
+            height: 60px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .logo {
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-right: 40px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            flex-grow: 1;
+        }
+
+        .nav-item {
+            padding: 8px 16px;
+            text-decoration: none;
+            color: white;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-item.active {
+            background-color: white;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .user-profile {
+            font-size: 1.5rem;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 200px;
+            margin-top: 10px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .user-dropdown.active {
+            display: block;
+        }
+
+        .user-dropdown-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e0e0e0;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .user-dropdown-item {
+            padding: 10px 16px;
+            color: #333;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .user-dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .user-dropdown-item i {
+            width: 18px;
+            text-align: center;
+        }
+
+        /* --- MAIN CONTENT --- */
+        .main-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        /* Badge Styles (from Document view) */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            gap: 5px;
+        }
+
+        .badge-processing {
+            background-color: #e7f1ff;
+            color: #0d6efd;
+            border: 1px solid #b6d4fe;
+        }
+
+        .badge-new {
+            background-color: #fff8eb;
+            color: #b07d00;
+            border: 1px solid #ffe5b3;
+        }
+
+        .badge-success {
+            background-color: #eafbea;
+            color: #28a745;
+            border: 1px solid #c3e6cb;
+        }
+
+        .badge-error {
+            background-color: #fdeaea;
+            color: #dc3545;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Table Styles with Sticky Headers */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table thead {
+            position: sticky;
+            top: 0;
+            background-color: #fff;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        table thead th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            padding: 12px;
+            text-align: left;
+            border: none;
+        }
+
+        table tbody tr {
+            transition: background-color 0.2s;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        table tbody td {
+            padding: 12px;
+            vertical-align: middle;
+        }
+
+        /* Text wrapping for Bot Response columns */
+        .bot-response-cell {
+            white-space: normal;
+            word-wrap: break-word;
+            max-width: 400px;
+        }
+
+        /* Icon Button Styles */
+        .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+            color: #666;
+        }
+
+        .icon-btn:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+            color: var(--primary-color);
+        }
+
+        .icon-btn.btn-danger:hover {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: var(--danger-color);
+        }
+
+        .icon-btn.btn-success:hover {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+        }
+    </style>
+
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <!-- Header with Navigation -->
+    <header class="header">
+        <div class="logo">CorpLex</div>
+        <nav class="nav-tabs">
+            <a href="@(webAppUrl)/Chat" class="nav-item @(currentPath.StartsWith("/Chat") ? "active" : "")">Chat</a>
+
+            @if (IdentityHelper.IsAdmin())
+            {
+                <a href="@(webAppUrl)/Document" class="nav-item @(currentPath.StartsWith("/Document") ? "active" : "")">Tài liệu</a>
+                <a href="@(webAppUrl)/Account" class="nav-item @(currentPath.StartsWith("/Account") ? "active" : "")">Tài khoản</a>
+                <a href="@(webAppUrl)/SystemPrompt" class="nav-item @(currentPath.StartsWith("/SystemPrompt") ? "active" : "")">Cấu hình</a>
+                <a href="@(webAppUrl)/PromptConfig" class="nav-item @(currentPath.StartsWith("/PromptConfig") ? "active" : "")">Thuật ngữ</a>
+                <a href="@(webAppUrl)/Stat" class="nav-item @(currentPath.StartsWith("/Stat") ? "active" : "")">Thống kê</a>
+            }
+        </nav>
+        <div class="user-profile" id="userProfileBtn" title="@IdentityHelper.GetUsername()">
+            👤
+            <div class="user-dropdown" id="userDropdown">
+                <div class="user-dropdown-header">@IdentityHelper.GetUsername()</div>
+                <a href="javascript:void(0)" class="user-dropdown-item" onclick="openChangePasswordModal()">
+                    <i class="bi bi-key-fill"></i> Đổi mật khẩu
+                </a>
+                <a href="@(webAppUrl)/Auth/Logout" class="user-dropdown-item">
+                    <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        @RenderBody()
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <!-- Tabler JS (includes Bootstrap 5 Bundle) -->
+    <script src="https://cdn.jsdelivr.net/npm/@@tabler/core@@1.0.0-beta20/dist/js/tabler.min.js"></script>
+
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Utils JS -->
+    <script src="@(webAppUrl)/js/utils.js"></script>
+
+    <!-- User Profile Dropdown Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const userProfileBtn = document.getElementById('userProfileBtn');
+            const userDropdown = document.getElementById('userDropdown');
+
+            if (userProfileBtn && userDropdown) {
+                // Toggle dropdown on click
+                userProfileBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    userDropdown.classList.toggle('active');
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function (e) {
+                    if (!userProfileBtn.contains(e.target)) {
+                        userDropdown.classList.remove('active');
+                    }
+                });
+            }
+
+            // Initialize Bootstrap Tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

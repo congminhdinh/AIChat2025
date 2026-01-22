@@ -1,0 +1,201 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - CorpLex</title>
+    <style>
+        /* Thiết lập cơ bản */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Chiều cao bằng 100% màn hình để căn giữa */
+        }
+
+        /* Container chính */
+        .login-container {
+            width: 100%;
+            max-width: 480px; /* Độ rộng tối đa giống trong ảnh */
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Phần tiêu đề thay thế Logo */
+        .brand-title {
+            color: #0055FF; /* Màu xanh chủ đạo */
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .login-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        /* Khung bao quanh form (Card) */
+        .login-card {
+            width: 100%;
+            border: 1px solid #e0e0e0;
+            border-radius: 16px; /* Bo góc lớn */
+            padding: 30px;
+            background-color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Đổ bóng nhẹ cho đẹp */
+        }
+
+        /* Các nhóm input */
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 16px;
+            color: #111;
+            font-weight: 400;
+        }
+
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 16px;
+            border: 1px solid #d0d0d0;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s;
+            color: #333;
+        }
+
+            .form-control::placeholder {
+                color: #999;
+            }
+
+            .form-control:focus {
+                border-color: #0055FF;
+            }
+
+        /* Icon mắt (ẩn/hiện pass) */
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #0055FF;
+            display: flex;
+            align-items: center;
+            background: none;
+            border: none;
+        }
+
+            .toggle-password svg {
+                width: 20px;
+                height: 20px;
+            }
+
+        /* Nút đăng nhập */
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background-color: #0055FF; /* Màu xanh giống nút trong ảnh */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+        }
+
+            .btn-submit:hover {
+                background-color: #0044cc;
+            }
+
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h1 class="brand-title">CorpLex</h1>
+        <h2 class="login-title">Đăng nhập tài khoản Quản trị viên Hệ thống</h2>
+
+        <div class="login-card">
+            <form action="#" method="POST">
+@*                 <div class="form-group">
+                    <label class="form-label" for="tenantId">Mã định danh (Tenant ID)</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="tenantId" class="form-control" placeholder="Nhập mã định danh" required>
+                    </div>
+                </div> *@
+
+                <div class="form-group">
+                    <label class="form-label" for="username">Tên đăng nhập</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="username" class="form-control" placeholder="Nhập tên đăng nhập" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Mật khẩu</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" class="form-control" placeholder="Nhập mật khẩu" required>
+                        <button type="button" class="toggle-password" onclick="togglePassword()">
+                            <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Đăng nhập</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Script đơn giản để ẩn/hiện mật khẩu
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eye-icon');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                // Đổi sang icon mắt mở (không gạch chéo)
+                eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />';
+            } else {
+                passwordInput.type = 'password';
+                // Đổi lại icon mắt đóng (có gạch chéo)
+                eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />';
+            }
+        }
+    </script>
+
+    <!-- Login logic script -->
+    <script src="~/Scripts/Auth/Login.js"></script>
+</body>
+</html>

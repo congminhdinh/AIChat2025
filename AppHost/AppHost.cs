@@ -1,19 +1,32 @@
+using Microsoft.Extensions.DependencyInjection;
 using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
+builder.Services.Configure<DistributedApplicationOptions>(options => {
+   
+});
 var accountService = builder.AddProject<AccountService>("accountservice");
 var tenantService = builder.AddProject<TenantService>("tenantservice");
-var documentService =  builder.AddProject<DocumentService>("documentservice");
-var storageService =  builder.AddProject<StorageService>("storageservice");
-builder.AddProject<ApiGateway>("apigateway")
-       // Inject the URLs of the downstream services into the gateway's configuration
+var storageService = builder.AddProject<StorageService>("storageservice");
+var documentService = builder.AddProject<DocumentService>("documentservice")
+    .WaitFor(storageService);
+
+var chatService = builder.AddProject<Projects.ChatService>("chatservice")
+    .WaitFor(accountService);
+var apiGateway = builder.AddProject<ApiGateway>("apigateway")
        .WithReference(accountService)
        .WithReference(tenantService)
        .WithReference(documentService)
-       .WithReference(storageService);
-//// Expose the gateway's endpoint to be accessible from the browser
-//.WithExternalHttpEndpoints();
-//builder.AddProject<Projects.DocumentService>("documentservice");
-//// Expose the gateway's endpoint to be accessible from the browser
-//.WithExternalHttpEndpoints();
+       .WithReference(storageService)
+       .WithReference(chatService)
+       .WaitFor(accountService)
+       .WaitFor(tenantService)
+       .WaitFor(documentService)
+       .WaitFor(storageService)
+       .WaitFor(chatService);
+
+builder.AddProject<Projects.WebApp>("webapp")
+       .WaitFor(apiGateway);
+builder.AddProject<Projects.AdminCMS>("admincms")
+       .WaitFor(apiGateway);
 builder.Build().Run();

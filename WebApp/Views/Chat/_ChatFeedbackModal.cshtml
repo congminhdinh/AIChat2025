@@ -1,0 +1,192 @@
+@* Partial View: _ChatFeedbackModal.cshtml
+    Mô tả: Modal để người dùng gửi phản hồi chi tiết về câu trả lời của Bot
+*@
+
+<div class="feedback-modal-container">
+    <h3 class="modal-header-title">Đánh giá chi tiết</h3>
+
+    <div class="modal-body-content">
+        <input type="hidden" id="feedbackMessageId" />
+        <input type="hidden" id="feedbackId" />
+
+        <label for="feedbackCategory" class="input-label">Danh mục</label>
+        <div class="custom-select-wrapper">
+            <select id="feedbackCategory" class="custom-select">
+                <option value="1">Sai kiến thức pháp luật</option>
+                <option value="2">Thông tin hết hiệu lực</option>
+                <option value="3">Câu trả lời mâu thuẫn</option>
+                <option value="4">Hiểu sai ý người dùng</option>
+                <option value="5">Trích dẫn sai nguồn</option>
+                <option value="6">Thiếu căn cứ pháp lý</option>
+                <option value="7">Nguồn không liên quan</option>
+                <option value="8">Trả lời quá lan man</option>
+                <option value="9">Trả lời quá sơ sài</option>
+                <option value="10">Phản hồi quá chậm</option>
+                <option value="11">Lỗi hiển thị/Định dạng</option>
+                <option value="99">Khác</option>
+            </select>
+        </div>
+
+        <label for="feedbackContent" class="input-label" style="margin-top: 20px;">Nội dung chi tiết</label>
+        <div class="custom-textarea-wrapper">
+            <textarea id="feedbackContent" class="custom-textarea" rows="5" placeholder="Vui lòng mô tả chi tiết vấn đề bạn gặp phải..."></textarea>
+        </div>
+        <p class="hint-text">Phản hồi của bạn giúp chúng tôi cải thiện chất lượng dịch vụ.</p>
+    </div>
+
+    <div class="modal-footer-actions">
+        <button type="button" class="icon-btn" onclick="closeFeedbackModal()" data-bs-toggle="tooltip" title="Hủy">
+            <i class="ti ti-x"></i>
+        </button>
+        <button type="button" class="icon-btn btn-primary" onclick="submitFeedback()" data-bs-toggle="tooltip" title="Gửi phản hồi">
+            <i class="ti ti-check"></i>
+        </button>
+    </div>
+</div>
+
+<style>
+    /* Scope styles riêng cho Feedback Modal */
+    .feedback-modal-container {
+        padding: 10px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #333;
+    }
+
+    .modal-header-title {
+        margin-bottom: 20px;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--primary-color, #0d6efd);
+        text-align: center;
+    }
+
+    .modal-body-content {
+        margin-bottom: 25px;
+        max-height: 70vh;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+
+    .input-label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+        color: #555;
+    }
+
+    /* Custom Select Dropdown */
+    .custom-select-wrapper {
+        width: 100%;
+        background-color: #f0f4f9;
+        border-radius: 15px;
+        padding: 5px;
+        transition: background 0.2s, box-shadow 0.2s;
+        border: 1px solid transparent;
+    }
+
+        .custom-select-wrapper:focus-within {
+            background-color: #fff;
+            border-color: #cce5ff;
+            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+        }
+
+    .custom-select {
+        width: 100%;
+        padding: 10px 20px;
+        border: none;
+        background: transparent;
+        outline: none;
+        font-size: 1rem;
+        color: #333;
+        cursor: pointer;
+    }
+
+    /* Custom Textarea */
+    .custom-textarea-wrapper {
+        width: 100%;
+        background-color: #f0f4f9;
+        border-radius: 15px;
+        padding: 5px;
+        transition: background 0.2s, box-shadow 0.2s;
+        border: 1px solid transparent;
+    }
+
+        .custom-textarea-wrapper:focus-within {
+            background-color: #fff;
+            border-color: #cce5ff;
+            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+        }
+
+    .custom-textarea {
+        width: 100%;
+        padding: 10px 20px;
+        border: none;
+        background: transparent;
+        outline: none;
+        font-size: 1rem;
+        color: #333;
+        resize: vertical;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .hint-text {
+        font-size: 0.8rem;
+        color: #999;
+        margin-top: 8px;
+        margin-left: 15px;
+    }
+
+    /* Footer Buttons */
+    .modal-footer-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .btn-modal {
+        padding: 10px 24px;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+    }
+
+    .btn-cancel {
+        background-color: transparent;
+        color: #666;
+    }
+
+        .btn-cancel:hover {
+            background-color: #f1f3f4;
+            color: #333;
+        }
+
+    .icon-btn {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        border: 1px solid #dee2e6;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        color: #495057;
+    }
+
+    .icon-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .icon-btn.btn-primary {
+        background-color: #0d6efd;
+        color: white;
+        border-color: #0d6efd;
+    }
+</style>

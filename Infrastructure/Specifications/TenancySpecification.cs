@@ -7,7 +7,8 @@ namespace Infrastructure.Specifications
     {
         public TenancySpecification(int tenantId)
         {
-            Query.Where(e => EF.Property<int>(e, "TenantId") == tenantId).AsNoTracking();
+            Query.AsNoTracking();
+            Query.Where(e => EF.Property<int>(e, "TenantId") == tenantId);
         }
     }
 }

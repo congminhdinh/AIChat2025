@@ -1,0 +1,107 @@
+@{
+}
+
+<div class="edit-modal-container">
+    <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" id="editDocumentLabel">Chỉnh sửa tài liệu</h5>
+        <button type="button" class="btn-close-modal" onclick="closeEditModal()">×</button>
+    </div>
+    <div class="modal-body">
+        <p class="text-muted small mb-4">
+            Vui lòng nhập chính xác tên tài liệu để hệ thống AI có thể định danh và truy xuất dữ liệu hiệu quả hơn.
+        </p>
+
+        <form id="editDocumentForm">
+            <input type="hidden" id="editDocumentId" value="@ViewBag.DocumentId" />
+            <div class="mb-2">
+                <label for="editDocumentName" class="form-label fw-semibold text-secondary">Tên tài liệu</label>
+                <input type="text" class="form-control bg-light border-0 py-2"
+                       id="editDocumentName"
+                       name="documentName"
+                       placeholder="Nhập tên tài liệu..."
+                       value="@ViewBag.DocumentName"
+                       required>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer border-0 justify-content-center">
+        <button type="button" class="icon-btn" onclick="closeEditModal()" data-bs-toggle="tooltip" title="Hủy">
+            <i class="ti ti-x"></i>
+        </button>
+        <button type="button" class="icon-btn btn-primary" id="btnSubmitEditDocument" data-bs-toggle="tooltip" title="Lưu thay đổi">
+            <i class="ti ti-check"></i>
+        </button>
+    </div>
+</div>
+
+<style>
+    .edit-modal-container {
+        padding: 10px;
+    }
+
+    .btn-close-modal {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #999;
+    }
+
+    .btn-close-modal:hover {
+        color: #333;
+    }
+
+    .form-control:focus {
+        background-color: #f1f3f5 !important;
+        box-shadow: none;
+        border: 1px solid #0d6efd !important;
+    }
+
+    .rounded-pill {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+    #editDocumentName {
+        font-size: 0.95rem;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .modal-footer {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .icon-btn {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        border: 1px solid #dee2e6;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        color: #495057;
+    }
+
+    .icon-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .icon-btn.btn-primary {
+        background-color: #0d6efd;
+        color: white;
+        border-color: #0d6efd;
+    }
+</style>

@@ -1,0 +1,250 @@
+﻿@model WebApp.Models.PaginatedListDto<WebApp.Models.PromptConfig.PromptConfigDto>
+
+<div class="table-wrapper">
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 60px;">STT</th>
+                <th style="width: 250px;">Tên</th>
+                <th style="width: 300px;">Giá trị</th>
+                <th style="width: 180px;">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Items == null || !Model.Items.Any())
+            {
+                <tr>
+                    <td colspan="5" class="text-center">Không có dữ liệu</td>
+                </tr>
+            }
+            else
+            {
+                int stt = (Model.PageIndex - 1) * Model.PageSize + 1;
+                foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td>@stt</td>
+                        <td>@item.Key</td>
+                        <td>@item.Value</td>
+                        <td>
+                            <div class="actions">
+                                <button class="icon-btn btn-primary btn-edit-prompt-config" data-id="@item.Id" data-bs-toggle="tooltip" title="Sửa">
+                                    <i class="ti ti-edit"></i>
+                                </button>
+                                <button class="icon-btn btn-danger btn-delete-prompt-config" data-id="@item.Id" data-bs-toggle="tooltip" title="Xóa">
+                                    <i class="ti ti-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    stt++;
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (Model.TotalPages > 1)
+{
+    <div class="pagination-container">
+        <ul class="pagination">
+            <li class="page-item @(Model.PageIndex == 1 ? "disabled" : "")">
+                <a class="page-link" href="#" data-page="@(Model.PageIndex - 1)">
+                    <i class="bi bi-chevron-left"></i> Trước
+                </a>
+            </li>
+
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                    <a class="page-link" href="#" data-page="@i">@i</a>
+                </li>
+            }
+
+            <li class="page-item @(Model.PageIndex == Model.TotalPages ? "disabled" : "")">
+                <a class="page-link" href="#" data-page="@(Model.PageIndex + 1)">
+                    Sau <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </div>
+}
+
+<style>
+    .table-wrapper {
+        border: 1px solid #eee;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+        thead th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+    tbody td {
+        padding: 14px 16px;
+        border-bottom: 1px solid #f0f0f0;
+        vertical-align: middle;
+    }
+
+    tbody tr:hover {
+        background-color: #f8f9ff;
+    }
+
+    .content-preview {
+        max-width: 500px;
+        line-height: 1.5;
+        color: #495057;
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .badge-success {
+        background-color: #d1f2eb;
+        color: #0f5132;
+    }
+
+    .badge-secondary {
+        background-color: #e2e3e5;
+        color: #41464b;
+    }
+
+    .actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+        .btn i {
+            font-size: 0.9rem;
+        }
+
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .icon-btn i {
+        font-size: 1.1rem;
+    }
+
+    .btn-primary, .icon-btn.btn-primary {
+        background-color: #0d6efd;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+            box-shadow: 0 2px 8px rgba(13, 110, 253, 0.3);
+        }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+        .btn-danger:hover {
+            background-color: #bb2d3b;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+        }
+
+    .text-center {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+    }
+
+    .pagination-container {
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .pagination {
+        list-style: none;
+        display: flex;
+        gap: 8px;
+        padding: 0;
+        margin: 0;
+    }
+
+    .page-item {
+        display: inline-block;
+    }
+
+        .page-item.disabled .page-link {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+    .page-link {
+        padding: 8px 14px;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+        background-color: white;
+        color: #0d6efd;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+        .page-link:hover:not(.disabled) {
+            background-color: #e9ecef;
+            border-color: #dee2e6;
+        }
+
+    .page-item.active .page-link {
+        background-color: #0d6efd;
+        color: white;
+        border-color: #0d6efd;
+    }
+
+    .text-muted {
+        color: #6c757d;
+    }
+</style>

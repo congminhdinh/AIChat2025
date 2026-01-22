@@ -4,11 +4,13 @@ using DocumentService.Features;
 using Hangfire;
 using Infrastructure;
 using Infrastructure.Database;
+using Infrastructure.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.ConfigureAppSettings();
 builder.AddInfrastructure();
+builder.AddCustomOpenApi();
 var appSettings = builder.Configuration.Get<AppSettings>()?? new AppSettings();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped(typeof(IReadRepository<>), typeof(EfRepository<>));
@@ -24,7 +26,7 @@ builder.Services.AddHangfire(configuration => configuration
     .UseSqlServerStorage(builder.Configuration.GetConnectionString(nameof(DocumentDbContext))));
 builder.Services.AddHangfireServer(options =>
 {
-    options.WorkerCount = 10; // Maximum 10 concurrent jobs
+    options.WorkerCount = 2;
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -35,6 +37,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseInfrastructure();
+app.MapOpenApi();
 app.MapDocumentEndpoints();
 app.UseHangfireDashboard("/hangfire");
 //app.MapControllers();

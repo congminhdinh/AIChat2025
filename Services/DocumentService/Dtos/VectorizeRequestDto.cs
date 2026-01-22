@@ -15,10 +15,10 @@ namespace DocumentService.Dtos
 
     public class VectorizeResponseDto
     {
-        public bool Success { get; set; }
-        public string? PointId { get; set; }
-        public int Dimensions { get; set; }
-        public string? Collection { get; set; }
-        public int? Count { get; set; }
+        public bool success { get; set; }
+        public string? point_id { get; set; }
+        public string? dimensions { get; set; }
+        public string? collection { get; set; }
+        public int? count { get; set; }
     }
 }

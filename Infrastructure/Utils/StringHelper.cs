@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using Microsoft.AspNetCore.StaticFiles;
+using System.Text.RegularExpressions;
 using System.Web;
 
 namespace Infrastructure.Utils
@@ -28,6 +29,16 @@ namespace Infrastructure.Utils
                              select p.Name + "=" + HttpUtility.UrlEncode(p.GetValue(obj, null).ToString());
 
             return String.Join("&", properties.ToArray());
+        }
+        public static string GetMimeType(this string filePath)
+        {
+            var provider = new FileExtensionContentTypeProvider();
+            string mimeType;
+            if (!provider.TryGetContentType(filePath, out mimeType))
+            {
+                mimeType = "application/octet-stream"; // Default MIME type
+            }
+            return mimeType;
         }
     }
 }

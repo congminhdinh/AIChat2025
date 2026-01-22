@@ -8,6 +8,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UserSecretsId>42b48a16-37bc-4a1b-b6d7-e3094a77d8d9</UserSecretsId>
+	  <MSBuildDisableNodeReuse>true</MSBuildDisableNodeReuse>
+	  <MaxCpuCount>1</MaxCpuCount>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,11 +17,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AdminCMS\AdminCMS.csproj" />
     <ProjectReference Include="..\ApiGateway\ApiGateway.csproj" />
     <ProjectReference Include="..\Services\AccountService\AccountService.csproj" />
+    <ProjectReference Include="..\Services\ChatService\ChatService.csproj" />
     <ProjectReference Include="..\Services\DocumentService\DocumentService.csproj" />
     <ProjectReference Include="..\Services\StorageService\StorageService.csproj" />
     <ProjectReference Include="..\Services\TenantService\TenantService.csproj" />
+    <ProjectReference Include="..\WebApp\WebApp.csproj" />
   </ItemGroup>
 
 </Project>

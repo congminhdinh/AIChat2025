@@ -1,0 +1,156 @@
+@using AdminCMS.Models
+@using AdminCMS.Models.Document
+@using AdminCMS.Models.Document.Enums
+@model PaginatedListDto<DocumentDto>
+
+@{
+    // Vietnamese label mappings
+    string GetActionLabel(DocumentAction action)
+    {
+        return action switch
+        {
+            DocumentAction.Upload => "Tải lên",
+            DocumentAction.Standardization => "Chuẩn hóa",
+            DocumentAction.Vectorize_Start => "Bắt đầu nạp dữ liệu",
+            DocumentAction.Vectorize_Success => "Nạp dữ liệu thành công",
+            DocumentAction.Vectorize_Failed => "Nạp dữ liệu thất bại",
+            DocumentAction.Update_Metadata => "Cập nhật metadata",
+            _ => "Không xác định"
+        };
+    }
+
+    string GetActionBadgeClass(DocumentAction action)
+    {
+        return action switch
+        {
+            DocumentAction.Upload => "badge-new",
+            DocumentAction.Standardization => "badge-processing",
+            DocumentAction.Vectorize_Start => "badge-processing",
+            DocumentAction.Vectorize_Success => "badge-success",
+            DocumentAction.Vectorize_Failed => "badge-error",
+            DocumentAction.Update_Metadata => "badge-processing",
+            _ => "badge-new"
+        };
+    }
+}
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 50px;">ID</th>
+                <th>Tên tài liệu</th>
+                <th style="width: 150px;">Trạng thái</th>
+                <th style="width: 180px;">Chỉnh sửa lần cuối</th>
+                <th style="width: 200px;">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody id="documents-table-body">
+            @if (Model.Items == null || !Model.Items.Any())
+            {
+                <tr>
+                    <td colspan="7" class="text-center">Không có tài liệu nào</td>
+                </tr>
+            }
+            else
+            {
+                int i = 1;
+                foreach (var doc in Model.Items)
+                {
+                    <tr>
+                        <td>@i</td>
+                        <td>@(string.IsNullOrEmpty(doc.DocumentName) ? doc.FileName : doc.DocumentName)</td>
+                        <td>
+                            <span class="badge @GetActionBadgeClass(doc.Action)">
+                                @GetActionLabel(doc.Action)
+                            </span>
+                        </td>
+
+                        <td>@(doc.LastModifiedAt.HasValue? doc.LastModifiedAt.Value.ToString("dd/MM/yyyy HH:mm") : "")</td>
+                        <td>
+                            <div class="actions">
+                                <button class="icon-btn btn-edit-doc" data-doc-id="@doc.Id" data-bs-toggle="tooltip" title="Sửa">
+                                    <i class="ti ti-edit"></i>
+                                </button>
+                                <button class="icon-btn btn-info btn-vectorize-doc" data-doc-id="@doc.Id" data-bs-toggle="tooltip" title="Nạp dữ liệu">
+                                    <i class="ti ti-bolt"></i>
+                                </button>
+                                <button class="icon-btn btn-danger btn-delete-doc" data-doc-id="@doc.Id" data-bs-toggle="tooltip" title="Xóa">
+                                    <i class="ti ti-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                        
+                    </tr>
+                    i++;
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (Model.TotalPages > 1)
+{
+    <div id="pagination-container" class="pagination">
+        <ul class="pagination">
+            <li class="page-item @(Model.PageIndex == 1 ? "disabled" : "")">
+                <a class="page-link" href="#" data-page="@(Model.PageIndex - 1)">Trước</a>
+            </li>
+
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                    <a class="page-link" href="#" data-page="@i">@i</a>
+                </li>
+            }
+
+            <li class="page-item @(Model.PageIndex == Model.TotalPages ? "disabled" : "")">
+                <a class="page-link" href="#" data-page="@(Model.PageIndex + 1)">Sau</a>
+            </li>
+        </ul>
+    </div>
+}
+
+<style>
+    .actions {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 4px 12px;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: opacity 0.2s;
+    }
+
+    .btn:hover {
+        opacity: 0.8;
+    }
+
+    .btn-sm {
+        font-size: 0.8rem;
+    }
+
+    .btn-primary {
+        background-color: #0d6efd;
+        color: white;
+    }
+
+    .btn-info {
+        background-color: #0dcaf0;
+        color: white;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+</style>

@@ -1,0 +1,329 @@
+@{
+    ViewData["Title"] = "Báo cáo Phản hồi";
+}
+
+@section Styles {
+    <style>
+        .stats-dashboard {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 24px;
+            padding: 0;
+        }
+
+        .stats-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+        }
+
+        .stat-card h4 {
+            margin: 0 0 20px 0;
+            color: var(--primary-color);
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .pie-chart-container {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            margin: 0 auto 20px auto;
+            position: relative;
+        }
+
+        .pie-chart {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(
+                var(--success-color) 0% var(--positive-percentage, 50%),
+                var(--danger-color) var(--positive-percentage, 50%) 100%
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .pie-chart::after {
+            content: attr(data-percentage);
+            position: absolute;
+            background: white;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) inset;
+        }
+
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 0.85rem;
+        }
+
+        .chart-legend span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.positive {
+            background-color: var(--success-color);
+        }
+
+        .legend-dot.negative {
+            background-color: var(--danger-color);
+        }
+
+        .stat-item {
+            padding: 16px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .table-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .filter-select {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            font-size: 0.875rem;
+            outline: none;
+            background-color: #f8f9fa;
+            color: #495057;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-select:focus {
+            border-color: var(--primary-color);
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+        }
+
+        .feedback-table-wrapper {
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .feedback-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .feedback-table thead {
+            position: sticky;
+            top: 0;
+            background-color: var(--primary-color);
+            z-index: 10;
+        }
+
+        .feedback-table th {
+            padding: 14px 16px;
+            text-align: left;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+            border: none;
+        }
+
+        .feedback-table tbody tr {
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .feedback-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .feedback-table td {
+            padding: 14px 16px;
+            vertical-align: top;
+            font-size: 0.875rem;
+        }
+
+        .feedback-table td.bot-response {
+            white-space: normal;
+            word-wrap: break-word;
+            max-width: 500px;
+            line-height: 1.6;
+        }
+
+        .col-stt {
+            width: 50px;
+        }
+
+        .col-question {
+            width: 25%;
+        }
+
+        .col-response {
+            width: 40%;
+        }
+
+        .col-rating {
+            width: 100px;
+        }
+
+        .col-category {
+            width: 120px;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .loading-state i {
+            font-size: 3rem;
+            color: var(--primary-color);
+        }
+
+        .pagination-container {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <h2 style="margin: 0; font-size: 1.75rem; font-weight: 700; color: #2c3e50; display: flex; align-items: center; gap: 12px;">
+            <i class="ti ti-chart-bar"></i> Báo cáo Phản hồi Hệ thống
+        </h2>
+    </div>
+
+    <div class="stats-dashboard">
+        <!-- Stats Sidebar -->
+        <div class="stats-sidebar">
+            <!-- Satisfaction Chart Card -->
+            <div class="stat-card">
+                <h4><i class="ti ti-chart-pie"></i> Tỉ lệ hài lòng</h4>
+                <div class="pie-chart-container">
+                    <div class="pie-chart" id="pie-chart" data-percentage="50%"></div>
+                </div>
+                <div class="chart-legend">
+                    <span>
+                        <div class="legend-dot positive"></div>
+                        Tích cực
+                    </span>
+                    <span>
+                        <div class="legend-dot negative"></div>
+                        Tiêu cực
+                    </span>
+                </div>
+            </div>
+
+            <!-- Statistics Card -->
+            <div class="stat-card">
+                <div class="stat-item">
+                    <span class="stat-label"><i class="ti ti-message"></i> Tổng tin nhắn</span>
+                    <span class="stat-value" id="total-messages-value">...</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label"><i class="ti ti-star"></i> Lượt đánh giá</span>
+                    <span class="stat-value" id="total-ratings-value">...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Section -->
+        <div class="table-card">
+            <div class="table-header">
+                <h3><i class="ti ti-list"></i> Chi tiết phản hồi gần đây</h3>
+                <div class="header-actions">
+                    <select class="filter-select" id="filter-rating">
+                        <option value="">Tất cả đánh giá</option>
+                        <option value="1">Thích (Like)</option>
+                        <option value="2">Không thích (Dislike)</option>
+                        <option value="0" selected>Mặc định (Initial)</option>
+                    </select>
+                    <button class="icon-btn btn-success" id="btn-export-excel" data-bs-toggle="tooltip" title="Xuất Excel">
+                        <i class="ti ti-file-spreadsheet"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="feedback-table-container">
+                <div class="loading-state">
+                    <i class="ti ti-loader"></i>
+                    <p style="margin-top: 15px; font-weight: 500;">Đang tải dữ liệu...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/Stat/stat.js" asp-append-version="true"></script>
+}

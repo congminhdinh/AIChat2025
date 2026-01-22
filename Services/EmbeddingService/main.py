@@ -1,187 +1,39 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from optimum.onnxruntime import ORTModelForFeatureExtraction
-from transformers import AutoTokenizer
-from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 import uvicorn
-import os
-from typing import List, Optional
+import time
+import json
 import uuid
-import torch
+from src.router import router
+from src.config import settings
+from src.logger import logger, set_session_id, clear_session_id
+app = FastAPI(title='VN Law Embedding Service')
 
-app = FastAPI(title="VN Law Embedding Service")
-
-MODEL_NAME = os.getenv("MODEL_NAME", "truro7/vn-law-embedding")
-QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
-QDRANT_PORT = int(os.getenv("QDRANT_PORT", "6333"))
-QDRANT_COLLECTION = os.getenv("QDRANT_COLLECTION", "vn_law_documents")
-
-print(f"Loading model: {MODEL_NAME}...")
-try:
-    # Use ONNX Runtime for lighter and faster inference
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    model = ORTModelForFeatureExtraction.from_pretrained(MODEL_NAME, export=True)
-    print("Model loaded successfully with ONNX Runtime!")
-except Exception as e:
-    print(f"Error loading model: {e}")
-
-print(f"Connecting to Qdrant at {QDRANT_HOST}:{QDRANT_PORT}...")
-try:
-    qdrant_client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
-    print("Qdrant client initialized successfully!")
-except Exception as e:
-    print(f"Error connecting to Qdrant: {e}")
-
-class EmbeddingRequest(BaseModel):
-    text: str
-
-class VectorizeRequest(BaseModel):
-    text: str
-    metadata: dict
-    collection_name: Optional[str] = None
-
-class BatchVectorizeRequest(BaseModel):
-    items: List[VectorizeRequest]
-    collection_name: Optional[str] = None
-
-def mean_pooling(model_output, attention_mask):
-    """Mean pooling to get sentence embeddings"""
-    token_embeddings = model_output[0]
-    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-    return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
-
-def encode_text(text: str):
-    """Encode text to embedding vector using ONNX model"""
-    encoded_input = tokenizer(text, padding=True, truncation=True, return_tensors='pt', max_length=512)
-    model_output = model(**encoded_input)
-    sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
-    # Normalize embeddings
-    sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
-    return sentence_embeddings[0].tolist()
-
-@app.post("/embed")
-async def create_embedding(request: EmbeddingRequest):
+@app.middleware('http')
+async def log_requests(request: Request, call_next):
+    session_id = str(uuid.uuid4())[:8]
+    set_session_id(session_id)
     try:
-        if not request.text:
-            raise HTTPException(status_code=400, detail="Text cannot be empty")
-
-        embedding = encode_text(request.text)
-
-        return {
-            "vector": embedding,
-            "dimensions": len(embedding)
-        }
+        body = await request.body()
+        body_str = body.decode('utf-8') if body else ''
+        query_params = dict(request.query_params)
+        logger.info(f"Request: {request.method} {request.url.path} | Query: {(json.dumps(query_params) if query_params else 'None')} | Body: {(body_str[:200] if body_str else 'None')}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/vectorize")
-async def vectorize_and_store(request: VectorizeRequest):
-    """Generate embedding and store directly in Qdrant"""
+        logger.error(f'Error logging request: {str(e)}')
+    start_time = time.time()
     try:
-        if not request.text:
-            raise HTTPException(status_code=400, detail="Text cannot be empty")
-
-        collection_name = request.collection_name or QDRANT_COLLECTION
-
-        # Generate embedding
-        embedding = encode_text(request.text)
-
-        # Ensure collection exists
-        await ensure_collection(collection_name, len(embedding))
-
-        # Generate unique ID
-        point_id = str(uuid.uuid4())
-
-        # Store in Qdrant
-        qdrant_client.upsert(
-            collection_name=collection_name,
-            points=[
-                PointStruct(
-                    id=point_id,
-                    vector=embedding,
-                    payload={
-                        "text": request.text,
-                        **request.metadata
-                    }
-                )
-            ]
-        )
-
-        return {
-            "success": True,
-            "point_id": point_id,
-            "dimensions": len(embedding),
-            "collection": collection_name
-        }
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        logger.info(f'Response: {response.status_code} | Process Time: {process_time:.3f}s')
+        return response
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/vectorize-batch")
-async def vectorize_batch(request: BatchVectorizeRequest):
-    """Generate embeddings for multiple items and store in Qdrant"""
-    try:
-        if not request.items:
-            raise HTTPException(status_code=400, detail="Items list cannot be empty")
-
-        collection_name = request.collection_name or QDRANT_COLLECTION
-
-        points = []
-        for item in request.items:
-            if not item.text:
-                continue
-
-            # Generate embedding
-            embedding = encode_text(item.text)
-
-            # Ensure collection exists (only once)
-            if not points:
-                await ensure_collection(collection_name, len(embedding))
-
-            # Generate unique ID
-            point_id = str(uuid.uuid4())
-
-            points.append(
-                PointStruct(
-                    id=point_id,
-                    vector=embedding,
-                    payload={
-                        "text": item.text,
-                        **item.metadata
-                    }
-                )
-            )
-
-        # Batch insert to Qdrant
-        if points:
-            qdrant_client.upsert(
-                collection_name=collection_name,
-                points=points
-            )
-
-        return {
-            "success": True,
-            "count": len(points),
-            "collection": collection_name
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-async def ensure_collection(collection_name: str, vector_size: int):
-    """Ensure Qdrant collection exists, create if not"""
-    collections = qdrant_client.get_collections().collections
-    collection_names = [c.name for c in collections]
-
-    if collection_name not in collection_names:
-        qdrant_client.create_collection(
-            collection_name=collection_name,
-            vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE)
-        )
-
-@app.get("/health")
-def health_check():
-    return {"status": "ok", "model": MODEL_NAME, "qdrant": f"{QDRANT_HOST}:{QDRANT_PORT}"}
-
-if __name__ == "__main__":
-    import uvicorn 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+        process_time = time.time() - start_time
+        logger.error(f'Exception: {str(e)} | Process Time: {process_time:.3f}s', exc_info=True)
+        clear_session_id()
+        return JSONResponse(status_code=500, content={'detail': str(e)})
+    finally:
+        clear_session_id()
+app.include_router(router)
+if __name__ == '__main__':
+    logger.info('Starting VN Law Embedding Service...')
+    uvicorn.run(app, host='0.0.0.0', port=8000)

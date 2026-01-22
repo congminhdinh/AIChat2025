@@ -5,20 +5,34 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure.Database
 {
-    public sealed class UpdateTenancyInterceptor(IServiceScopeFactory serviceScopeFactory): SaveChangesInterceptor
+
+    public sealed class UpdateTenancyInterceptor(IServiceScopeFactory serviceScopeFactory) : SaveChangesInterceptor
     {
         readonly IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
-        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
         {
             var context = eventData.Context;
             if (context == null) return base.SavingChangesAsync(eventData, result);
+
             var entries = context.ChangeTracker.Entries<TenancyEntity>();
-            var tenantProvider = _serviceScopeFactory.CreateScope().ServiceProvider.GetRequiredService<ICurrentTenantProvider>();
-            var utcNow = DateTime.UtcNow;
-            foreach (var entry in entries)
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            var tenantProvider = scope.ServiceProvider.GetRequiredService<ICurrentTenantProvider>();
+
+            var currentTenantId = tenantProvider.TenantId;
+
+            if (currentTenantId > 0)
             {
-                entry.Entity.TenantId = tenantProvider.TenantId;
+                foreach (var entry in entries)
+                {
+                    entry.Entity.TenantId = currentTenantId;
+                }
             }
+
             return base.SavingChangesAsync(eventData, result);
         }
     }

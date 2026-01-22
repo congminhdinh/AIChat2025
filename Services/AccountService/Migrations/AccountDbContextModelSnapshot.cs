@@ -66,12 +66,18 @@ namespace AccountService.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Permissions")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("TenancyActive")
+                        .HasColumnType("bit");
+
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Accounts", (string)null);
+                    b.ToTable("Accounts");
 
                     b.HasData(
                         new
@@ -83,7 +89,8 @@ namespace AccountService.Migrations
                             IsAdmin = true,
                             IsDeleted = false,
                             Name = "Admin",
-                            Password = "XWVlzLc5K4xHQ5bfxcmyXKXX5zyUFPvFmDZHWmj9/dg=:73f25c0d147b4ac6968be8455c817b0d",
+                            Password = "Xgz3816ok9rbQwhcSCYt00NH9qkEvWDdWiY9LH6fZy4=:ae98995e673341afb9f1932ec28c2c90",
+                            TenancyActive = true,
                             TenantId = 1
                         });
                 });

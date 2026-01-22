@@ -2,21 +2,20 @@
 {
     public class AccountDto
     {
-        public AccountDto(int id, string name, string email, string? avatarUrl, bool isActive, bool isDisable)
+        public AccountDto(int id, string name, string email, string? avatarUrl, bool isActive, string? permissions)
         {
             Id = id;
             Name = name;
             Email = email;
             AvatarUrl = avatarUrl;
             IsActive = isActive;
-            IsDisable = isDisable;
+            PermissionList = string.IsNullOrEmpty(permissions) ? new List<int>() : permissions.Split(',').Select(m => Int32.Parse(m)).ToList();
         }
         public int Id { get; set; }
         public string? Name { get; set; }
         public string Email { get; set; }
         public string? AvatarUrl { get; set; }
-        public List<string> PermissionList { get; set; } = new List<string>();
+        public List<int> PermissionList { get; set; } = new List<int>();
         public bool IsActive { get; set; }
-        public bool IsDisable { get; set; }
     }
 }
