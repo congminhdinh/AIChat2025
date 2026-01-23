@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     ollama_timeout: int = 300
     qdrant_host: str = 'localhost'
     qdrant_port: int = 6333
-    qdrant_collection: str = 'documents'
+    qdrant_collection: str = 'vn_law_documents'
     rag_top_k: int = 5
     embedding_service_url: str = 'http://localhost:8000'
     fastapi_host: str = '0.0.0.0'
