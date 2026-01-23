@@ -16,9 +16,14 @@ namespace AdminCMS.Business
         {
             try
             {
-                var response = await PostAsync<LoginRequest, BaseResponse<TokenDto>>(
-                    $"/web-api/account/auth/login?tenantId={request.TenantId}",
+                var headers = new Dictionary<string, string>
+                {
+                    { "X-Tenant-Key", request.TenantKey }
+                };
+                var response = await PostWithHeadersAsync<LoginRequest, BaseResponse<TokenDto>>(
+                    "/web-api/account/auth/login",
                     request,
+                    headers,
                     cancellationToken
                 );
 

@@ -2,10 +2,12 @@
 (function () {
     'use strict';
 
+    // Default tenant key for SuperAdmin
+    const DEFAULT_TENANT_KEY = 'SUPERADMIN-KEY-2025';
+
     // Wait for DOM to be ready
     document.addEventListener('DOMContentLoaded', function () {
         const loginForm = document.querySelector('form');
-        const tenantIdInput = document.getElementById('tenantId');
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
         const submitButton = document.querySelector('.btn-submit');
@@ -15,13 +17,12 @@
             e.preventDefault();
             document.querySelector('.btn-submit').disabled = true;
             // Get form values
-            //const tenantId = tenantIdInput.value.trim();
             const username = usernameInput.value.trim();
             const password = passwordInput.value.trim();
 
             // Basic validation
             if (!username || !password) {
-                showError('Vui lòng nhập đầy đủ mã định danh, tên đăng nhập và mật khẩu');
+                showError('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu');
                 return;
             }
 
@@ -29,14 +30,14 @@
             setLoadingState(true);
 
             try {
-                // Call the backend API
+                // Call the backend API with default tenant key
                 const response = await fetch('/Auth/ExecuteLogin', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        tenantId: 1,
+                        tenantKey: DEFAULT_TENANT_KEY,
                         email: username,
                         password: password
                     })

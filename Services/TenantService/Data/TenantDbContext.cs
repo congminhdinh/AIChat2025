@@ -17,8 +17,8 @@ namespace TenantService.Data
                 new Tenant
                 {
                     Id = 1,
-                    Name = "SuperAdmin"
-
+                    Name = "SuperAdmin",
+                    TenantKey = "SUPERADMIN-KEY-2025"
                 });
             modelBuilder.Entity<Tenant>().HasQueryFilter(t => !t.IsDeleted);
         }

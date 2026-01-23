@@ -5,7 +5,7 @@
     // Wait for DOM to be ready
     document.addEventListener('DOMContentLoaded', function () {
         const loginForm = document.querySelector('form');
-        const tenantIdInput = document.getElementById('tenantId');
+        const tenantKeyInput = document.getElementById('tenantKey');
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
         const submitButton = document.querySelector('.btn-submit');
@@ -15,12 +15,12 @@
             e.preventDefault();
             document.querySelector('.btn-submit').disabled = true;
             // Get form values
-            const tenantId = tenantIdInput.value.trim();
+            const tenantKey = tenantKeyInput.value.trim();
             const username = usernameInput.value.trim();
             const password = passwordInput.value.trim();
 
             // Basic validation
-            if (!tenantId || !username || !password) {
+            if (!tenantKey || !username || !password) {
                 showError('Vui lòng nhập đầy đủ mã định danh, tên đăng nhập và mật khẩu');
                 return;
             }
@@ -36,7 +36,7 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        tenantId: parseInt(tenantId),
+                        tenantKey: tenantKey,
                         email: username,
                         password: password
                     })
