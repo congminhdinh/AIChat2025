@@ -13,7 +13,7 @@ builder.AddCustomOpenApi();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped(typeof(IReadRepository<>), typeof(EfRepository<>));
 builder.Services.AddScoped<AccountBusiness>();
-builder.Services.AddScoped<AuthBusiness>();
+builder.Services.AddHttpClient<AuthBusiness>();
 builder.AddCustomDbContext<AccountDbContext>(builder.Configuration.GetConnectionString(nameof(AccountDbContext)), "AccountService");
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

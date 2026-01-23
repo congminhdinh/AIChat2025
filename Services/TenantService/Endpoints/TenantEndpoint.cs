@@ -40,6 +40,20 @@ namespace TenantService.Endpoints
             {
                 return await tenantBusiness.DeactivateTenant(input);
             });
+
+            group.MapPost("/tenant-key", async (TenantBusiness tenantBusiness, UpdateTenantKeyRequest input) =>
+            {
+                return await tenantBusiness.RefreshTenantKey(input);
+            });
+
+            group.MapGet("/tenant-key/{tenantId}", async ([FromServices] TenantBusiness tenantBusiness, int tenantId) =>
+            {
+                return await tenantBusiness.GetTenantKeyById(tenantId);
+            });
+            group.MapPost("/tenant-key/validate", async ([FromServices] TenantBusiness tenantBusiness, string tenantKey) =>
+            {
+                return await tenantBusiness.ValidateTenantKey(tenantKey);
+            }).AllowAnonymous();
         }
     }
 }

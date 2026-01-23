@@ -5,21 +5,34 @@ using AccountService.Requests;
 using AccountService.Specifications;
 using Infrastructure;
 using Infrastructure.Authentication;
+using Infrastructure.Logging;
 using Infrastructure.Tenancy;
 using Infrastructure.Utils;
+using Infrastructure.Web;
+using Microsoft.Extensions.Options;
 
 namespace AccountService.Features
 {
-    public class AuthBusiness
+    public class AuthBusiness : BaseHttpClient
     {
         private readonly IRepository<Account> _repository;
         private readonly ITokenClaimsService _tokenClaimsService;
         private readonly ICurrentTenantProvider _currentTenantProvider;
-        public AuthBusiness(IRepository<Account> repository, ITokenClaimsService tokenClaimsService, ICurrentTenantProvider currentTenantProvider)
+        private readonly AppSettings _appSettings;
+
+        public AuthBusiness(
+            IRepository<Account> repository,
+            ITokenClaimsService tokenClaimsService,
+            ICurrentTenantProvider currentTenantProvider,
+            HttpClient httpClient,
+            IAppLogger<BaseHttpClient> appLogger,
+            IOptionsMonitor<AppSettings> optionsMonitor)
+            : base(httpClient, appLogger)
         {
             _repository = repository;
             _tokenClaimsService = tokenClaimsService;
             _currentTenantProvider = currentTenantProvider;
+            _appSettings = optionsMonitor.CurrentValue;
         }
         //public async Task<BaseResponse<TokenDto>> Register(RegisterRequest input, int tenantId)
         //{
@@ -40,8 +53,19 @@ namespace AccountService.Features
         //    return new BaseResponse<TokenDto>(new TokenDto(token.AccessToken, token.RefreshToken, token.ExpiresAt), input.CorrelationId());
         //}
 
-        public async Task<BaseResponse<TokenDto>> Login(LoginRequest input, int tenantId)
+        public async Task<BaseResponse<TokenDto>> Login(LoginRequest input, string tenantKey)
         {
+            // Validate tenant key and get tenantId from TenantService
+            var validateResponse = await PostAsync<string, BaseResponse<int>>(
+                $"{_appSettings.ApiGatewayUrl}/web-api/tenant/tenant-key/validate?tenantKey={tenantKey}",
+                tenantKey);
+
+            if (validateResponse == null || validateResponse.Data == -1)
+            {
+                throw new Exception("Invalid tenant key");
+            }
+
+            var tenantId = validateResponse.Data;
             _currentTenantProvider.SetTenantId(tenantId);
 
             var account = await _repository.FirstOrDefaultAsync(new AccountSpecification(input.Email, tenantId));

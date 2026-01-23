@@ -1,5 +1,6 @@
 ﻿using Infrastructure.Logging;
 using Infrastructure.Paging;
+using Infrastructure.Utils;
 using Infrastructure.Web;
 using Microsoft.Extensions.Options;
 using TenantService.Data;
@@ -110,6 +111,50 @@ namespace TenantService.Features
             await PostWithTokenAsync<int, BaseResponse<int>>($"/web-api/account/tenancy-deactivate?tenantId={input.Id}", input.Id, _currentUserProvider.Token);
             return new BaseResponse<int>(tenant.Id, input.CorrelationId());
         }
+
+        public async Task<BaseResponse<int>> RefreshTenantKey(UpdateTenantKeyRequest input)
+        {
+            if (!CheckIsSuperAdmin())
+            {
+                throw new Exception("Only super admin can access this resource");
+            }
+            var tenant = await _repository.GetByIdAsync(input.Id);
+            if (tenant == null)
+            {
+                throw new Exception("Tenant doesnt exist");
+            }
+            tenant.TenantKey = EncryptionHelper.GenerateSecureKey();
+            await _repository.UpdateAsync(tenant);
+            await _repository.SaveChangesAsync();
+            return new BaseResponse<int>(tenant.Id, input.CorrelationId());
+        }
+
+        public async Task<BaseResponse<TenantKeyDto>> GetTenantKeyById(int tenantId)
+        {
+            if (!CheckIsSuperAdmin())
+            {
+                throw new Exception("Only super admin can access this resource");
+            }
+            var input = new GetTenantByIdRequest { Id = tenantId };
+            var tenant = await _repository.GetByIdAsync(tenantId);
+            if (tenant == null)
+            {
+                throw new Exception("Tenant doesnt exist");
+            }
+            var tenantKeyDto = new TenantKeyDto
+            {
+                Id = tenant.Id,
+                TenantKey = tenant.TenantKey
+            };
+            return new BaseResponse<TenantKeyDto>(tenantKeyDto, input.CorrelationId());
+        }
+
+        public async Task<BaseResponse<int>> ValidateTenantKey(string tenantKey)
+        {
+            var tenant = await _repository.FirstOrDefaultAsync(new TenantByKeySpecification(tenantKey));
+            var tenantId = tenant?.Id ?? -1;
+            return new BaseResponse<int>(tenantId, Guid.NewGuid());
+        }   
         private bool CheckIsSuperAdmin()
         {
             var tenantId = _currentUserProvider.TenantId;
