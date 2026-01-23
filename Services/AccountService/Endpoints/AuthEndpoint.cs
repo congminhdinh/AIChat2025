@@ -19,9 +19,9 @@ namespace AccountService.Endpoints
             //{
             //    return await authBusiness.Register(input, tenantId);
             //}).AllowAnonymous();
-            group.MapPost("/login", async (AuthBusiness authBusiness, LoginRequest input, int tenantId) =>
+            group.MapPost("/login", async (AuthBusiness authBusiness, LoginRequest input, [FromHeader(Name = "X-Tenant-Key")] string tenantKey) =>
             {
-                return await authBusiness.Login(input, tenantId);
+                return await authBusiness.Login(input, tenantKey);
             }).AllowAnonymous();
         }
     }
