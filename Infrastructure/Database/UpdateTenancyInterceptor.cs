@@ -29,7 +29,11 @@ namespace Infrastructure.Database
             {
                 foreach (var entry in entries)
                 {
-                    entry.Entity.TenantId = currentTenantId;
+                    // Only set TenantId if it's not already explicitly set
+                    if (entry.Entity.TenantId == 0)
+                    {
+                        entry.Entity.TenantId = currentTenantId;
+                    }
                 }
             }
 
