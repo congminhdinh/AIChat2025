@@ -54,11 +54,10 @@
             }
             else
             {
-                int i = 1;
                 foreach (var doc in Model.Items)
                 {
                     <tr>
-                        <td>@i</td>
+                        <td>@doc.Id</td>
                         <td>@(string.IsNullOrEmpty(doc.DocumentName) ? doc.FileName : doc.DocumentName)</td>
                         <td>
                             <span class="badge @GetActionBadgeClass(doc.Action)">
@@ -80,9 +79,8 @@
                                 </button>
                             </div>
                         </td>
-                        
+
                     </tr>
-                    i++;
                 }
             }
         </tbody>

@@ -208,6 +208,8 @@
     async function submitUpload() {
         const fileInput = document.querySelector('#documentFile');
         const nameInput = document.querySelector('#documentName');
+        const docTypeSelect = document.querySelector('#documentType');
+        const fatherDocIdInput = document.querySelector('#fatherDocumentId');
 
         if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
             showToast('warning', 'Vui lòng chọn tệp để tải lên');
@@ -216,12 +218,22 @@
 
         const file = fileInput.files[0];
         const documentName = nameInput ? nameInput.value.trim() : '';
+        const documentType = docTypeSelect ? parseInt(docTypeSelect.value) : 1;
+        const fatherDocumentId = fatherDocIdInput && fatherDocIdInput.value ? parseInt(fatherDocIdInput.value) : -1;
+
+        // Validate fatherDocumentId if document type is NghiDinh
+        if (documentType === 2 && fatherDocumentId <= 0) {
+            showToast('warning', 'Vui lòng nhập ID tài liệu Luật cho Nghị Định');
+            return;
+        }
 
         const formData = new FormData();
         formData.append('file', file);
         if (documentName) {
             formData.append('documentName', documentName);
         }
+        formData.append('documentType', documentType);
+        formData.append('fatherDocumentId', fatherDocumentId);
 
         try {
             const response = await fetch('/Document/Upload', {
