@@ -60,6 +60,7 @@ namespace TenantService.Features
                 throw new Exception("Tenant name already exists");
             }
             var tenant = new Tenant(input.Name, input.Description, input.IsActive);
+            tenant.TenantKey = EncryptionHelper.GenerateSecureKey();
             await _repository.AddAsync(tenant);
             await _repository.SaveChangesAsync();
             var adminAccountRequest = new

@@ -304,5 +304,113 @@ namespace AdminCMS.Business
                 };
             }
         }
+
+        public async Task<BaseResponse<TenantKeyDto>> GetTenantKeyAsync(int tenantId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var token = await _identityHelper.GetAccessTokenAsync();
+                if (string.IsNullOrEmpty(token))
+                {
+                    return new BaseResponse<TenantKeyDto>
+                    {
+                        Status = BaseResponseStatus.Error,
+                        Message = "Không tìm thấy token xác thực"
+                    };
+                }
+
+                var response = await GetWithTokenAsync<BaseResponse<TenantKeyDto>>(
+                    $"/web-api/tenant/tenant-key/{tenantId}",
+                    token,
+                    cancellationToken
+                );
+
+                if (response == null)
+                {
+                    return new BaseResponse<TenantKeyDto>
+                    {
+                        Status = BaseResponseStatus.Error,
+                        Message = "Không nhận được phản hồi từ server"
+                    };
+                }
+
+                return response;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError($"HTTP error during get tenant key: {ex.Message}");
+                return new BaseResponse<TenantKeyDto>
+                {
+                    Status = BaseResponseStatus.Error,
+                    Message = "Lỗi kết nối đến dịch vụ tenant"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error during get tenant key: {ex.Message}");
+                return new BaseResponse<TenantKeyDto>
+                {
+                    Status = BaseResponseStatus.Error,
+                    Message = "Đã xảy ra lỗi khi tải tenant key"
+                };
+            }
+        }
+
+        public async Task<BaseResponse<int>> RefreshTenantKeyAsync(int tenantId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var token = await _identityHelper.GetAccessTokenAsync();
+                if (string.IsNullOrEmpty(token))
+                {
+                    return new BaseResponse<int>
+                    {
+                        Status = BaseResponseStatus.Error,
+                        Message = "Không tìm thấy token xác thực"
+                    };
+                }
+
+                var refreshRequest = new
+                {
+                    Id = tenantId
+                };
+
+                var response = await PostWithTokenAsync<object, BaseResponse<int>>(
+                    "/web-api/tenant/tenant-key",
+                    refreshRequest,
+                    token,
+                    cancellationToken
+                );
+
+                if (response == null)
+                {
+                    return new BaseResponse<int>
+                    {
+                        Status = BaseResponseStatus.Error,
+                        Message = "Không nhận được phản hồi từ server"
+                    };
+                }
+
+                return response;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError($"HTTP error during refresh tenant key: {ex.Message}");
+                return new BaseResponse<int>
+                {
+                    Status = BaseResponseStatus.Error,
+                    Message = "Lỗi kết nối đến dịch vụ tenant"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error during refresh tenant key: {ex.Message}");
+                return new BaseResponse<int>
+                {
+                    Status = BaseResponseStatus.Error,
+                    Message = "Đã xảy ra lỗi khi làm mới tenant key"
+                };
+            }
+        }
     }
 }
