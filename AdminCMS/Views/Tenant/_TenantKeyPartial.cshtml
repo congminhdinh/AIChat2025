@@ -1,0 +1,134 @@
+@using AdminCMS.Models.Tenant
+@model TenantKeyViewModel
+
+<div class="tenantkey-modal-container">
+    <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" id="tenantKeyLabel">
+            <i class="bi bi-key-fill text-primary me-2"></i>Tenant Key
+        </h5>
+        <button type="button" class="btn-close-modal" onclick="closeTenantKeyModal()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <div class="modal-body">
+        <p class="text-muted small mb-4">
+            <i class="bi bi-info-circle me-1"></i>Tenant Key dùng để xác thực kết nối từ webapp. Nhấn nút làm mới để tạo key mới.
+        </p>
+
+        <input type="hidden" id="tenantKeyTenantId" value="@Model.TenantId" />
+
+        <div class="tenant-key-display mb-3">
+            <label class="form-label fw-semibold text-secondary small">
+                <i class="bi bi-shield-lock me-1"></i>Tenant Key hiện tại
+            </label>
+            <div class="key-input-group">
+                <input type="text" class="form-control bg-light border-0 py-2 key-input"
+                       id="txtTenantKey" value="@Model.TenantKey" readonly>
+                <button type="button" class="btn-copy-key" onclick="copyTenantKey()" data-bs-toggle="tooltip" title="Sao chép">
+                    <i class="bi bi-clipboard"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="alert alert-warning d-flex align-items-start" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
+            <div class="small">
+                <strong>Lưu ý:</strong> Khi làm mới key, các website đang sử dụng key cũ sẽ không thể kết nối được nữa.
+                Cần thông báo với doanh nghiệp theo tenant này để cập nhật.
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer border-0 justify-content-center pt-0">
+        <button type="button" class="icon-btn" onclick="closeTenantKeyModal()" data-bs-toggle="tooltip" title="Dong">
+            <i class="ti ti-x"></i>
+        </button>
+        <button type="button" class="icon-btn btn-warning" id="btnRefreshTenantKey" onclick="refreshTenantKey()" data-bs-toggle="tooltip" title="Lam moi Key">
+            <i class="ti ti-refresh"></i>
+        </button>
+    </div>
+</div>
+
+<style>
+    .tenantkey-modal-container {
+        padding: 5px;
+    }
+
+    .btn-close-modal {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        color: #adb5bd;
+        transition: 0.2s;
+        cursor: pointer;
+    }
+
+    .btn-close-modal:hover {
+        color: #495057;
+        transform: rotate(90deg);
+    }
+
+    .key-input-group {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .key-input-group .form-control {
+        padding-right: 45px;
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-copy-key {
+        position: absolute;
+        right: 10px;
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 5px 10px;
+        transition: color 0.2s;
+    }
+
+    .btn-copy-key:hover {
+        color: #0d6efd;
+    }
+
+    .btn-copy-key i {
+        font-size: 1.1rem;
+    }
+
+    .icon-btn {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+        border: 1px solid #dee2e6;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        color: #495057;
+    }
+
+    .icon-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .icon-btn.btn-warning {
+        background-color: #ffc107;
+        color: #212529;
+        border-color: #ffc107;
+    }
+
+    .icon-btn.btn-warning:hover {
+        background-color: #e0a800;
+        border-color: #d39e00;
+    }
+</style>

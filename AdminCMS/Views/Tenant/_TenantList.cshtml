@@ -52,6 +52,9 @@
                                 <button class="icon-btn btn-primary btn-edit-tenant" data-tenant-id="@tenant.Id" data-bs-toggle="tooltip" title="Sửa">
                                     <i class="ti ti-edit"></i>
                                 </button>
+                                <button class="icon-btn btn-info btn-view-key" data-tenant-id="@tenant.Id" data-bs-toggle="tooltip" title="Xem Key">
+                                    <i class="ti ti-key"></i>
+                                </button>
                                 @if (tenant.IsActive)
                                 {
                                     <button class="icon-btn btn-warning btn-disable-tenant" data-tenant-id="@tenant.Id" data-bs-toggle="tooltip" title="Vô hiệu hóa">
@@ -204,6 +207,17 @@
         background-color: #ffb300;
         transform: translateY(-1px);
         box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+    }
+
+    .btn-info {
+        background-color: #17a2b8;
+        color: white;
+    }
+
+    .btn-info:hover {
+        background-color: #138496;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(23, 162, 184, 0.3);
     }
 
     .text-muted {

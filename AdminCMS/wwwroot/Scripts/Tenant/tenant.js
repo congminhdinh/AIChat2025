@@ -60,6 +60,14 @@
                 disableTenant(tenantId);
             }
 
+            // View Tenant Key button
+            if (e.target.closest('.btn-view-key')) {
+                e.preventDefault();
+                const btn = e.target.closest('.btn-view-key');
+                const tenantId = btn.getAttribute('data-tenant-id');
+                openTenantKeyModal(tenantId);
+            }
+
             // Pagination links - using closest() for consistency
             const pageLink = e.target.closest('.page-link');
             if (pageLink && !pageLink.parentElement.classList.contains('disabled')) {
@@ -351,6 +359,113 @@
         }
     }
 
+    // ========== TENANT KEY MODAL ==========
+    async function openTenantKeyModal(tenantId) {
+        try {
+            const response = await fetch(`${WEB_APP_URL}/Tenant/GetTenantKey?id=${tenantId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'text/html'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load tenant key');
+            }
+
+            const html = await response.text();
+
+            const modalContainer = document.querySelector('#modal-content-container');
+            const modalOverlay = document.querySelector('#modal-overlay');
+
+            if (modalContainer && modalOverlay) {
+                modalContainer.innerHTML = html;
+                modalOverlay.classList.add('active');
+            }
+        } catch (error) {
+            console.error('Error opening tenant key modal:', error);
+            showToast('error', 'Khong the tai thong tin tenant key.');
+        }
+    }
+
+    function closeTenantKeyModal() {
+        const modalOverlay = document.querySelector('#modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.classList.remove('active');
+            setTimeout(() => {
+                const modalContainer = document.querySelector('#modal-content-container');
+                if (modalContainer) {
+                    modalContainer.innerHTML = '';
+                }
+            }, 200);
+        }
+    }
+
+    async function copyTenantKey() {
+        const keyInput = document.querySelector('#txtTenantKey');
+        if (!keyInput) return;
+
+        try {
+            await navigator.clipboard.writeText(keyInput.value);
+            showToast('success', 'Da sao chep tenant key');
+        } catch (error) {
+            console.error('Error copying tenant key:', error);
+            // Fallback for older browsers
+            keyInput.select();
+            document.execCommand('copy');
+            showToast('success', 'Da sao chep tenant key');
+        }
+    }
+
+    async function refreshTenantKey() {
+        const tenantIdInput = document.querySelector('#tenantKeyTenantId');
+        if (!tenantIdInput) {
+            showToast('error', 'Khong tim thay thong tin tenant');
+            return;
+        }
+
+        const tenantId = tenantIdInput.value;
+
+        const result = await Swal.fire({
+            title: 'Xac nhan lam moi Tenant Key',
+            html: '<p>Ban co chac chan muon lam moi tenant key nay?</p>' +
+                  '<p class="text-danger"><strong>Webapp dang su dung key cu se khong the ket noi duoc.</strong></p>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ffc107',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Lam moi',
+            cancelButtonText: 'Huy bo',
+            reverseButtons: true
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${WEB_APP_URL}/Tenant/RefreshTenantKey?id=${tenantId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const responseData = await response.json();
+
+            if (responseData.success) {
+                showToast('success', responseData.message || 'Lam moi tenant key thanh cong');
+                // Reload the modal to show new key
+                await openTenantKeyModal(tenantId);
+            } else {
+                showToast('error', responseData.message || 'Khong the lam moi tenant key. Vui long thu lai.');
+            }
+        } catch (error) {
+            console.error('Error refreshing tenant key:', error);
+            showToast('error', 'Da xay ra loi ket noi. Vui long thu lai.');
+        }
+    }
+
     // ========== NOTIFICATION HELPERS ==========
     function showToast(type, message) {
         const Toast = Swal.mixin({
@@ -374,5 +489,8 @@
     // ========== GLOBAL EXPOSURE ==========
     window.closeCreateModal = closeCreateModal;
     window.closeEditModal = closeEditModal;
+    window.closeTenantKeyModal = closeTenantKeyModal;
+    window.copyTenantKey = copyTenantKey;
+    window.refreshTenantKey = refreshTenantKey;
 
 })();

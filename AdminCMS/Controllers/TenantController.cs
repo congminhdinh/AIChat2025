@@ -141,5 +141,47 @@ namespace AdminCMS.Controllers
 
             return Json(new { success = true, message = "Vô hiệu hóa tenant thành công" });
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetTenantKey(int id)
+        {
+            if (id <= 0)
+            {
+                return Json(new { success = false, message = "ID tenant không hợp lệ" });
+            }
+
+            var response = await _tenantBusiness.GetTenantKeyAsync(id);
+
+            if (response.Status == BaseResponseStatus.Error || response.Data == null)
+            {
+                return Json(new { success = false, message = response.Message ?? "Không tìm thấy tenant key" });
+            }
+
+            var viewModel = new TenantKeyViewModel
+            {
+                TenantId = response.Data.Id,
+                TenantKey = response.Data.TenantKey ?? string.Empty
+            };
+
+            return PartialView("_TenantKeyPartial", viewModel);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RefreshTenantKey(int id)
+        {
+            if (id <= 0)
+            {
+                return Json(new { success = false, message = "ID tenant không hợp lệ" });
+            }
+
+            var response = await _tenantBusiness.RefreshTenantKeyAsync(id);
+
+            if (response.Status == BaseResponseStatus.Error)
+            {
+                return Json(new { success = false, message = response.Message });
+            }
+
+            return Json(new { success = true, message = "Làm mới tenant key thành công" });
+        }
     }
 }

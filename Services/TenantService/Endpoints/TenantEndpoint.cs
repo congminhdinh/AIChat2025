@@ -46,7 +46,7 @@ namespace TenantService.Endpoints
                 return await tenantBusiness.RefreshTenantKey(input);
             });
 
-            group.MapGet("  ", async ([FromServices] TenantBusiness tenantBusiness, int tenantId) =>
+            group.MapGet("/tenant-key/{tenantId}", async ([FromServices] TenantBusiness tenantBusiness, int tenantId) =>
             {
                 return await tenantBusiness.GetTenantKeyById(tenantId);
             });
