@@ -53,7 +53,27 @@
                             }
                         </td>
                         <td>
-                            <span class="badge badge-processing">@((int)feedback.Category)</span>
+                            <span class="badge badge-processing">
+                                @{
+                                    var categoryText = feedback.Category switch
+                                    {
+                                        ChatFeedbackCategory.WrongKnowledge => "Sai kiến thức pháp luật",
+                                        ChatFeedbackCategory.OutdatedInfo => "Thông tin hết hiệu lực",
+                                        ChatFeedbackCategory.ConflictingInfo => "Câu trả lời mâu thuẫn",
+                                        ChatFeedbackCategory.Misunderstood => "Hiểu sai ý người dùng",
+                                        ChatFeedbackCategory.WrongCitation => "Trích dẫn sai nguồn",
+                                        ChatFeedbackCategory.MissingLegalBasis => "Thiếu căn cứ pháp lý",
+                                        ChatFeedbackCategory.IrrelevantSource => "Nguồn không liên quan",
+                                        ChatFeedbackCategory.TooVerbose => "Trả lời quá lan man",
+                                        ChatFeedbackCategory.TooBrief => "Trả lời quá sơ sài",
+                                        ChatFeedbackCategory.SlowResponse => "Phản hồi quá chậm",
+                                        ChatFeedbackCategory.FormattingError => "Lỗi hiển thị/Định dạng",
+                                        ChatFeedbackCategory.Other => "Khác",
+                                        _ => feedback.Category.ToString()
+                                    };
+                                }
+                                @categoryText
+                            </span>
                         </td>
                         <td class="bot-response">
                             @if (!string.IsNullOrEmpty(feedback.Content))

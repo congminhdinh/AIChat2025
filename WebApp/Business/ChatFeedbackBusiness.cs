@@ -37,7 +37,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<ChatFeedbackDetailDto>
                     {
@@ -89,7 +89,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<int>
                     {
@@ -141,7 +141,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<int>
                     {
@@ -193,7 +193,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<int>
                     {
@@ -255,7 +255,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<PaginatedListDto<ChatFeedbackDto>>
                     {

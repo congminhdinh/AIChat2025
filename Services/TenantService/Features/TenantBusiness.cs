@@ -109,7 +109,7 @@ namespace TenantService.Features
 
             await _repository.UpdateAsync(tenant);
             await _repository.SaveChangesAsync();
-            await PostWithTokenAsync<int, BaseResponse<int>>($"/web-api/account/tenancy-deactivate?tenantId={input.Id}", input.Id, _currentUserProvider.Token);
+            //await PostWithTokenAsync<int, BaseResponse<int>>($"/web-api/account/tenancy-deactivate?tenantId={input.Id}", input.Id, _currentUserProvider.Token);
             return new BaseResponse<int>(tenant.Id, input.CorrelationId());
         }
 

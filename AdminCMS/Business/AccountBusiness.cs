@@ -41,7 +41,7 @@ namespace AdminCMS.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<PaginatedListDto<AccountDto>>
                     {
@@ -92,7 +92,7 @@ namespace AdminCMS.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<AccountDto>
                     {
@@ -170,7 +170,7 @@ namespace AdminCMS.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<int>
                     {
@@ -224,7 +224,7 @@ namespace AdminCMS.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<bool>
                     {
@@ -303,7 +303,7 @@ namespace AdminCMS.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<int>
                     {
@@ -362,7 +362,7 @@ namespace AdminCMS.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<bool>
                     {
@@ -431,7 +431,7 @@ namespace AdminCMS.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<bool>
                     {
@@ -485,7 +485,7 @@ namespace AdminCMS.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<string>
                     {

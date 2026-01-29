@@ -19,7 +19,7 @@ namespace AdminCMS.Business
             var token = _currentUserProvider.Token;
             var userId = _currentUserProvider.UserId;
             var response = await GetWithTokenAsync<BaseResponse<AccountDto>>($"/web-api/account/{userId}", token);
-            if(response == null || response.Data == null)
+            if(response == null || response.Status == 0 || response.Data == null)
             {
                return new List<int>();
             }

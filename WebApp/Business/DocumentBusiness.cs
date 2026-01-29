@@ -40,7 +40,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<PaginatedListDto<DocumentDto>>
                     {
@@ -91,7 +91,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<DocumentDto>
                     {
@@ -169,7 +169,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<int>
                     {
@@ -220,7 +220,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<DocumentDto>
                     {
@@ -274,7 +274,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<bool>
                     {
@@ -329,7 +329,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<bool>
                     {
