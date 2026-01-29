@@ -32,7 +32,7 @@ namespace AdminCMS.Business
                     return new BaseResponse<TokenDto>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi đăng nhập, vui lòng thử lại"
                     };
                 }
 

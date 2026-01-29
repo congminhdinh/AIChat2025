@@ -3258,5 +3258,17 @@
     "user_id": 9,
     "tenant_id": 7,
     "timestamp": "2026-01-26T08:31:13.428175"
+  },
+  {
+    "question": "Nghỉ phép mà không xin phép có bị trừ lương không?",
+    "contexts": [
+      "Chương II NỘI DUNG CỦA NỘI QUY LAO ĐỘNG\nMục 1 THỜI GIAN LÀM VIỆC VÀ THỜI GIAN NGHỈ NGƠI\nĐiều 10. Nghỉ việc riêng không hưởng lương\nNgười lao động được nghỉ không hưởng lương 01 ngày và phải thông báo với Người sử dụng lao động khi ông nội, bà nội, ông ngoại, bà ngoại, anh, chị, em ruột chết; bố hoặc mẹ kết hôn; anh, chị, em ruột kết hôn.\nNgười lao động có thể thỏa thuận với người sử dụng lao động để nghỉ không hưởng lương.",
+      "Chương II NỘI DUNG CỦA NỘI QUY LAO ĐỘNG\nMục 7 HÀNH VI VI PHẠM KỶ LUẬT LAO ĐỘNG, HÌNH THỨC XỬ LÝ KỶ LUẬT LAO ĐỘNG VÀ TRÁCH NHIỆM VẬT CHẤT\nĐiều 32. Tạm đình chỉ công việc\nNgười sử dụng lao động có thể tạm đình chỉ công việc của người lao động khi vụ việc vi phạm cần phải xác minh. Việc tạm đình chỉ công việc chỉ được thực hiện sau khi tham khảo ý kiến của tổ chức đại điện người lao động nơi người lao động là thành viên.\nThời hạn tạm đình chỉ công việc không quá 15 ngày, trường hợp đặc biệt cũng không quá 90 ngày.\nTrong thời gian tạm đình chỉ người lao động sẽ được tạm ứng 50% tiền lương và nếu sau khi điều tra xác định người lao động không có lỗi thì Công ty sẽ trả đủ lương cho người lao động. Trường hợp người lao động xác định có lỗi thì chỉ nhận được 50% tiền lương đã tạm ứng."
+    ],
+    "answer": "Theo Điều 10 Chương II Nội quy Lao động, một nhân viên có thể nghỉ việc riêng không hưởng lương khi ông nội, bà nội, ông ngoại, bà ngoại, anh chị em ruột chết; bố hoặc mẹ kết hôn; anh chị em ruột kết hôn. Tuy nhiên, nếu người lao động tự ý nghỉ mà không xin phép thì họ vẫn phải tuân theo các quy định về kỷ luật lao động và trách nhiệm vật chất được nêu trong Mục 7 của Chương II Nội quy Lao động.\n\nTrong trường hợp này, bạn nên tham khảo Điều 32 để biết thêm thông tin chi tiết cụ thể. Nếu người sử dụng lao động xác minh rằng nhân viên đã vi phạm các điều khoản của nội quy lao động thì họ có thể bị xử lý kỷ luật lao động theo hình thức tạm đình chỉ công việc hoặc sa thải tùy thuộc vào mức độ nghiêm trọng của hành vi vi phạm.\n\nNếu sau khi điều tra, Công ty xác định người lao động không có lỗi thì sẽ trả đủ lương cho người lao động. Trường hợp người lao động xác định có lỗi thì chỉ nhận được 50% tiền lương đã tạm ứng. Do đó, nghỉ phép mà không xin phép có thể dẫn đến việc bị trừ lương hoặc thậm chí là sa thải tùy thuộc vào mức độ nghiêm trọng của hành vi vi phạm và quyết định của Công ty.\n\nNguồn: [Quy định #1 - Chương II NỘI DUNG CỦA NỘI QUY LAO ĐỘNG - Mục 1 THỜI GIAN LÀM VIỆC VÀ THỜI GIAN NGHỈ NGƠI] & [Quy định #2 - Chương II NỘI DUNG CỦA NỘI QUY LAO ĐỘNG - Mục 7 HÀNH VI VI PHẠM KỶ LUẬT LAO ĐỘNG, HÌNH THỨC XỬ LÝ KỶ LUẬT LAO ĐỘNG VÀ TRÁCH NHIỆM VẬT CHẤT]\n\nCâu trả lời: Có, nghỉ phép mà không xin phép có thể dẫn đến việc bị trừ lương hoặc thậm chí là sa thải tùy thuộc vào mức độ nghiêm trọng của hành vi vi phạm và quyết định của Công ty.",
+    "conversation_id": 1014,
+    "user_id": 17,
+    "tenant_id": 20,
+    "timestamp": "2026-01-29T18:20:54.339547"
   }
 ]

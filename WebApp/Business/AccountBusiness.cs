@@ -46,7 +46,7 @@ namespace WebApp.Business
                     return new BaseResponse<PaginatedListDto<AccountDto>>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi tải danh sách tài khoản"
                     };
                 }
 
@@ -229,7 +229,7 @@ namespace WebApp.Business
                     return new BaseResponse<bool>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi xóa tài khoản"
                     };
                 }
 
@@ -309,7 +309,7 @@ namespace WebApp.Business
                     return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi tạo tài khoản"
                     };
                 }
 
@@ -368,7 +368,7 @@ namespace WebApp.Business
                     return new BaseResponse<bool>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi đổi mật khẩu"
                     };
                 }
 
@@ -437,7 +437,7 @@ namespace WebApp.Business
                     return new BaseResponse<bool>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi đổi mật khẩu"
                     };
                 }
 
@@ -491,7 +491,7 @@ namespace WebApp.Business
                     return new BaseResponse<string>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ storage service"
+                        Message = "Có lỗi khi tải lên avatar"
                     };
                 }
 

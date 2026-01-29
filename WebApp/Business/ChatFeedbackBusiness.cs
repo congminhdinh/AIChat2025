@@ -42,7 +42,7 @@ namespace WebApp.Business
                     return new BaseResponse<ChatFeedbackDetailDto>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi lấy chi tiết phản hồi"
                     };
                 }
 
@@ -94,7 +94,7 @@ namespace WebApp.Business
                     return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi đánh giá phản hồi"
                     };
                 }
 
@@ -146,7 +146,7 @@ namespace WebApp.Business
                     return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi tạo phản hồi"
                     };
                 }
 
@@ -198,7 +198,7 @@ namespace WebApp.Business
                     return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi cập nhật phản hồi"
                     };
                 }
 
@@ -260,7 +260,7 @@ namespace WebApp.Business
                     return new BaseResponse<PaginatedListDto<ChatFeedbackDto>>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi tải danh sách phản hồi"
                     };
                 }
 
