@@ -27,7 +27,7 @@ namespace AdminCMS.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<TokenDto>
                     {

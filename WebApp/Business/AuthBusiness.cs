@@ -27,12 +27,12 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<TokenDto>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi đăng nhập"
                     };
                 }
 

@@ -41,7 +41,7 @@ namespace AdminCMS.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<PaginatedListDto<TenantDto>>
                     {
@@ -92,7 +92,7 @@ namespace AdminCMS.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<TenantDto>
                     {
@@ -156,7 +156,7 @@ namespace AdminCMS.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<int>
                     {
@@ -216,7 +216,7 @@ namespace AdminCMS.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<int>
                     {
@@ -274,7 +274,7 @@ namespace AdminCMS.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<int>
                     {
@@ -325,7 +325,7 @@ namespace AdminCMS.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<TenantKeyDto>
                     {
@@ -382,7 +382,7 @@ namespace AdminCMS.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<int>
                     {

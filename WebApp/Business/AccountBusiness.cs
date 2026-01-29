@@ -41,7 +41,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<PaginatedListDto<AccountDto>>
                     {
@@ -92,12 +92,12 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<AccountDto>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi lấy tài khoản"
                     };
                 }
 
@@ -170,12 +170,12 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi cập nhật tài khoản"
                     };
                 }
 
@@ -224,7 +224,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<bool>
                     {
@@ -304,7 +304,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<int>
                     {
@@ -363,7 +363,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<bool>
                     {
@@ -432,7 +432,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<bool>
                     {
@@ -486,7 +486,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<string>
                     {

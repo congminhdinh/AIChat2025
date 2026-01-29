@@ -37,7 +37,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<ConversationDto>
                     {
@@ -88,7 +88,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<List<ConversationDto>>
                     {
@@ -139,7 +139,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<ConversationDto>
                     {
@@ -191,7 +191,7 @@ namespace WebApp.Business
                     cancellationToken
                 );
 
-                if (response == null)
+                if (response == null || response.Status == 0)
                 {
                     return new BaseResponse<MessageDto>
                     {
