@@ -46,7 +46,7 @@ namespace AdminCMS.Business
                     return new BaseResponse<PaginatedListDto<TenantDto>>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi tải danh sách tenant"
                     };
                 }
 
@@ -97,7 +97,7 @@ namespace AdminCMS.Business
                     return new BaseResponse<TenantDto>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi lấy thông tin tenant"
                     };
                 }
 
@@ -161,7 +161,7 @@ namespace AdminCMS.Business
                     return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi tạo tenant"
                     };
                 }
 
@@ -221,7 +221,7 @@ namespace AdminCMS.Business
                     return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi cập nhật tenant"
                     };
                 }
 
@@ -279,7 +279,7 @@ namespace AdminCMS.Business
                     return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi vô hiệu hóa tenant"
                     };
                 }
 
@@ -330,7 +330,7 @@ namespace AdminCMS.Business
                     return new BaseResponse<TenantKeyDto>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi lấy tenant key"
                     };
                 }
 
@@ -387,7 +387,7 @@ namespace AdminCMS.Business
                     return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi làm mới tenant key"
                     };
                 }
 

@@ -42,7 +42,7 @@ namespace AdminCMS.Business
                     return new BaseResponse<ConversationDto>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi tạo hội thoại"
                     };
                 }
 
@@ -93,7 +93,7 @@ namespace AdminCMS.Business
                     return new BaseResponse<List<ConversationDto>>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi tải danh sách hội thoại"
                     };
                 }
 
@@ -144,7 +144,7 @@ namespace AdminCMS.Business
                     return new BaseResponse<ConversationDto>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi tải hội thoại"
                     };
                 }
 
@@ -191,12 +191,12 @@ namespace AdminCMS.Business
                     cancellationToken
                 );
 
-                if (response == null || response.Status == 0)
+                if (response == null)
                 {
                     return new BaseResponse<MessageDto>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi gửi tin nhắn"
                     };
                 }
 

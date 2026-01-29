@@ -45,7 +45,7 @@ namespace WebApp.Business
                     return new BaseResponse<PaginatedListDto<DocumentDto>>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi tải danh sách tài liệu"
                     };
                 }
 
@@ -96,7 +96,7 @@ namespace WebApp.Business
                     return new BaseResponse<DocumentDto>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi lấy thông tin tài liệu"
                     };
                 }
 
@@ -174,7 +174,7 @@ namespace WebApp.Business
                     return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi tải lên tài liệu"
                     };
                 }
 
@@ -225,7 +225,7 @@ namespace WebApp.Business
                     return new BaseResponse<DocumentDto>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi cập nhật tài liệu"
                     };
                 }
 
@@ -279,7 +279,7 @@ namespace WebApp.Business
                     return new BaseResponse<bool>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi xóa tài liệu"
                     };
                 }
 
@@ -334,7 +334,7 @@ namespace WebApp.Business
                     return new BaseResponse<bool>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi nạp dữ liệu tài liệu"
                     };
                 }
 

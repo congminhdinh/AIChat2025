@@ -43,7 +43,7 @@ namespace WebApp.Business
                     return new BaseResponse<PaginatedListDto<SystemPromptDto>>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi tải danh sách system prompt"
                     };
                 }
 
@@ -94,7 +94,7 @@ namespace WebApp.Business
                     return new BaseResponse<SystemPromptDto>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi lấy thông tin system prompt"
                     };
                 }
 
@@ -146,7 +146,7 @@ namespace WebApp.Business
                     return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi tạo system prompt"
                     };
                 }
 
@@ -198,7 +198,7 @@ namespace WebApp.Business
                     return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi cập nhật system prompt"
                     };
                 }
 
@@ -252,7 +252,7 @@ namespace WebApp.Business
                     return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi xóa system prompt"
                     };
                 }
 

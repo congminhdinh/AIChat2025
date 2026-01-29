@@ -43,7 +43,7 @@ namespace WebApp.Business
                     return new BaseResponse<PaginatedListDto<PromptConfigDto>>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi tải danh sách cấu hình prompt"
                     };
                 }
 
@@ -94,7 +94,7 @@ namespace WebApp.Business
                     return new BaseResponse<PromptConfigDto>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi lấy thông tin cấu hình prompt"
                     };
                 }
 
@@ -146,7 +146,7 @@ namespace WebApp.Business
                     return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi tạo cấu hình prompt"
                     };
                 }
 
@@ -198,7 +198,7 @@ namespace WebApp.Business
                     return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi cập nhật cấu hình prompt"
                     };
                 }
 
@@ -252,7 +252,7 @@ namespace WebApp.Business
                     return new BaseResponse<int>
                     {
                         Status = BaseResponseStatus.Error,
-                        Message = "Không nhận được phản hồi từ server"
+                        Message = "Có lỗi khi xóa cấu hình prompt"
                     };
                 }
 
