@@ -120,7 +120,8 @@ class QdrantService:
                 collection_name=self.collection_name,
                 query_vector=query_vector,
                 query_filter=search_filter,
-                limit=limit
+                limit=limit,
+                with_vectors=False  # Don't return vectors to save memory
             )
 
             # Adaptive similarity threshold: Lower threshold to reduce false negatives
@@ -162,7 +163,8 @@ class QdrantService:
                 collection_name=self.collection_name,
                 query_vector=query_vector,
                 query_filter=search_filter,
-                limit=limit
+                limit=limit,
+                with_vectors=False  # Don't return vectors to save memory
             )
 
             # Adaptive similarity threshold: Lower threshold to reduce false negatives
@@ -295,7 +297,8 @@ class QdrantService:
                 query_vector=query_vector,
                 query_filter=search_filter,
                 limit=limit,
-                score_threshold=KEYWORD_THRESHOLD
+                score_threshold=KEYWORD_THRESHOLD,
+                with_vectors=False  # Don't return vectors to save memory
             )
 
             logger.info(
