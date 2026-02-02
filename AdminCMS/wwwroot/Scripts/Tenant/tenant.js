@@ -427,9 +427,9 @@
         const tenantId = tenantIdInput.value;
 
         const result = await Swal.fire({
-            title: 'Xac nhan lam moi Tenant Key',
-            html: '<p>Ban co chac chan muon lam moi tenant key nay?</p>' +
-                  '<p class="text-danger"><strong>Webapp dang su dung key cu se khong the ket noi duoc.</strong></p>',
+            title: 'Xác nhận làm mới Tenant Key',
+            html: '<p>Bạn có chắc chắn muốn làm mới?</p>' +
+                  '<p class="text-danger"><strong>Cần liên hệ với tenant này để chỉnh sửa ứng dụng doanh nghiệp</strong></p>',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#ffc107',
