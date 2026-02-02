@@ -298,9 +298,7 @@
         loadingDiv.innerHTML = `
             <div class="avatar bot">✨</div>
             <div class="msg-bubble">
-                <span class="loading-dots">
-                    <span>.</span><span>.</span><span>.</span>
-                </span>
+                <span class="loading-text">Đang suy nghĩ...</span>
             </div>
         `;
 

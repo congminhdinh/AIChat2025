@@ -287,7 +287,7 @@
             {
                 <a href="@(webAppUrl)/Tenant" class="nav-item @(currentPath.StartsWith("/Tenant") ? "active" : "")">Tenant</a>
                 <a href="@(webAppUrl)/Document" class="nav-item @(currentPath.StartsWith("/Document") ? "active" : "")">Tài liệu</a>
-                @* <a href="@(webAppUrl)/Account" class="nav-item @(currentPath.StartsWith("/Account") ? "active" : "")">Tài khoản</a> *@
+@*                 <a href="@(webAppUrl)/Account" class="nav-item @(currentPath.StartsWith("/Account") ? "active" : "")">Tài khoản</a> *@
 @*                 
                 <a href="@(webAppUrl)/PromptConfig" class="nav-item @(currentPath.StartsWith("/PromptConfig") ? "active" : "")">Thuật ngữ</a>
                 <a href="@(webAppUrl)/Stat" class="nav-item @(currentPath.StartsWith("/Stat") ? "active" : "")">Thống kê</a> *@
@@ -300,7 +300,7 @@
                 <a href="javascript:void(0)" class="user-dropdown-item" onclick="openChangePasswordModal()">
                     <i class="bi bi-key-fill"></i> Đổi mật khẩu
                 </a>
-                <a href="@(webAppUrl)/Auth/Logout" class="user-dropdown-item">
+                <a href="@(webAppUrl)/Auth/Login" class="user-dropdown-item">
                     <i class="bi bi-box-arrow-right"></i> Đăng xuất
                 </a>
             </div>

@@ -384,7 +384,7 @@
             }
         } catch (error) {
             console.error('Error opening tenant key modal:', error);
-            showToast('error', 'Khong the tai thong tin tenant key.');
+            showToast('error', 'Không thể tải thông tin tenant key.');
         }
     }
 
@@ -407,20 +407,20 @@
 
         try {
             await navigator.clipboard.writeText(keyInput.value);
-            showToast('success', 'Da sao chep tenant key');
+            showToast('success', 'Đã sao chép tenant key');
         } catch (error) {
             console.error('Error copying tenant key:', error);
             // Fallback for older browsers
             keyInput.select();
             document.execCommand('copy');
-            showToast('success', 'Da sao chep tenant key');
+            showToast('success', 'Đã sao chép tenant key');
         }
     }
 
     async function refreshTenantKey() {
         const tenantIdInput = document.querySelector('#tenantKeyTenantId');
         if (!tenantIdInput) {
-            showToast('error', 'Khong tim thay thong tin tenant');
+            showToast('error', 'Không tìm thấy thông tin tenant');
             return;
         }
 
@@ -434,8 +434,8 @@
             showCancelButton: true,
             confirmButtonColor: '#ffc107',
             cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Lam moi',
-            cancelButtonText: 'Huy bo',
+            confirmButtonText: 'Làm mới',
+            cancelButtonText: 'Hủy bỏ',
             reverseButtons: true
         });
 
@@ -454,15 +454,15 @@
             const responseData = await response.json();
 
             if (responseData.success) {
-                showToast('success', responseData.message || 'Lam moi tenant key thanh cong');
+                showToast('success', responseData.message || 'Làm mới tenant key thành công');
                 // Reload the modal to show new key
                 await openTenantKeyModal(tenantId);
             } else {
-                showToast('error', responseData.message || 'Khong the lam moi tenant key. Vui long thu lai.');
+                showToast('error', responseData.message || 'Không thể làm mới tenant key. Vui lòng thử lại.');
             }
         } catch (error) {
             console.error('Error refreshing tenant key:', error);
-            showToast('error', 'Da xay ra loi ket noi. Vui long thu lai.');
+            showToast('error', 'Đã xảy ra lỗi kết nối. Vui lòng thử lại.');
         }
     }
 
