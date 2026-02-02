@@ -173,12 +173,13 @@ class ReciprocalRankFusion:
             result = result_map[doc_id]
             # Create new ScoredPoint with RRF score
             # Note: Qdrant's ScoredPoint is immutable, so we create a new instance
+            # Set vector=None to avoid memory duplication - vectors not needed after search
             fused_result = ScoredPoint(
                 id=result.id,
                 version=result.version,
                 score=rrf_score,
                 payload=result.payload,
-                vector=result.vector
+                vector=None
             )
             final_results.append(fused_result)
 
@@ -223,12 +224,13 @@ class ReciprocalRankFusion:
         final_results = []
         for doc_id, rrf_score in sorted_doc_ids:
             result = result_map[doc_id]
+            # Set vector=None to avoid memory duplication - vectors not needed after search
             fused_result = ScoredPoint(
                 id=result.id,
                 version=result.version,
                 score=rrf_score,
                 payload=result.payload,
-                vector=result.vector
+                vector=None
             )
             final_results.append(fused_result)
 

@@ -250,11 +250,11 @@ class TestHybridSearchStrategy:
 
     def test_fallback_low_quality_tenant_results(self):
         """Test fallback when tenant results have low quality scores."""
-        # Multiple tenant results but all low quality (< 0.7)
+        # Multiple tenant results but all low quality (< 0.5 QUALITY_COSINE_THRESHOLD)
         tenant_results = [
-            self._create_scored_point("tenant1", 0.65),
-            self._create_scored_point("tenant2", 0.60),
-            self._create_scored_point("tenant3", 0.55)
+            self._create_scored_point("tenant1", 0.45),
+            self._create_scored_point("tenant2", 0.40),
+            self._create_scored_point("tenant3", 0.35)
         ]
 
         global_results = [
@@ -266,7 +266,7 @@ class TestHybridSearchStrategy:
             tenant_results, global_results, limit=5
         )
 
-        # Should trigger fallback because no high-quality tenant results
+        # Should trigger fallback because no high-quality tenant results (all < 0.5)
         assert fallback == True
 
     def test_fallback_respects_limit(self):
