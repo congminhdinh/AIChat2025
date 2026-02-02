@@ -403,16 +403,17 @@ class QdrantService:
         limit: int = 5
     ) -> tuple[List[ScoredPoint], List[ScoredPoint], bool]:
         """
-        Perform hybrid search with intelligent fallback from tenant to global docs.
+        Perform multi-source search with intelligent fallback from tenant to global docs.
 
         Flow:
-        1. Search tenant docs (hybrid: vector + keyword)
-        2. Search global legal docs (hybrid: vector + keyword)
-        3. Apply fallback logic based on tenant result quality
+        1. Vector search tenant docs (semantic similarity)
+        2. Vector search global legal docs (semantic similarity)
+        3. Apply fallback logic based on tenant result quality (cosine scores)
+        4. RRF fusion to combine results from both sources
 
         Args:
             query_vector: Query embedding
-            keywords: Extracted legal keywords
+            keywords: Extracted legal keywords (reserved for future use)
             tenant_id: Tenant ID
             limit: Total result limit
 
@@ -420,18 +421,16 @@ class QdrantService:
             (tenant_results, global_results, fallback_triggered)
         """
         try:
-            # Parallel hybrid search in both scopes
-            tenant_task = self.hybrid_search_single_tenant(
+            # Parallel vector search in both scopes
+            tenant_task = self.search_exact_tenant(
                 query_vector=query_vector,
-                keywords=keywords,
                 tenant_id=tenant_id,
-                limit=limit
+                limit=limit * 2  # Get more for better selection
             )
-            global_task = self.hybrid_search_single_tenant(
+            global_task = self.search_exact_tenant(
                 query_vector=query_vector,
-                keywords=keywords,
                 tenant_id=1,  # Global legal knowledge base
-                limit=limit
+                limit=limit * 2
             )
 
             tenant_results, global_results = await asyncio.gather(
@@ -446,28 +445,43 @@ class QdrantService:
                 logger.error(f'Global search failed: {global_results}')
                 global_results = []
 
-            # Apply fallback logic
+            # Apply fallback logic using cosine similarity scores (BEFORE RRF)
             tenant_filtered, global_filtered, fallback = HybridSearchStrategy.apply_fallback_logic(
                 tenant_results=tenant_results,
                 global_results=global_results,
                 limit=limit
             )
 
+            # Apply RRF fusion to combine tenant and global results
+            if tenant_filtered and global_filtered:
+                fused_results = ReciprocalRankFusion.fuse(
+                    tenant_results=tenant_filtered,
+                    global_results=global_filtered,
+                    k=60
+                )
+                # Split back into tenant and global based on original source
+                tenant_ids = {r.id for r in tenant_filtered}
+                final_tenant = [r for r in fused_results if r.id in tenant_ids]
+                final_global = [r for r in fused_results if r.id not in tenant_ids]
+            else:
+                final_tenant = tenant_filtered
+                final_global = global_filtered
+
             if fallback:
                 logger.warning(
                     f'Fallback activated for tenant {tenant_id}: '
-                    f'{len(tenant_filtered)} tenant + {len(global_filtered)} global results'
+                    f'{len(final_tenant)} tenant + {len(final_global)} global results'
                 )
             else:
                 logger.info(
-                    f'Normal hybrid search for tenant {tenant_id}: '
-                    f'{len(tenant_filtered)} tenant + {len(global_filtered)} global results'
+                    f'Multi-source search for tenant {tenant_id}: '
+                    f'{len(final_tenant)} tenant + {len(final_global)} global results'
                 )
 
-            return tenant_filtered, global_filtered, fallback
+            return final_tenant, final_global, fallback
 
         except Exception as e:
-            logger.error(f'Hybrid search with fallback failed: {e}', exc_info=True)
+            logger.error(f'Multi-source search with fallback failed: {e}', exc_info=True)
             return [], [], False
 
 class ChatBusiness:

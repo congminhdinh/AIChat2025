@@ -1,10 +1,10 @@
 """
-Hybrid Search Module for RAG System
+Multi-Source Search Module for RAG System
 
-This module implements hybrid search combining:
-1. Vector search (semantic similarity)
-2. BM25 keyword search (exact term matching)
-3. RRF (Reciprocal Rank Fusion) re-ranking
+This module implements multi-source retrieval combining:
+1. Vector search (semantic similarity) for tenant-specific docs
+2. Vector search (semantic similarity) for global legal docs
+3. RRF (Reciprocal Rank Fusion) for cross-source ranking
 4. Fallback mechanism (tenant → global legal docs)
 """
 
@@ -130,18 +130,18 @@ class ReciprocalRankFusion:
     @classmethod
     def fuse(
         cls,
-        vector_results: List[ScoredPoint],
-        keyword_results: List[ScoredPoint],
+        tenant_results: List[ScoredPoint],
+        global_results: List[ScoredPoint],
         k: int = DEFAULT_K
     ) -> List[ScoredPoint]:
         """
-        Combine results from vector and keyword search using RRF.
+        Combine results from tenant and global searches using RRF.
 
         RRF formula: score(d) = Σ 1 / (k + rank_i(d))
 
         Args:
-            vector_results: Results from vector search (ranked by cosine similarity)
-            keyword_results: Results from keyword/BM25 search
+            tenant_results: Results from tenant-specific vector search
+            global_results: Results from global legal docs vector search
             k: Constant to reduce impact of high ranks (default: 60)
 
         Returns:
@@ -150,17 +150,17 @@ class ReciprocalRankFusion:
         rrf_scores = {}
         result_map = {}  # Store actual ScoredPoint objects
 
-        # Process vector search results
-        for rank, result in enumerate(vector_results, start=1):
+        # Process tenant search results
+        for rank, result in enumerate(tenant_results, start=1):
             doc_id = result.id
             rrf_scores[doc_id] = rrf_scores.get(doc_id, 0.0) + 1.0 / (k + rank)
             result_map[doc_id] = result
 
-        # Process keyword search results
-        for rank, result in enumerate(keyword_results, start=1):
+        # Process global search results
+        for rank, result in enumerate(global_results, start=1):
             doc_id = result.id
             rrf_scores[doc_id] = rrf_scores.get(doc_id, 0.0) + 1.0 / (k + rank)
-            # Prefer vector result if exists, otherwise use keyword result
+            # Prefer tenant result if exists, otherwise use global result
             if doc_id not in result_map:
                 result_map[doc_id] = result
 
@@ -183,7 +183,7 @@ class ReciprocalRankFusion:
             final_results.append(fused_result)
 
         logger.info(
-            f'RRF fusion: {len(vector_results)} vector + {len(keyword_results)} keyword '
+            f'RRF fusion: {len(tenant_results)} tenant + {len(global_results)} global '
             f'→ {len(final_results)} unique results'
         )
 
@@ -240,9 +240,10 @@ class ReciprocalRankFusion:
 class HybridSearchStrategy:
     """Defines strategies for combining tenant and global search results."""
 
-    # Thresholds for fallback logic
+    # Thresholds for fallback logic (cosine similarity scores)
     MIN_TENANT_RESULTS = 2  # Minimum tenant results before triggering fallback
-    FALLBACK_SIMILARITY_THRESHOLD = 0.65  # Lower threshold when falling back
+    QUALITY_COSINE_THRESHOLD = 0.5  # Cosine similarity threshold for quality results
+    FALLBACK_COSINE_THRESHOLD = 0.4  # Lower threshold when falling back to global
 
     @classmethod
     def apply_fallback_logic(
@@ -258,9 +259,12 @@ class HybridSearchStrategy:
         1. If tenant has >= MIN_TENANT_RESULTS good results: balanced split
         2. If tenant has < MIN_TENANT_RESULTS: prioritize global legal docs
 
+        Note: This method expects results with cosine similarity scores (0-1),
+        not RRF scores. Apply BEFORE RRF fusion.
+
         Args:
-            tenant_results: Results from tenant-specific docs
-            global_results: Results from global legal knowledge base
+            tenant_results: Results from tenant-specific docs (cosine scores)
+            global_results: Results from global legal knowledge base (cosine scores)
             limit: Total result limit
 
         Returns:
@@ -268,17 +272,17 @@ class HybridSearchStrategy:
         """
         fallback_triggered = False
 
-        # Count high-quality tenant results
+        # Count high-quality tenant results using cosine similarity threshold
         quality_tenant_results = [
             r for r in tenant_results
-            if r.score >= 0.7
+            if r.score >= cls.QUALITY_COSINE_THRESHOLD
         ]
 
         if len(quality_tenant_results) < cls.MIN_TENANT_RESULTS:
             # FALLBACK: Insufficient tenant results
             logger.warning(
                 f'Fallback triggered: Only {len(quality_tenant_results)} quality tenant results '
-                f'(threshold: {cls.MIN_TENANT_RESULTS})'
+                f'(need >= {cls.MIN_TENANT_RESULTS} with cosine >= {cls.QUALITY_COSINE_THRESHOLD})'
             )
             fallback_triggered = True
 
@@ -286,7 +290,7 @@ class HybridSearchStrategy:
             # Lower the threshold for global results in fallback mode
             quality_global_results = [
                 r for r in global_results
-                if r.score >= cls.FALLBACK_SIMILARITY_THRESHOLD
+                if r.score >= cls.FALLBACK_COSINE_THRESHOLD
             ]
 
             # Balance: Keep up to 1-2 tenant results, rest from global
